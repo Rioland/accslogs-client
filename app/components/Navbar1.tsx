@@ -10,13 +10,13 @@ export default function Navbar1() {
   const pathname = usePathname();
 
   return (
-    <div className='bg-white w-full py-5 shadow-sm'>
+    <div className='bg-white w-full py-2 shadow-sm'>
         <Wrapper >
                 <div className='flex flex-row justify-between items-center'>
 
                     <Link  href="" className=' rounded-4xl border border-blue-400 p-2 flex flex-row items-center gap-2 hover:bg-gray-200 cursor-pointer'>
-                        <InfoCircle size="32" color="#FF8A65" variant="Bold"/>
-                        <p className='text-blue-400 hidden md:block'>Ask a question</p>
+                        <InfoCircle size="28" color="#FF8A65" variant="Bold"/>
+                        <p className='text-blue-400 hidden md:block text-base'>Ask a question</p>
                     </Link>
 
                     <div className='hidden md:flex flex-row gap-3.5'>

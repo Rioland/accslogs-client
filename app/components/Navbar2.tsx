@@ -20,10 +20,10 @@ export default function Navbar2({ categories, onSelectCategory }: Props) {
         return (
                 <div className='w-full bg-white shadow-sm '>
                         <Wrapper>
-                                <div className='flex flex-col md:flex-row justify-between items-center py-6 gap-4 md:gap-4'>
-                                        <img src='/images/logo.png'  alt='logo' className='w-full md:w-36  md:w-36 md:h-16' />
+                                <div className='flex flex-col md:flex-row justify-between items-center py-3 gap-4 md:gap-4'>
+                                        <img src='/images/logo.png'  alt='logo' className='w-full md:w-36  md:w-36 md:h-12' />
                                         <div className='relative w-full md:w-max-content '>
-                                                <div className='bg-amber-500 text-white p-2 md:p-4 rounded-md hover:bg-amber-600 cursor-pointer flex flex-row gap-2 items-center justify-between' onClick={() => setIsOpen(!isOpen)}>
+                                                <div className='bg-amber-500 text-white p-2  rounded-md hover:bg-amber-600 cursor-pointer flex flex-row gap-2 items-center justify-between' onClick={() => setIsOpen(!isOpen)}>
                                                       <div className='flex flex-row gap-2 items-center'>
                                                           <HamburgerMenu size="32" color="#ffffff" variant="Outline" />
                                                         <p className='text-white'>Select a Category</p>
@@ -55,7 +55,7 @@ export default function Navbar2({ categories, onSelectCategory }: Props) {
                                         </div>
                                         {/* Search bar */}
 
-                                        <div className='border border-gray-500 py-3 px-4 rounded-md flex items-center  md:ml-6 w-full md:w-max-content'>
+                                        <div className='border border-gray-500 py-2 px-4 rounded-md flex items-center  md:ml-6 w-full md:w-max-content'>
                                                 <input
                                                         type='text'
                                                         placeholder='Search for products...'

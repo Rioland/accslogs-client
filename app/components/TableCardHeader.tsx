@@ -1,4 +1,5 @@
 import React from 'react';
+import Wrapper from './Wrapper';
 
 interface AccountProduct {
   year: number | string;
@@ -17,13 +18,14 @@ interface TablCardHeaderProps {
   className?: string;
 }
 
-const TablCardHeader: React.FC<TablCardHeaderProps> = ({
+const TableCardHeader: React.FC<TablCardHeaderProps> = ({
   title = 'Gmail - Aged Accounts',
   products,
   className = '',
 }) => {
   return (
-    <div className={`w-full max-w-4xl mx-auto border border-gray-200 rounded-xl overflow-hidden shadow-sm ${className}`}>
+    <div className={`w-full   ${className}`}>
+     <Wrapper>
       {/* Header */}
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,3fr)_auto_1fr] bg-gray-900 text-white font-medium text-sm md:text-base">
         <div className="px-5 py-4">{title}</div>
@@ -101,9 +103,11 @@ const TablCardHeader: React.FC<TablCardHeaderProps> = ({
           </div>
         ))}
       </div>
-    </div>
+  
+       </Wrapper>
+     </div>
   );
 };
 
 
-export default TablCardHeader;
+export default TableCardHeader;
