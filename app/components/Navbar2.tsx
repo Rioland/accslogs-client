@@ -1,0 +1,74 @@
+"use client"
+import React, { useState } from 'react'
+import Wrapper from './Wrapper'
+import Image from 'next/image'
+import { ArrowDown2, HamburgerMenu, SearchNormal } from 'iconsax-reactjs'
+
+interface Category {
+  name: string;
+  subcategories: string[];
+}
+
+interface Props {
+  categories: Category[];
+  onSelectCategory: (category: string, subcategory: string) => void;
+}
+
+export default function Navbar2({ categories, onSelectCategory }: Props) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+        return (
+                <div className='w-full bg-white shadow-sm '>
+                        <Wrapper>
+                                <div className='flex flex-col md:flex-row justify-between items-center py-6 gap-4 md:gap-4'>
+                                        <img src='/images/logo.png'  alt='logo' className='w-full md:w-36  md:w-36 md:h-16' />
+                                        <div className='relative w-full md:w-max-content '>
+                                                <div className='bg-amber-500 text-white p-2 md:p-4 rounded-md hover:bg-amber-600 cursor-pointer flex flex-row gap-2 items-center justify-between' onClick={() => setIsOpen(!isOpen)}>
+                                                      <div className='flex flex-row gap-2 items-center'>
+                                                          <HamburgerMenu size="32" color="#ffffff" variant="Outline" />
+                                                        <p className='text-white'>Select a Category</p>
+                                                      </div>
+                                                        <ArrowDown2 size="32" color="#ffffff" variant="Bold" className={isOpen ? 'transform rotate-180' : ''} />
+                                                </div>
+                                                {isOpen && (
+                                                        <div className='absolute top-full left-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 min-w-max' onMouseLeave={() => setIsOpen(false)}>
+                                                                <div className='flex'>
+                                                                        <ul className='py-2'>
+                                                                                {categories.map(cat => (
+                                                                                        <li key={cat.name} className='px-4 py-2 hover:bg-gray-100 cursor-pointer' onMouseEnter={() => setHoveredCategory(cat.name)}>
+                                                                                                {cat.name}
+                                                                                        </li>
+                                                                                ))}
+                                                                        </ul>
+                                                                        {hoveredCategory && (
+                                                                                <ul className='py-2 border-l border-gray-200'>
+                                                                                        {categories.find(c => c.name === hoveredCategory)?.subcategories.map(sub => (
+                                                                                                <li key={sub} className='px-4 py-2 hover:bg-gray-100 cursor-pointer' onClick={() => { onSelectCategory(hoveredCategory, sub); setIsOpen(false); }}>
+                                                                                                        {sub}
+                                                                                                </li>
+                                                                                        ))}
+                                                                                </ul>
+                                                                        )}
+                                                                </div>
+                                                        </div>
+                                                )}
+                                        </div>
+                                        {/* Search bar */}
+
+                                        <div className='border border-gray-500 py-3 px-4 rounded-md flex items-center  md:ml-6 w-full md:w-max-content'>
+                                                <input
+                                                        type='text'
+                                                        placeholder='Search for products...'
+                                                        className='w-full outline-none px-4 text-gray-700'
+                                                />
+
+                                                <SearchNormal size="32" color="#000000" variant="Outline" />
+
+
+                                        </div>
+
+                                </div>
+                        </Wrapper>
+                </div>
+        )
+}
