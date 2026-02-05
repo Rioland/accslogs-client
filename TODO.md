@@ -1,0 +1,3 @@
+- [x] Update grid breakpoints from md: to sm: in header and body for earlier responsiveness
+- [x] Adjust button to be full width on mobile and stack price/button vertically on mobile
+- [x] Fine-tune text sizes and spacing for smaller screens
