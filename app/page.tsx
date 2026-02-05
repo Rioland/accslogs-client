@@ -4,6 +4,8 @@ import TopBar from "./components/TopBar";
 import Navbar1 from "./components/Navbar1";
 import Navbar2 from "./components/Navbar2";
 import TableCardHeader from "./components/TableCardHeader";
+import Footer from "./components/Footer";
+import SocialMediaAcquisition from "./components/SocialMediaAcquisition";
 
 export default function Home() {
   const categories = [
@@ -50,13 +52,17 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <TopBar/>
-      <Navbar1/>
+      <TopBar />
+      <Navbar1 />
       <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
-      <TableCardHeader products={products} className="mt-6"/>
-      <TableCardHeader products={products} className="mt-6"/>
-      <TableCardHeader products={products} className="mt-6"/>
-      <TableCardHeader products={products} className="mt-6"/>
+      <TableCardHeader products={products} className="mt-6" />
+      <TableCardHeader products={products} className="mt-6" />
+      <TableCardHeader products={products} className="mt-6" />
+      <TableCardHeader products={products} className="mt-6" />
+
+
+      <SocialMediaAcquisition />
+      <Footer />
 
     </div>
   );
