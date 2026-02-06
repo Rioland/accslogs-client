@@ -11,7 +11,7 @@ export default function TopBar() {
 
                                 <p className="text-sm md:text-base">Accslogs - Accounts store</p>
                                 <Send2 size="32" color="#FF8A65" variant="Bold" />
-                                <a href="" className="text-sm md:text-base">@accszone1</a>
+                                <a href="" className="text-sm md:text-base">@accslogs1</a>
 
                         </div>
                        </Wrapper>

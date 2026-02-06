@@ -15,10 +15,10 @@ export default function SocialMediaAcquisition() {
         <p>
           At{" "}
           <a
-            href="https://accszone.com"
+            href="https://accslogs.com"
             className="text-blue-600 font-medium hover:underline"
           >
-            AccsZone.com
+            Accslogs.com
           </a>
           , we pride ourselves on delivering top-notch social media accounts that
           are not only authentic but also incredibly strong and ready for you
@@ -34,7 +34,7 @@ export default function SocialMediaAcquisition() {
         </h2>
 
         <p>
-          Greetings from Accszone! Accszone specializes in offering a smooth
+          Greetings from Accslogs! Accslogs specializes in offering a smooth
           environment for those wishing to purchase and sell account selling
           sites online social media channels. Our varied choice of accounts is
           meant to fit your particular requirements, whether you are an
@@ -53,21 +53,21 @@ export default function SocialMediaAcquisition() {
 
         <p>
           Though daunting, navigating the social media landscape may be made
-          easier with Accszone. Our simple interface helps you to interact with
+          easier with Accslogs. Our simple interface helps you to interact with
           your audience and successfully promote your goods easily. Moreover,
           our committed customer support staff is always there to help you.
         </p>
 
         <p>
           Are you prepared to move on? Check out our range right now to see what
-          having premium accounts might provide. Come to Accszone and improve
-          your social media performance! See us at Accszone right now!
+          having premium accounts might provide. Come to Accslogs and improve
+          your social media performance! See us at Accslogs right now!
         </p>
 
         {/* Why Choose */}
         <h2 className="text-lg font-semibold">
           Why Choose{" "}
-          <span className="text-blue-600">AccsZone.com</span>?
+          <span className="text-blue-600">Accslogs.com</span>?
         </h2>
 
         <ol className="list-decimal pl-5 space-y-4">
@@ -90,13 +90,13 @@ export default function SocialMediaAcquisition() {
             run-of-the-mill profiles. We craft each one meticulously, using our
             own proprietary methods to make them robust, secure, and ready for
             action. You&apos;ll feel the difference when you use an{" "}
-            <span className="text-blue-600">AccsZone.com</span> account.
+            <span className="text-blue-600">Accslogs.com</span> account.
           </li>
 
           <li>
             <strong>Strong and Reliable:</strong> Our accounts are designed to
             withstand the rigors of the online world. With{" "}
-            <span className="text-blue-600">AccsZone.com</span> accounts, you can
+            <span className="text-blue-600">Accslogs.com</span> accounts, you can
             confidently engage with your audience, market your products or
             services, and build your brand without any worries.
           </li>
@@ -125,7 +125,7 @@ export default function SocialMediaAcquisition() {
         {/* Closing */}
         <p>
           At{" "}
-          <span className="text-blue-600 font-medium">AccsZone.com</span>, we are
+          <span className="text-blue-600 font-medium">Accslogs.com</span>, we are
           more than just a marketplace for social media accounts; we are your
           partners in achieving online success. Whether you&apos;re an entrepreneur,
           influencer, marketer, or business owner, our accounts will empower
@@ -135,7 +135,7 @@ export default function SocialMediaAcquisition() {
         <p>
           Don&apos;t settle for subpar accounts that may compromise your online
           goals. Choose{" "}
-          <span className="text-blue-600 font-medium">AccsZone.com</span> for
+          <span className="text-blue-600 font-medium">Accslogs.com</span> for
           strong, authentic, and reliable social media accounts that will set
           you up for success.
         </p>

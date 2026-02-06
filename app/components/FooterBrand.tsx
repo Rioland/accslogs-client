@@ -1,7 +1,7 @@
 export default function FooterBrand() {
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">ACCSZONE</h2>
+      <h2 className="text-2xl font-bold mb-4">Accslogs</h2>
 
       <p className="font-semibold mb-3">Customer Support</p>
 
