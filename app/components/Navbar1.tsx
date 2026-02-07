@@ -30,12 +30,12 @@ export default function Navbar1() {
                             <HamburgerMenu size="32" color="#FF8A65" />
                         </button>
 
-                         <Link href="" className= 'hidden text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg md:flex flex-row gap-2.5 items-center  justify-between border border-[#FF8A65] rounded-4xl p-2 hover:bg-gray-200 cursor-pointer'>
+                         <Link href="/dashboard" className= 'hidden text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg md:flex flex-row gap-2.5 items-center  justify-between border border-[#FF8A65] rounded-4xl p-2 hover:bg-gray-200 cursor-pointer'>
                             <div className='flex flex-row items-center gap-2.5'>
                                 <ProfileCircle size="32" color="#FF8A65" variant="Bold" />
                                 <p className='text-[#FF8A65]'>Dashboard</p>
                             </div>
-                            <ArrowDown2 size="32" color="#FF8A65" variant="Bold" />
+                            {/* <ArrowDown2 size="32" color="#FF8A65" variant="Bold" /> */}
 
                         </Link>
 

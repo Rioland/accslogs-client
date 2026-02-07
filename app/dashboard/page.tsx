@@ -6,6 +6,7 @@ import { Menu, X } from "lucide-react";
 import Navbar1 from "../components/Navbar1";
 import Navbar2 from "../components/Navbar2";
 import TopBar from "../components/TopBar";
+import Footer from "../components/Footer";
 
 const tabs = [
         { key: "home", label: "home" },
@@ -129,6 +130,7 @@ export default function DashboardPage() {
                                         </div>
                                 </div>
                         </div>
+                        <Footer/>
                 </div>
         );
 }
