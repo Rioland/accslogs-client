@@ -8,7 +8,7 @@ import Footer from "./components/Footer";
 import SocialMediaAcquisition from "./components/SocialMediaAcquisition";
 
 export default function Home() {
-  const [islogin, setLogin] = useState(false);
+  
   const categories = [
     { name: "Electronics", subcategories: ["Phones", "Laptops"] },
     { name: "Clothing", subcategories: ["Shirts", "Pants"] },
@@ -54,7 +54,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <TopBar />
-      <Navbar1 islogin={islogin} setLogin={setLogin}/>
+      <Navbar1 />
       <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
       <TableCardHeader products={products} className="mt-6" />
       <TableCardHeader products={products} className="mt-6" />
