@@ -3,117 +3,132 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import { Menu, X } from "lucide-react";
+import Navbar1 from "../components/Navbar1";
+import Navbar2 from "../components/Navbar2";
+import TopBar from "../components/TopBar";
 
 const tabs = [
-  { key: "home", label: "home" },
-  { key: "add-funds", label: "add funds" },
-  { key: "my-orders", label: "my orders" },
-  { key: "tickets", label: "tickets" },
-  { key: "transaction-history", label: "transaction history" },
-  { key: "balance-history", label: "balance history" },
+        { key: "home", label: "home" },
+        { key: "add-funds", label: "add funds" },
+        { key: "my-orders", label: "my orders" },
+        { key: "tickets", label: "tickets" },
+        { key: "transaction-history", label: "transaction history" },
+        { key: "balance-history", label: "balance history" },
 ];
 
 export default function DashboardPage() {
-  const [activeKey, setActiveKey] = useState<string>(tabs[0].key);
-  const [mobileOpen, setMobileOpen] = useState(false);
+        const [activeKey, setActiveKey] = useState<string>(tabs[0].key);
+        const [mobileOpen, setMobileOpen] = useState(false);
+        const categories = [
+                { name: "Electronics", subcategories: ["Phones", "Laptops"] },
+                { name: "Clothing", subcategories: ["Shirts", "Pants"] },
+        ];
 
-  return (
-    <div className="min-h-screen bg-[#e4e9ee] text-foreground">
-      {/* Top bar for mobile with menu toggle */}
-      <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-[backdrop-filter]:bg-[#e4e9ee]/60">
-        <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between">
-          <button
-            type="button"
-            aria-label="Open menu"
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm active:scale-[0.98]"
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-            Menu
-          </button>
-          <span className="text-base font-semibold text-gray-900">Dashboard</span>
-        </div>
-      </div>
+        const handleSelectCategory = (category: string, subcategory: string) => {
+                console.log("Selected:", category, subcategory);
+        };
+        return (
+                <div className="min-h-screen bg-[#e4e9ee] text-foreground">
+                        <TopBar />
+                        <Navbar1 />
+                        <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
 
-      <div className="max-w-[1200px] w-full mx-auto flex gap-6 py-4 md:py-6 px-4 md:px-6">
-        {/* Sidebar: desktop static */}
-        <div className="hidden md:block md:shrink-0">
-          <Sidebar activeKey={activeKey} onChange={setActiveKey} />
-        </div>
+                        {/* Top bar for mobile with menu toggle */}
 
-        {/* Sidebar: mobile off-canvas */}
-        {mobileOpen && (
-          <div className="md:hidden">
-            <div
-              className="fixed inset-0 z-40 bg-black/40"
-              aria-hidden
-              onClick={() => setMobileOpen(false)}
-            />
-            <div className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] p-2">
-              <div className="rounded-xl bg-white shadow-2xl ring-1 ring-black/10 h-full overflow-y-auto">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                  <span className="text-base font-semibold text-gray-900">Menu</span>
-                  <button
-                    type="button"
-                    aria-label="Close menu"
-                    className="inline-flex items-center rounded-md border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
+                        <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-[backdrop-filter]:bg-[#e4e9ee]/60">
+                                <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between">
+                                        <button
+                                                type="button"
+                                                aria-label="Open menu"
+                                                className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm active:scale-[0.98]"
+                                                onClick={() => setMobileOpen(true)}
+                                        >
+                                                <Menu className="h-5 w-5" />
+                                                Menu
+                                        </button>
+                                        <span className="text-base font-semibold text-gray-900">Dashboard</span>
+                                </div>
+                        </div>
+
+                        <div className="max-w-[1200px] w-full mx-auto flex gap-6 py-4 md:py-6 px-4 md:px-6">
+                                {/* Sidebar: desktop static */}
+                                <div className="hidden md:block md:shrink-0">
+                                        <Sidebar activeKey={activeKey} onChange={setActiveKey} />
+                                </div>
+
+                                {/* Sidebar: mobile off-canvas */}
+                                {mobileOpen && (
+                                        <div className="md:hidden">
+                                                <div
+                                                        className="fixed inset-0 z-40 bg-black/40"
+                                                        aria-hidden
+                                                        onClick={() => setMobileOpen(false)}
+                                                />
+                                                <div className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] p-2">
+                                                        <div className="rounded-xl bg-white shadow-2xl ring-1 ring-black/10 h-full overflow-y-auto">
+                                                                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                                                                        <span className="text-base font-semibold text-gray-900">Menu</span>
+                                                                        <button
+                                                                                type="button"
+                                                                                aria-label="Close menu"
+                                                                                className="inline-flex items-center rounded-md border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50"
+                                                                                onClick={() => setMobileOpen(false)}
+                                                                        >
+                                                                                <X className="h-5 w-5" />
+                                                                        </button>
+                                                                </div>
+                                                                <div className="p-2">
+                                                                        <Sidebar
+                                                                                activeKey={activeKey}
+                                                                                onChange={(key) => {
+                                                                                        setActiveKey(key);
+                                                                                        setMobileOpen(false);
+                                                                                }}
+                                                                        />
+                                                                </div>
+                                                        </div>
+                                                </div>
+                                        </div>
+                                )}
+
+                                {/* Content column */}
+                                <div className="flex-1 flex flex-col gap-4">
+                                        <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Hello, peter olayinka</h1>
+
+                                        <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
+                                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                                        <div className="text-amber-600 font-semibold">Hello, peter olayinka!</div>
+                                                        <div className="flex items-center gap-2">
+                                                                <span className="text-sm text-gray-700">Promotional Emails</span>
+                                                                <label className="inline-flex items-center cursor-pointer">
+                                                                        <input type="checkbox" className="sr-only peer" />
+                                                                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:block after:w-5 after:h-5 after:bg-white after:rounded-full after:shadow after:transition peer-checked:bg-amber-500" />
+                                                                </label>
+                                                        </div>
+                                                </div>
+
+                                                {/* Stat cards */}
+                                                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        {[
+                                                                { title: "Orders", icon: "🛒" },
+                                                                { title: "Open Tickets", icon: "🎟️" },
+                                                                { title: "Close Tickets", icon: "✔️" },
+                                                        ].map((c) => (
+                                                                <div
+                                                                        key={c.title}
+                                                                        className="rounded-xl border border-amber-300/60 bg-white p-5 md:p-6 shadow-[0_6px_20px_rgba(0,0,0,0.06)]"
+                                                                >
+                                                                        <div className="flex flex-col items-center justify-center gap-2 text-amber-600">
+                                                                                <div className="text-2xl md:text-3xl" aria-hidden>{c.icon}</div>
+                                                                                <div className="font-semibold text-gray-800">{c.title}</div>
+                                                                                <div className="text-xl md:text-2xl font-bold">0</div>
+                                                                        </div>
+                                                                </div>
+                                                        ))}
+                                                </div>
+                                        </div>
+                                </div>
+                        </div>
                 </div>
-                <div className="p-2">
-                  <Sidebar
-                    activeKey={activeKey}
-                    onChange={(key) => {
-                      setActiveKey(key);
-                      setMobileOpen(false);
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Content column */}
-        <div className="flex-1 flex flex-col gap-4">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Hello, peter olayinka</h1>
-
-          <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="text-amber-600 font-semibold">Hello, peter olayinka!</div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-700">Promotional Emails</span>
-                <label className="inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:block after:w-5 after:h-5 after:bg-white after:rounded-full after:shadow after:transition peer-checked:bg-amber-500" />
-                </label>
-              </div>
-            </div>
-
-            {/* Stat cards */}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { title: "Orders", icon: "🛒" },
-                { title: "Open Tickets", icon: "🎟️" },
-                { title: "Close Tickets", icon: "✔️" },
-              ].map((c) => (
-                <div
-                  key={c.title}
-                  className="rounded-xl border border-amber-300/60 bg-white p-5 md:p-6 shadow-[0_6px_20px_rgba(0,0,0,0.06)]"
-                >
-                  <div className="flex flex-col items-center justify-center gap-2 text-amber-600">
-                    <div className="text-2xl md:text-3xl" aria-hidden>{c.icon}</div>
-                    <div className="font-semibold text-gray-800">{c.title}</div>
-                    <div className="text-xl md:text-2xl font-bold">0</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+        );
 }
