@@ -138,7 +138,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen  bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen  bg-gray-50 ">
       <TopBar />
       <Navbar1 />
       <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
