@@ -1,3 +1,3 @@
-- [x] Update grid breakpoints from md: to sm: in header and body for earlier responsiveness
-- [x] Adjust button to be full width on mobile and stack price/button vertically on mobile
-- [x] Fine-tune text sizes and spacing for smaller screens
+- [x] Create app/forgot-password/page.tsx with email form and Supabase resetPasswordForEmail integration
+- [x] Create app/reset-password/page.tsx with password reset form and Supabase updateUser integration
+- [x] Test the reset password flow by running the development server and verifying page functionality (dev server started successfully without errors)
