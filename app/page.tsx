@@ -3,10 +3,12 @@
 import { useState } from "react";
 import TopBar from "./components/TopBar";
 import Navbar1 from "./components/Navbar1";
-import Navbar2 from "./components/Navbar2";
+import dynamic from "next/dynamic";
 import TableCardHeader from "./components/TableCardHeader";
 import Footer from "./components/Footer";
 import SocialMediaAcquisition from "./components/SocialMediaAcquisition";
+
+const Navbar2 = dynamic(() => import("./components/Navbar2"), { ssr: false });
 
 export default function Home() {
 

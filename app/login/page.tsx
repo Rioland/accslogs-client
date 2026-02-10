@@ -2,12 +2,14 @@
 "use client"
 import React, { useMemo, useState } from 'react'
 import Navbar1 from '../components/Navbar1'
-import Navbar2 from '../components/Navbar2'
+import dynamic from 'next/dynamic'
 import TopBar from '../components/TopBar'
 import Footer from '../components/Footer'
 import { useRouter } from 'next/navigation'
 import supabaseClient from '@/lib/supabaseClient'
 import toast from 'react-hot-toast'
+
+const Navbar2 = dynamic(() => import('../components/Navbar2'), { ssr: false })
 
 function isValidEmail(email: string) {
   return /^(?:[a-zA-Z0-9_'^&+%?`{|}~-]+(?:\.[a-zA-Z0-9_'^&+%?`{|}~-]+)*|\"(?:[^\"]|\\\")+\")@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(email)
@@ -52,24 +54,31 @@ export default function LoginPage() {
         return
       }
 
-      // Check if user is admin
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: adminData, error: adminError } = await supabase
-          .from('admins')
-          .select('user_id')
-          .eq('user_id', user.id)
-          .single()
+      // Wait for session to be set
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
-        if (!adminError && adminData) {
-          // User is admin
-          router.push('/admin')
-        } else {
-          // User is not admin
-          router.push('/dashboard')
-        }
-      } else {
+      // Get the user to confirm sign-in
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
         toast.error('Unable to retrieve user information.')
+        return
+      }
+
+      // Check if user is admin
+      const { data: adminData, error: adminError } = await supabase
+        .from('admins')
+        .select('user_id')
+        .eq('user_id', user.id)
+
+      if (adminError) {
+        toast.error('Unable to retrieve user information.')
+        return
+      }
+
+      if (adminData && adminData.length > 0) {
+        router.push('/admin')
+      } else {
+        router.push('/dashboard')
       }
     } catch (err: any) {
       toast.error(err?.message || 'Something went wrong. Please try again.')

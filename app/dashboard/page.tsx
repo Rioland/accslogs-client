@@ -5,9 +5,11 @@ import { useState } from "react";
 import Sidebar from "./Sidebar";
 import { Menu, X } from "lucide-react";
 import Navbar1 from "../components/Navbar1";
-import Navbar2 from "../components/Navbar2";
+import dynamic from "next/dynamic";
 import TopBar from "../components/TopBar";
 import Footer from "../components/Footer";
+
+const Navbar2 = dynamic(() => import("../components/Navbar2"), { ssr: false });
 
 const tabs = [
         { key: "home", label: "home" },

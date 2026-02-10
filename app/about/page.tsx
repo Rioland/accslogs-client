@@ -3,12 +3,14 @@
 
 import React from 'react'
 import Navbar1 from '../components/Navbar1'
-import Navbar2 from '../components/Navbar2'
+import dynamic from 'next/dynamic'
 import TopBar from '../components/TopBar'
 import Footer from '../components/Footer'
 import TopCard from '../components/About/TopCard'
 import Wrapper from '../components/Wrapper'
 import WhyChooseAccsZone from '../components/About/WhyChooseAccsLogs'
+
+const Navbar2 = dynamic(() => import('../components/Navbar2'), { ssr: false })
 
 export default function AboutPage() {
   const handleSelectCategory = (category: any, subcategory: any) => {

@@ -6,10 +6,12 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Footer from '../components/Footer';
 import Navbar1 from '../components/Navbar1';
-import Navbar2 from '../components/Navbar2';
+import dynamic from 'next/dynamic';
 import TopBar from '../components/TopBar';
 import { useRouter } from 'next/navigation';
 import supabaseClient from '@/lib/supabaseClient';
+
+const Navbar2 = dynamic(() => import('../components/Navbar2'), { ssr: false });
 import toast from 'react-hot-toast';
 
 function isValidEmail(email: string) {

@@ -2,11 +2,13 @@
 "use client"
 import React, { useMemo, useState, useEffect } from 'react'
 import Navbar1 from '../components/Navbar1'
-import Navbar2 from '../components/Navbar2'
+import dynamic from 'next/dynamic'
 import TopBar from '../components/TopBar'
 import Footer from '../components/Footer'
 import { useRouter } from 'next/navigation'
 import supabaseClient from '@/lib/supabaseClient'
+
+const Navbar2 = dynamic(() => import('../components/Navbar2'), { ssr: false })
 import toast from 'react-hot-toast'
 
 function passwordIssues(pw: string): string | null {
