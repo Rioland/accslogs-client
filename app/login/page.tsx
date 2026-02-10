@@ -7,6 +7,7 @@ import TopBar from '../components/TopBar'
 import Footer from '../components/Footer'
 import { useRouter } from 'next/navigation'
 import supabaseClient from '@/lib/supabaseClient'
+import toast from 'react-hot-toast'
 
 function isValidEmail(email: string) {
   return /^(?:[a-zA-Z0-9_'^&+%?`{|}~-]+(?:\.[a-zA-Z0-9_'^&+%?`{|}~-]+)*|\"(?:[^\"]|\\\")+\")@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(email)
@@ -22,7 +23,6 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,16 +31,15 @@ export default function LoginPage() {
     // Input validation
     const trimmedEmail = email.trim()
     if (!trimmedEmail || !password) {
-      setError('Please fill in all fields.')
+      toast.error('Please fill in all fields.')
       return
     }
     if (!isValidEmail(trimmedEmail)) {
-      setError('Please enter a valid email address.')
+      toast.error('Please enter a valid email address.')
       return
     }
 
     setIsSubmitting(true)
-    setError(null)
 
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -49,14 +48,31 @@ export default function LoginPage() {
       })
 
       if (signInError) {
-        setError(signInError.message)
+        toast.error(signInError.message)
         return
       }
 
-      // Successful login -> redirect
-      router.push('/dashboard')
+      // Check if user is admin
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: adminData, error: adminError } = await supabase
+          .from('admins')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .single()
+
+        if (!adminError && adminData) {
+          // User is admin
+          router.push('/admin')
+        } else {
+          // User is not admin
+          router.push('/dashboard')
+        }
+      } else {
+        toast.error('Unable to retrieve user information.')
+      }
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.')
+      toast.error(err?.message || 'Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -86,11 +102,6 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-6">
-            {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 text-red-700 text-sm rounded">
-                {error}
-              </div>
-            )}
 
             {/* Email */}
             <div>

@@ -7,6 +7,7 @@ import TopBar from '../components/TopBar'
 import Footer from '../components/Footer'
 import { useRouter } from 'next/navigation'
 import supabaseClient from '@/lib/supabaseClient'
+import toast from 'react-hot-toast'
 
 function isValidEmail(email: string) {
   return /^(?:[a-zA-Z0-9_'^&+%?`{|}~-]+(?:\.[a-zA-Z0-9_'^&+%?`{|}~-]+)*|\"(?:[^\"]|\\\")+\")@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(email)
@@ -21,8 +22,6 @@ export default function ForgotPasswordPage() {
   const supabase = useMemo(() => supabaseClient, [])
 
   const [email, setEmail] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,17 +30,15 @@ export default function ForgotPasswordPage() {
     // Input validation
     const trimmedEmail = email.trim()
     if (!trimmedEmail) {
-      setError('Please enter your email address.')
+      toast.error('Please enter your email address.')
       return
     }
     if (!isValidEmail(trimmedEmail)) {
-      setError('Please enter a valid email address.')
+      toast.error('Please enter a valid email address.')
       return
     }
 
     setIsSubmitting(true)
-    setError(null)
-    setSuccess(null)
 
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
@@ -49,13 +46,13 @@ export default function ForgotPasswordPage() {
       })
 
       if (resetError) {
-        setError(resetError.message)
+        toast.error(resetError.message)
         return
       }
 
-      setSuccess('If an account with that email exists, we\'ve sent you a password reset link.')
+      toast.success('If an account with that email exists, we\'ve sent you a password reset link.')
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.')
+      toast.error(err?.message || 'Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -85,16 +82,6 @@ export default function ForgotPasswordPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-6">
-            {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 text-red-700 text-sm rounded">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 text-green-700 text-sm rounded">
-                {success}
-              </div>
-            )}
 
             {/* Email */}
             <div>

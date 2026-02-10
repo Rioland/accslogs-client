@@ -7,6 +7,7 @@ import TopBar from '../components/TopBar'
 import Footer from '../components/Footer'
 import { useRouter } from 'next/navigation'
 import supabaseClient from '@/lib/supabaseClient'
+import toast from 'react-hot-toast'
 
 function passwordIssues(pw: string): string | null {
   if (pw.length < 8) return 'Password must be at least 8 characters long'
@@ -26,7 +27,6 @@ export default function ResetPasswordPage() {
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null)
 
@@ -48,16 +48,15 @@ export default function ResetPasswordPage() {
     // Input validation
     const pwIssue = passwordIssues(password)
     if (pwIssue) {
-      setError(pwIssue)
+      toast.error(pwIssue)
       return
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      toast.error('Passwords do not match')
       return
     }
 
     setIsSubmitting(true)
-    setError(null)
 
     try {
       const { error: updateError } = await supabase.auth.updateUser({
@@ -65,14 +64,14 @@ export default function ResetPasswordPage() {
       })
 
       if (updateError) {
-        setError(updateError.message)
+        toast.error(updateError.message)
         return
       }
 
       // Success - redirect to login
       router.push('/login')
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.')
+      toast.error(err?.message || 'Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -139,11 +138,6 @@ export default function ResetPasswordPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-6">
-            {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 text-red-700 text-sm rounded">
-                {error}
-              </div>
-            )}
 
             {/* Password */}
             <div>

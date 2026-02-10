@@ -107,6 +107,15 @@ create table if not exists public.admins (
 
 comment on table public.admins is 'List of admin users allowed to manage certain resources.';
 
+-- Enable RLS for admins
+alter table public.admins enable row level security;
+
+-- Allow users to check if they are admin (select their own row)
+drop policy if exists "Users can check own admin status" on public.admins;
+create policy "Users can check own admin status" on public.admins
+for select
+using (auth.uid() = user_id);
+
 -- 7) Social media account category table
 create table if not exists public.socialmedia_account_category (
   id bigserial primary key,

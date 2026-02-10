@@ -10,6 +10,7 @@ import Navbar2 from '../components/Navbar2';
 import TopBar from '../components/TopBar';
 import { useRouter } from 'next/navigation';
 import supabaseClient from '@/lib/supabaseClient';
+import toast from 'react-hot-toast';
 
 function isValidEmail(email: string) {
   // RFC 5322-ish simple email regex
@@ -39,15 +40,11 @@ export default function SignUpPage() {
     referralCode: '',
   });
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError(null);
-    setSuccess(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,26 +52,24 @@ export default function SignUpPage() {
 
     // Client-side validations
     if (!formData.firstName.trim()) {
-      setError('First name is required');
+      toast.error('First name is required');
       return;
     }
     if (!isValidEmail(formData.email.trim())) {
-      setError('Please enter a valid email');
+      toast.error('Please enter a valid email');
       return;
     }
     const pwIssue = passwordIssues(formData.password);
     if (pwIssue) {
-      setError(pwIssue);
+      toast.error(pwIssue);
       return;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
     setIsSubmitting(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       // 1) Sign up the user with Supabase Auth (email + password)
@@ -92,7 +87,7 @@ export default function SignUpPage() {
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        toast.error(signUpError.message);
         return;
       }
 
@@ -113,16 +108,16 @@ export default function SignUpPage() {
 
         if (insertError && insertError.code !== '23505') {
           // 23505 = unique_violation (e.g., row already exists via trigger)
-          setError(insertError.message);
+          toast.error(insertError.message);
           return;
         }
       }
 
       // Success handling depends on your auth email confirmation settings
-      setSuccess('Registration successful. Please check your email to confirm your account.');
+      toast.success('Registration successful. Please check your email to confirm your account.');
       setTimeout(() => router.push('/login'), 1200);
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.');
+      toast.error(err?.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -154,12 +149,6 @@ export default function SignUpPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="px-6 sm:px-8 pb-10 space-y-6">
-            {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 text-red-700 text-sm rounded">{error}</div>
-            )}
-            {success && (
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 text-green-700 text-sm rounded">{success}</div>
-            )}
 
             {/* Name fields - side by side on larger screens */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
