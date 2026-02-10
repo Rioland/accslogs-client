@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+"use client"
 import Navbar1 from '../components/Navbar1'
 
 import TopBar from '../components/TopBar'
