@@ -20,7 +20,7 @@ interface Category {
 }
 
 interface Props {
-  onSelectCategory: (category: Category, subcategory: Subcategory) => void;
+  onSelectCategory?: (category: Category, subcategory: Subcategory) => void;
 }
 
 export default function Navbar2({ onSelectCategory }: Props) {
@@ -75,7 +75,7 @@ export default function Navbar2({ onSelectCategory }: Props) {
                                                                         {hoveredCategory && (
                                                                                 <ul className='py-2 border-l border-gray-200'>
                                                                                         {hoveredCategory.subcategories.map(sub => (
-                                                                                                <li key={sub.id} className='px-4 py-2 hover:bg-gray-100 cursor-pointer' onClick={() => { onSelectCategory(hoveredCategory, sub); setIsOpen(false); }}>
+                                                                                                <li key={sub.id} className='px-4 py-2 hover:bg-gray-100 cursor-pointer' onClick={() => { onSelectCategory?.(hoveredCategory, sub); setIsOpen(false); }}>
                                                                                                         {sub.name}
                                                                                                 </li>
                                                                                         ))}
