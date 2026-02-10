@@ -13,12 +13,7 @@ function isValidEmail(email: string) {
 }
 
 export default function LoginPage() {
-  const categories = [
-    { name: "Electronics", subcategories: ["Phones", "Laptops"] },
-    { name: "Clothing", subcategories: ["Shirts", "Pants"] },
-  ]
-
-  const handleSelectCategory = (category: string, subcategory: string) => {
+  const handleSelectCategory = (category: any, subcategory: any) => {
     console.log("Selected:", category, subcategory)
   }
 
@@ -71,7 +66,7 @@ export default function LoginPage() {
     <div className="flex flex-col min-h-screen">
       <TopBar />
       <Navbar1 />
-      <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
+      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       <div className='flex-1'>
         <div className=" w-full md:w-6/12 mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 mt-12">

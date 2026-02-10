@@ -17,12 +17,7 @@ function passwordIssues(pw: string): string | null {
 }
 
 export default function ResetPasswordPage() {
-  const categories = [
-    { name: "Electronics", subcategories: ["Phones", "Laptops"] },
-    { name: "Clothing", subcategories: ["Shirts", "Pants"] },
-  ]
-
-  const handleSelectCategory = (category: string, subcategory: string) => {
+  const handleSelectCategory = (category: any, subcategory: any) => {
     console.log("Selected:", category, subcategory)
   }
 
@@ -88,7 +83,7 @@ export default function ResetPasswordPage() {
       <div className="flex flex-col min-h-screen">
         <TopBar />
         <Navbar1 />
-        <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
+        <Navbar2 onSelectCategory={handleSelectCategory} />
         <div className='flex-1 flex items-center justify-center'>
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
@@ -105,7 +100,7 @@ export default function ResetPasswordPage() {
       <div className="flex flex-col min-h-screen">
         <TopBar />
         <Navbar1 />
-        <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
+        <Navbar2 onSelectCategory={handleSelectCategory} />
         <div className='flex-1 flex items-center justify-center'>
           <div className="w-full md:w-6/12 mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 p-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Invalid Reset Link</h2>
@@ -124,7 +119,7 @@ export default function ResetPasswordPage() {
     <div className="flex flex-col min-h-screen">
       <TopBar />
       <Navbar1 />
-      <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
+      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       <div className='flex-1'>
         <div className=" w-full md:w-6/12 mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 mt-12">

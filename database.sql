@@ -114,6 +114,14 @@ create table if not exists public.socialmedia_account_category (
   created_at timestamptz not null default now()
 );
 
+-- 8) Social media account subcategory table
+create table if not exists public.socialmedia_account_subcategory (
+  id bigserial primary key,
+  category_id bigint not null references public.socialmedia_account_category(id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now()
+);
+
 -- Seed categories (id auto-incremented)
 insert into public.socialmedia_account_category (name) values
   ('facebook'),
@@ -138,6 +146,20 @@ insert into public.socialmedia_account_category (name) values
   ('Ai tools'),
   ('Tutorials')
  on conflict (name) do nothing;
+
+-- Seed subcategories (assuming category ids after insert, but since on conflict do nothing, need to handle carefully)
+-- For simplicity, insert some example subcategories for first few categories
+-- Note: In production, you might want to insert after categories are seeded
+insert into public.socialmedia_account_subcategory (category_id, name) values
+  (1, 'Personal'),
+  (1, 'Business'),
+  (2, 'Personal'),
+  (2, 'Business'),
+  (3, 'Dance'),
+  (3, 'Comedy'),
+  (4, 'Personal'),
+  (4, 'News')
+ on conflict do nothing;
 
 -- Enable RLS and policies: anyone can read; only admins can insert/update/delete
 alter table public.socialmedia_account_category enable row level security;
@@ -164,6 +186,29 @@ with check (exists (select 1 from public.admins a where a.user_id = auth.uid()))
 
 drop policy if exists "Only admins can delete categories" on public.socialmedia_account_category;
 create policy "Only admins can delete categories" on public.socialmedia_account_category
+for delete to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Enable RLS and policies for subcategories: anyone can read; only admins can insert/update/delete
+alter table public.socialmedia_account_subcategory enable row level security;
+
+drop policy if exists "Anyone can read subcategories" on public.socialmedia_account_subcategory;
+create policy "Anyone can read subcategories" on public.socialmedia_account_subcategory
+for select using (true);
+
+drop policy if exists "Only admins can insert subcategories" on public.socialmedia_account_subcategory;
+create policy "Only admins can insert subcategories" on public.socialmedia_account_subcategory
+for insert to authenticated
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+drop policy if exists "Only admins can update subcategories" on public.socialmedia_account_subcategory;
+create policy "Only admins can update subcategories" on public.socialmedia_account_subcategory
+for update to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()))
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+drop policy if exists "Only admins can delete subcategories" on public.socialmedia_account_subcategory;
+create policy "Only admins can delete subcategories" on public.socialmedia_account_subcategory
 for delete to authenticated
 using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 

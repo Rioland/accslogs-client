@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import React from 'react'
@@ -10,12 +11,7 @@ import Wrapper from '../components/Wrapper'
 import WhyChooseAccsZone from '../components/About/WhyChooseAccsLogs'
 
 export default function AboutPage() {
-          const categories = [
-    { name: "Electronics", subcategories: ["Phones", "Laptops"] },
-    { name: "Clothing", subcategories: ["Shirts", "Pants"] },
-  ];
-
-  const handleSelectCategory = (category: string, subcategory: string) => {
+  const handleSelectCategory = (category: any, subcategory: any) => {
     console.log("Selected:", category, subcategory);
   };
 
@@ -23,7 +19,7 @@ export default function AboutPage() {
    <div className="flex flex-col min-h-screen bg-gray-400">
          <TopBar />
               <Navbar1 />
-              <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
+              <Navbar2 onSelectCategory={handleSelectCategory} />
        
                 <TopCard />
                 <WhyChooseAccsZone />

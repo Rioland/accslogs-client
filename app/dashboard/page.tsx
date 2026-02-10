@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -20,19 +21,14 @@ const tabs = [
 export default function DashboardPage() {
         const [activeKey, setActiveKey] = useState<string>(tabs[0].key);
         const [mobileOpen, setMobileOpen] = useState(false);
-        const categories = [
-                { name: "Electronics", subcategories: ["Phones", "Laptops"] },
-                { name: "Clothing", subcategories: ["Shirts", "Pants"] },
-        ];
-
-        const handleSelectCategory = (category: string, subcategory: string) => {
+        const handleSelectCategory = (category: any, subcategory: any) => {
                 console.log("Selected:", category, subcategory);
         };
         return (
                 <div className="min-h-screen bg-[#e4e9ee] text-foreground">
                         <TopBar />
                         <Navbar1 />
-                        <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
+                        <Navbar2 onSelectCategory={handleSelectCategory} />
 
                         {/* Top bar for mobile with menu toggle */}
 

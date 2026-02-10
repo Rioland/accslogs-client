@@ -128,12 +128,7 @@ export default function SignUpPage() {
     }
   };
 
-  const categories = [
-    { name: 'Electronics', subcategories: ['Phones', 'Laptops'] },
-    { name: 'Clothing', subcategories: ['Shirts', 'Pants'] },
-  ];
-
-  const handleSelectCategory = (category: string, subcategory: string) => {
+  const handleSelectCategory = (category: any, subcategory: any) => {
     console.log('Selected:', category, subcategory);
   };
 
@@ -141,7 +136,7 @@ export default function SignUpPage() {
     <div className="min-h-screen  bg-gray-50 ">
       <TopBar />
       <Navbar1 />
-      <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
+      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       <div className="flex-1">
         <div className="w-full md:w-6/12 md:mx-auto mx-4 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden my-16">

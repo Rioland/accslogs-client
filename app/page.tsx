@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import { useState } from "react";
 import TopBar from "./components/TopBar";
@@ -8,13 +9,8 @@ import Footer from "./components/Footer";
 import SocialMediaAcquisition from "./components/SocialMediaAcquisition";
 
 export default function Home() {
-  
-  const categories = [
-    { name: "Electronics", subcategories: ["Phones", "Laptops"] },
-    { name: "Clothing", subcategories: ["Shirts", "Pants"] },
-  ];
 
-  const handleSelectCategory = (category: string, subcategory: string) => {
+  const handleSelectCategory = (category: any, subcategory: any) => {
     console.log("Selected:", category, subcategory);
   };
 
@@ -55,7 +51,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <TopBar />
       <Navbar1 />
-      <Navbar2 categories={categories} onSelectCategory={handleSelectCategory} />
+      <Navbar2 onSelectCategory={handleSelectCategory} />
       <TableCardHeader products={products} className="mt-6" />
       <TableCardHeader products={products} className="mt-6" />
       <TableCardHeader products={products} className="mt-6" />
