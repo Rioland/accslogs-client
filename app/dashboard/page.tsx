@@ -2,12 +2,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "./Sidebar";
 import { Menu, X } from "lucide-react";
 import Navbar1 from "../components/Navbar1";
 import dynamic from "next/dynamic";
 import TopBar from "../components/TopBar";
 import Footer from "../components/Footer";
+import supabaseClient from "@/lib/supabaseClient";
 
 const Navbar2 = dynamic(() => import("../components/Navbar2"), { ssr: false });
 
@@ -23,6 +25,17 @@ const tabs = [
 export default function DashboardPage() {
         const [activeKey, setActiveKey] = useState<string>(tabs[0].key);
         const [mobileOpen, setMobileOpen] = useState(false);
+        const router = useRouter();
+
+        const handleChange = async (key: string) => {
+                if (key === "sign-out") {
+                        await supabaseClient.auth.signOut();
+                        router.push('/login');
+                } else {
+                        setActiveKey(key);
+                }
+        };
+
         const handleSelectCategory = (category: any, subcategory: any) => {
                 console.log("Selected:", category, subcategory);
         };
@@ -52,7 +65,7 @@ export default function DashboardPage() {
                         <div className="max-w-[1200px] w-full mx-auto flex gap-6 py-4 md:py-6 px-4 md:px-6">
                                 {/* Sidebar: desktop static */}
                                 <div className="hidden md:block md:shrink-0">
-                                        <Sidebar activeKey={activeKey} onChange={setActiveKey} />
+                                        <Sidebar activeKey={activeKey} onChange={handleChange} />
                                 </div>
 
                                 {/* Sidebar: mobile off-canvas */}
@@ -80,7 +93,7 @@ export default function DashboardPage() {
                                                                         <Sidebar
                                                                                 activeKey={activeKey}
                                                                                 onChange={(key) => {
-                                                                                        setActiveKey(key);
+                                                                                        handleChange(key);
                                                                                         setMobileOpen(false);
                                                                                 }}
                                                                         />

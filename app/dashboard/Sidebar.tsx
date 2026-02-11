@@ -14,15 +14,23 @@ import {
   SlidersHorizontal,
   User,
   LogOut,
+  LucideIcon,
 } from "lucide-react";
+
+interface SidebarItem {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+}
 
 interface SidebarProps {
   activeKey: string;
   onChange: (key: string) => void;
+  items?: SidebarItem[];
 }
 
-export default function Sidebar({ activeKey, onChange }: SidebarProps) {
-  const items = useMemo(
+export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
+  const defaultItems = useMemo(
     () => [
       { key: "home", label: "Home", icon: Home },
       { key: "add-funds", label: "Add Funds", icon: Wallet },
@@ -38,6 +46,8 @@ export default function Sidebar({ activeKey, onChange }: SidebarProps) {
     ],
     []
   );
+
+  const sidebarItems = items || defaultItems;
 
   return (
     <aside className="w-full md:w-[320px] md:shrink-0 p-4 md:sticky md:top-0 md:h-screen">
@@ -60,7 +70,7 @@ export default function Sidebar({ activeKey, onChange }: SidebarProps) {
       {/* Menu */}
       <div className="mt-2 rounded-xl bg-white border border-gray-200 shadow-[0_6px_24px_rgba(0,0,0,0.08)] overflow-hidden">
         <nav className="py-1">
-          {items.map(({ key, label, icon: Icon }) => {
+          {sidebarItems.map(({ key, label, icon: Icon }) => {
             const isActive = key === activeKey;
             return (
               <a
