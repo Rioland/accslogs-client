@@ -65,6 +65,31 @@ create policy "Allow delete own profile" on public.profiles
 for delete
 using (auth.uid() = id);
 
+-- Allow admins to read all profiles
+drop policy if exists "Admins can read all profiles" on public.profiles;
+create policy "Admins can read all profiles" on public.profiles
+for select to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Allow admins to insert profiles (for creating users)
+drop policy if exists "Admins can insert profiles" on public.profiles;
+create policy "Admins can insert profiles" on public.profiles
+for insert to authenticated
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Allow admins to update other profiles
+drop policy if exists "Admins can update profiles" on public.profiles;
+create policy "Admins can update profiles" on public.profiles
+for update to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()))
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Allow admins to delete other profiles
+drop policy if exists "Admins can delete profiles" on public.profiles;
+create policy "Admins can delete profiles" on public.profiles
+for delete to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
 -- OPTIONAL: If you want all authenticated users to read all profiles, uncomment below
 -- drop policy if exists "Allow read profiles for authenticated" on public.profiles;
 -- create policy "Allow read profiles for authenticated" on public.profiles
@@ -117,6 +142,24 @@ drop policy if exists "Users can check own admin status" on public.admins;
 create policy "Users can check own admin status" on public.admins
 for select
 using (auth.uid() = user_id);
+
+-- Allow admins to read all admin statuses
+drop policy if exists "Admins can read all admins" on public.admins;
+create policy "Admins can read all admins" on public.admins
+for select to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Allow admins to assign admin roles
+drop policy if exists "Admins can insert admins" on public.admins;
+create policy "Admins can insert admins" on public.admins
+for insert to authenticated
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Allow admins to remove admin roles
+drop policy if exists "Admins can delete admins" on public.admins;
+create policy "Admins can delete admins" on public.admins
+for delete to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 
 -- 7) Social media account category table
 create table if not exists public.socialmedia_account_category (
