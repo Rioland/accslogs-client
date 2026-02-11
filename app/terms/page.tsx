@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import Navbar1 from '../components/Navbar1'
@@ -47,7 +48,7 @@ export default function TermsPage() {
 
               <h2 className="text-2xl font-semibold text-gray-900 mt-8 mb-4">4. No Warranties</h2>
               <p className="mb-6">
-                All services and accounts on Accslogs.com are provided "as is" and "as available" without warranties of any kind, express or implied, including but not limited to merchantability, fitness for a particular purpose, or non-infringement. We do not guarantee the accuracy, completeness, or reliability of any information on our site.
+                All services and accounts on Accslogs.com are provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind, express or implied, including but not limited to merchantability, fitness for a particular purpose, or non-infringement. We do not guarantee the accuracy, completeness, or reliability of any information on our site.
               </p>
 
               <h2 className="text-2xl font-semibold text-gray-900 mt-8 mb-4">5. Limitation of Liability</h2>

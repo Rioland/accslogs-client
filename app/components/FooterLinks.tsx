@@ -4,7 +4,7 @@ const links = [
   { label: "All Accounts", href: "/accounts" },
   { label: "Terms", href: "/terms" },
   { label: "FAQ's", href: "/faqs" },
-  { label: "Supplier Register", href: "/supplier-register" },
+  // { label: "Supplier Register", href: "/supplier-register" },
 ];
 
 export default function FooterLinks() {

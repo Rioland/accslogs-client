@@ -5,7 +5,7 @@ import Wrapper from "./Wrapper";
 
 export default function Footer() {
         return (
-                <footer className="bg-white border-t">
+                <footer className="bg-white border-t py-4">
                         <Wrapper>
                                 <div className=" grid gap-10 md:grid-cols-3">
                                         <FooterBrand />
