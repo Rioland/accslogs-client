@@ -43,6 +43,7 @@ export default function Navbar1() {
                         <Link href="/" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/' ? 'text-[#FF8A65]' : ''}`}>Home</Link>
                         <Link href="/about" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/about' ? 'text-[#FF8A65]' : ''}`}>About</Link>
                         <Link href="/contact" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/contact' ? 'text-[#FF8A65]' : ''}`}>Contact</Link>
+                        <Link href="/faq" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/faq' ? 'text-[#FF8A65]' : ''}`}>FAQ</Link>
                     </div>
 
                     <div className='flex flex-row items-center gap-2'>
@@ -80,6 +81,7 @@ export default function Navbar1() {
                         <Link href="/" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/' ? 'text-blue-500' : ''}`}>Home</Link>
                         <Link href="/about" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/about' ? 'text-blue-500' : ''}`}>About</Link>
                         <Link href="/contact" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/contact' ? 'text-blue-500' : ''}`}>Contact</Link>
+                        <Link href="/faq" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/faq' ? 'text-blue-500' : ''}`}>FAQ</Link>
                         {/* dashboard / auth items */}
                         {isAuthed ? (
                           <Link href="/dashboard" className='text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg flex flex-row gap-2.5 items-center  justify-between border border-[#FF8A65] rounded-4xl p-2 hover:bg-gray-200 cursor-pointer'>

@@ -1,11 +1,3 @@
-# User Management Implementation for Admins
-
-## Tasks
-- [x] Update database.sql with RLS policies for admin access to profiles and admins tables
-- [x] Create app/api/admin/users/route.ts for GET (list users) and POST (create user)
-- [x] Create app/api/admin/users/[id]/route.ts for GET, PUT, DELETE specific user
-- [x] Update app/admin/page.tsx to add CRUD UI for users
-- [ ] Test the functionality
-
-## Progress
-- Started implementation
+- [x] Update app/components/FooterLinks.tsx to change FAQ's href to "/faq"
+- [x] Update app/components/Navbar1.tsx to add FAQ link in desktop and mobile menus
+- [x] Create app/faq/page.tsx with FAQ content including navbar and footer

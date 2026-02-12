@@ -3,7 +3,7 @@ const links = [
   { label: "About Us", href: "/about" },
   { label: "All Accounts", href: "/accounts" },
   { label: "Terms", href: "/terms" },
-  { label: "FAQ's", href: "/faqs" },
+  { label: "FAQ's", href: "/faq" },
   // { label: "Supplier Register", href: "/supplier-register" },
 ];
 
