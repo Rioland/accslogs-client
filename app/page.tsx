@@ -4,10 +4,12 @@
 import TopBar from "./components/TopBar";
 import Navbar1 from "./components/Navbar1";
 import dynamic from "next/dynamic";
-import TableCardHeader from "./components/TableCardHeader";
+
 import Footer from "./components/Footer";
 import SocialMediaAcquisition from "./components/SocialMediaAcquisition";
 import WarningModal from "./components/WarningModal";
+import PremiumAccountsHero from "./components/PremiumAccountsHero";
+import FeatureCard from "./components/FeatureCard";
 
 const Navbar2 = dynamic(() => import("./components/Navbar2"), { ssr: false });
 
@@ -55,12 +57,10 @@ export default function Home() {
       <TopBar />
       <Navbar1 />
       <Navbar2 onSelectCategory={handleSelectCategory} />
-      <TableCardHeader products={products} className="mt-6" />
-      <TableCardHeader products={products} className="mt-6" />
-      <TableCardHeader products={products} className="mt-6" />
-      <TableCardHeader products={products} className="mt-6" />
-
-      <SocialMediaAcquisition />
+      <PremiumAccountsHero/>
+      <FeatureCard/>
+      
+      {/* <SocialMediaAcquisition /> */}
       <Footer />
       <WarningModal />
     </div>
