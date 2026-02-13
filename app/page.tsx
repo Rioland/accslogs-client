@@ -10,6 +10,8 @@ import SocialMediaAcquisition from "./components/SocialMediaAcquisition";
 import WarningModal from "./components/WarningModal";
 import PremiumAccountsHero from "./components/PremiumAccountsHero";
 import FeatureCard from "./components/FeatureCard";
+import StepsSection from "./components/StepsSection";
+import TestimonialsSection from "./components/TestimonialsSection";
 
 const Navbar2 = dynamic(() => import("./components/Navbar2"), { ssr: false });
 
@@ -59,6 +61,8 @@ export default function Home() {
       <Navbar2 onSelectCategory={handleSelectCategory} />
       <PremiumAccountsHero/>
       <FeatureCard/>
+      <StepsSection/>
+      <TestimonialsSection/>
       
       {/* <SocialMediaAcquisition /> */}
       <Footer />
