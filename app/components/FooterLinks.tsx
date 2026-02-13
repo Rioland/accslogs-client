@@ -1,7 +1,8 @@
 const links = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
-  { label: "All Accounts", href: "/accounts" },
+  { label: "Contact Us", href: "/contact" },
+  { label: "Market Place", href: "/market-place" },
   { label: "Terms", href: "/terms" },
   { label: "FAQ's", href: "/faq" },
   // { label: "Supplier Register", href: "/supplier-register" },

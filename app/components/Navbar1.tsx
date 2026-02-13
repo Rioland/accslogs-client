@@ -41,6 +41,7 @@ export default function Navbar1() {
 
                     <div className='hidden md:flex flex-row gap-3.5'>
                         <Link href="/" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/' ? 'text-[#FF8A65]' : ''}`}>Home</Link>
+                        <Link href="/about" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/market-place' ? 'text-[#FF8A65]' : ''}`}>Market Place</Link>
                         <Link href="/about" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/about' ? 'text-[#FF8A65]' : ''}`}>About</Link>
                         <Link href="/contact" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/contact' ? 'text-[#FF8A65]' : ''}`}>Contact</Link>
                         <Link href="/faq" className={`text-gray-800 hover:text-gray-700 mx-2 font-bold text-lg ${pathname === '/faq' ? 'text-[#FF8A65]' : ''}`}>FAQ</Link>
