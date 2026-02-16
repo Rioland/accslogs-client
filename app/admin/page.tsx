@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../dashboard/Sidebar";
-import { Menu, X, Home, Users, Folder, Settings } from "lucide-react";
+import { Menu, X, Home, Users, Folder, Settings, Package } from "lucide-react";
 import Navbar1 from "../components/Navbar1";
 import Navbar2 from "../components/Navbar2";
 import TopBar from "../components/TopBar";
@@ -32,10 +32,32 @@ interface User {
   is_admin: boolean;
 }
 
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  description: string | null;
+  category_id: number | null;
+  subcategory_id: number | null;
+  created_at: string;
+  category?: { name: string };
+  subcategory?: { name: string };
+}
+
+interface ProductConfiguration {
+  id: number;
+  product_id: number;
+  config_index: number;
+  config_data: object;
+  created_at: string;
+}
+
 const adminItems = [
   { key: "overview", label: "Overview", icon: Home },
   { key: "users", label: "Users", icon: Users },
   { key: "categories", label: "Categories", icon: Folder },
+  { key: "products", label: "Products", icon: Package },
   { key: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -46,10 +68,12 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [adminName, setAdminName] = useState<string>('');
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [totalCategories, setTotalCategories] = useState<number>(0);
+  const [totalProducts, setTotalProducts] = useState<number>(0);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [showAddSubcategory, setShowAddSubcategory] = useState<number | null>(null);
@@ -64,6 +88,15 @@ export default function AdminPage() {
   const [userLastName, setUserLastName] = useState('');
   const [userFunds, setUserFunds] = useState(0);
   const [userIsAdmin, setUserIsAdmin] = useState(false);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productName, setProductName] = useState('');
+  const [productPrice, setProductPrice] = useState(0);
+  const [productQuantity, setProductQuantity] = useState(0);
+  const [productDescription, setProductDescription] = useState('');
+  const [productCategoryId, setProductCategoryId] = useState<number | null>(null);
+  const [productSubcategoryId, setProductSubcategoryId] = useState<number | null>(null);
+  const [productConfigurations, setProductConfigurations] = useState<string[]>([]);
   const router = useRouter();
   const supabase = useMemo(() => supabaseClient, []);
 
@@ -123,6 +156,21 @@ export default function AdminPage() {
       setTotalUsers(data.users?.length || 0);
     } catch (error) {
       console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/admin/products');
+      if (!response.ok) {
+        console.error('Failed to fetch products');
+        return;
+      }
+      const data = await response.json();
+      setProducts(data.products || []);
+      setTotalProducts(data.products?.length || 0);
+    } catch (error) {
+      console.error('Error fetching products:', error);
     }
   };
 
@@ -383,6 +431,138 @@ export default function AdminPage() {
     }
   };
 
+  const handleAddProduct = () => {
+    setProductName('');
+    setProductPrice(0);
+    setProductQuantity(0);
+    setProductDescription('');
+    setProductCategoryId(null);
+    setProductSubcategoryId(null);
+    setProductConfigurations([]);
+    setShowAddProduct(true);
+  };
+
+  const handleEditProduct = async (product: Product) => {
+    setProductName(product.name);
+    setProductPrice(product.price);
+    setProductQuantity(product.quantity);
+    setProductDescription(product.description || '');
+    setProductCategoryId(product.category_id);
+    setProductSubcategoryId(product.subcategory_id);
+    setEditingProduct(product);
+
+    // Fetch configurations
+    try {
+      const response = await fetch(`/api/admin/products/${product.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const configs = data.configurations || [];
+        setProductConfigurations(configs.map((c: ProductConfiguration) => JSON.stringify(c.config_data)));
+      }
+    } catch (error) {
+      console.error('Error fetching configurations:', error);
+    }
+  };
+
+  const submitProduct = async () => {
+    if (!productName.trim() || productPrice < 0 || productQuantity < 0) {
+      alert('Name, valid price, and non-negative quantity are required');
+      return;
+    }
+
+    const configurations = productQuantity > 0 ? productConfigurations.slice(0, productQuantity).map(c => {
+      try {
+        return JSON.parse(c);
+      } catch {
+        return {};
+      }
+    }) : [];
+
+    if (editingProduct) {
+      // Update product
+      try {
+        const response = await fetch(`/api/admin/products/${editingProduct.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: productName.trim(),
+            price: productPrice,
+            quantity: productQuantity,
+            description: productDescription.trim() || null,
+            category_id: productCategoryId,
+            subcategory_id: productSubcategoryId,
+            configurations,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          alert(`Error updating product: ${error.error}`);
+          return;
+        }
+
+        alert('Product updated successfully');
+        setEditingProduct(null);
+        fetchProducts();
+      } catch (error) {
+        console.error('Error updating product:', error);
+        alert('Error updating product');
+      }
+    } else {
+      // Create product
+      try {
+        const response = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: productName.trim(),
+            price: productPrice,
+            quantity: productQuantity,
+            description: productDescription.trim() || null,
+            category_id: productCategoryId,
+            subcategory_id: productSubcategoryId,
+            configurations,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          alert(`Error creating product: ${error.error}`);
+          return;
+        }
+
+        alert('Product created successfully');
+        setShowAddProduct(false);
+        fetchProducts();
+      } catch (error) {
+        console.error('Error creating product:', error);
+        alert('Error creating product');
+      }
+    }
+  };
+
+  const deleteProduct = async (productId: number) => {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
+
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Error deleting product: ${error.error}`);
+        return;
+      }
+
+      alert('Product deleted successfully');
+      fetchProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('Error deleting product');
+    }
+  };
+
   useEffect(() => {
     const checkAdmin = async () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -422,6 +602,7 @@ export default function AdminPage() {
       // Fetch data after confirming admin
       await fetchCategories();
       await fetchUsers();
+      await fetchProducts();
     };
 
     checkAdmin();
@@ -524,6 +705,7 @@ export default function AdminPage() {
                 {[
                   { title: "Total Users", icon: "👥", value: totalUsers },
                   { title: "Categories", icon: "📂", value: totalCategories },
+                  { title: "Products", icon: "📦", value: totalProducts },
                   { title: "Reports", icon: "📊", value: 0 },
                 ].map((c) => (
                   <div
@@ -616,6 +798,41 @@ export default function AdminPage() {
                           Edit
                         </button>
                         <button onClick={() => deleteUser(user.id)} className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600">
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeKey === "products" && (
+            <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Manage Products</h2>
+                <button onClick={handleAddProduct} className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600">
+                  Add Product
+                </button>
+              </div>
+              {loading ? (
+                <p>Loading...</p>
+              ) : (
+                <div className="space-y-2">
+                  {products.map((product) => (
+                    <div key={product.id} className="flex items-center justify-between border border-gray-200 rounded p-4">
+                      <div>
+                        <p className="font-semibold">{product.name}</p>
+                        <p className="text-sm text-gray-600">${product.price} - Qty: {product.quantity}</p>
+                        <p className="text-sm text-gray-500">Category: {product.category?.name || 'None'} - Sub: {product.subcategory?.name || 'None'}</p>
+                        {product.description && <p className="text-sm text-gray-500">{product.description}</p>}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <button onClick={() => handleEditProduct(product)} className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600">
+                          Edit
+                        </button>
+                        <button onClick={() => deleteProduct(product.id)} className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600">
                           Delete
                         </button>
                       </div>
@@ -844,6 +1061,207 @@ export default function AdminPage() {
                 Update
               </button>
               <button onClick={() => setEditingUser(null)} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Modals */}
+      {showAddProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-96 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Add Product</h3>
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Product Name"
+              />
+              <input
+                type="number"
+                value={productPrice}
+                onChange={(e) => setProductPrice(Number(e.target.value))}
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Price"
+                min="0"
+                step="0.01"
+              />
+              <input
+                type="number"
+                value={productQuantity}
+                onChange={(e) => {
+                  const qty = Number(e.target.value);
+                  setProductQuantity(qty);
+                  setProductConfigurations(new Array(qty).fill('{}'));
+                }}
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Quantity"
+                min="0"
+              />
+              <textarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Description"
+                rows={3}
+              />
+              <select
+                value={productCategoryId || ''}
+                onChange={(e) => {
+                  const catId = e.target.value ? Number(e.target.value) : null;
+                  setProductCategoryId(catId);
+                  setProductSubcategoryId(null); // Reset subcategory
+                }}
+                className="w-full p-2 border border-gray-300 rounded"
+              >
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              {productCategoryId && (
+                <select
+                  value={productSubcategoryId || ''}
+                  onChange={(e) => setProductSubcategoryId(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full p-2 border border-gray-300 rounded"
+                >
+                  <option value="">Select Subcategory (optional)</option>
+                  {subcategories.filter((sub) => sub.category_id === productCategoryId).map((sub) => (
+                    <option key={sub.id} value={sub.id}>{sub.name}</option>
+                  ))}
+                </select>
+              )}
+              {productQuantity > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2">Configurations (one per quantity item)</h4>
+                  {productConfigurations.map((config, index) => (
+                    <div key={index} className="mb-2">
+                      <label className="block text-sm text-gray-600">Item {index + 1} Config (JSON)</label>
+                      <textarea
+                        value={config}
+                        onChange={(e) => {
+                          const newConfigs = [...productConfigurations];
+                          newConfigs[index] = e.target.value;
+                          setProductConfigurations(newConfigs);
+                        }}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        rows={2}
+                        placeholder='{"key": "value"}'
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={submitProduct} className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600">
+                Add
+              </button>
+              <button onClick={() => setShowAddProduct(false)} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-96 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Edit Product</h3>
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Product Name"
+              />
+              <input
+                type="number"
+                value={productPrice}
+                onChange={(e) => setProductPrice(Number(e.target.value))}
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Price"
+                min="0"
+                step="0.01"
+              />
+              <input
+                type="number"
+                value={productQuantity}
+                onChange={(e) => {
+                  const qty = Number(e.target.value);
+                  setProductQuantity(qty);
+                  setProductConfigurations(new Array(qty).fill('{}'));
+                }}
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Quantity"
+                min="0"
+              />
+              <textarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Description"
+                rows={3}
+              />
+              <select
+                value={productCategoryId || ''}
+                onChange={(e) => {
+                  const catId = e.target.value ? Number(e.target.value) : null;
+                  setProductCategoryId(catId);
+                  setProductSubcategoryId(null); // Reset subcategory
+                }}
+                className="w-full p-2 border border-gray-300 rounded"
+              >
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              {productCategoryId && (
+                <select
+                  value={productSubcategoryId || ''}
+                  onChange={(e) => setProductSubcategoryId(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full p-2 border border-gray-300 rounded"
+                >
+                  <option value="">Select Subcategory (optional)</option>
+                  {subcategories.filter((sub) => sub.category_id === productCategoryId).map((sub) => (
+                    <option key={sub.id} value={sub.id}>{sub.name}</option>
+                  ))}
+                </select>
+              )}
+              {productQuantity > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2">Configurations (one per quantity item)</h4>
+                  {productConfigurations.map((config, index) => (
+                    <div key={index} className="mb-2">
+                      <label className="block text-sm text-gray-600">Item {index + 1} Config (JSON)</label>
+                      <textarea
+                        value={config}
+                        onChange={(e) => {
+                          const newConfigs = [...productConfigurations];
+                          newConfigs[index] = e.target.value;
+                          setProductConfigurations(newConfigs);
+                        }}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        rows={2}
+                        placeholder='{"key": "value"}'
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={submitProduct} className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600">
+                Update
+              </button>
+              <button onClick={() => setEditingProduct(null)} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
                 Cancel
               </button>
             </div>

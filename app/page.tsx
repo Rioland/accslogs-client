@@ -6,7 +6,7 @@ import Navbar1 from "./components/Navbar1";
 import dynamic from "next/dynamic";
 
 import Footer from "./components/Footer";
-import SocialMediaAcquisition from "./components/SocialMediaAcquisition";
+
 import WarningModal from "./components/WarningModal";
 import PremiumAccountsHero from "./components/PremiumAccountsHero";
 import FeatureCard from "./components/FeatureCard";

@@ -215,6 +215,30 @@ insert into public.socialmedia_account_subcategory (category_id, name) values
   (4, 'News')
  on conflict do nothing;
 
+-- 9) Products table
+create table if not exists public.products (
+  id bigserial primary key,
+  name text not null,
+  price numeric(10,2) not null,
+  quantity int not null default 0,
+  description text,
+  category_id bigint references public.socialmedia_account_category(id) on delete set null,
+  subcategory_id bigint references public.socialmedia_account_subcategory(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- 10) Product configurations table
+create table if not exists public.product_configurations (
+  id bigserial primary key,
+  product_id bigint not null references public.products(id) on delete cascade,
+  config_index int not null,
+  config_data jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+-- Unique constraint for product_id and config_index
+alter table public.product_configurations add constraint unique_product_config unique (product_id, config_index);
+
 -- Enable RLS and policies: anyone can read; only admins can insert/update/delete
 alter table public.socialmedia_account_category enable row level security;
 
@@ -263,6 +287,52 @@ with check (exists (select 1 from public.admins a where a.user_id = auth.uid()))
 
 drop policy if exists "Only admins can delete subcategories" on public.socialmedia_account_subcategory;
 create policy "Only admins can delete subcategories" on public.socialmedia_account_subcategory
+for delete to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Enable RLS and policies for products: anyone can read; only admins can insert/update/delete
+alter table public.products enable row level security;
+
+drop policy if exists "Anyone can read products" on public.products;
+create policy "Anyone can read products" on public.products
+for select using (true);
+
+drop policy if exists "Only admins can insert products" on public.products;
+create policy "Only admins can insert products" on public.products
+for insert to authenticated
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+drop policy if exists "Only admins can update products" on public.products;
+create policy "Only admins can update products" on public.products
+for update to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()))
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+drop policy if exists "Only admins can delete products" on public.products;
+create policy "Only admins can delete products" on public.products
+for delete to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Enable RLS and policies for product_configurations: anyone can read; only admins can insert/update/delete
+alter table public.product_configurations enable row level security;
+
+drop policy if exists "Anyone can read product_configurations" on public.product_configurations;
+create policy "Anyone can read product_configurations" on public.product_configurations
+for select using (true);
+
+drop policy if exists "Only admins can insert product_configurations" on public.product_configurations;
+create policy "Only admins can insert product_configurations" on public.product_configurations
+for insert to authenticated
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+drop policy if exists "Only admins can update product_configurations" on public.product_configurations;
+create policy "Only admins can update product_configurations" on public.product_configurations
+for update to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()))
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+drop policy if exists "Only admins can delete product_configurations" on public.product_configurations;
+create policy "Only admins can delete product_configurations" on public.product_configurations
 for delete to authenticated
 using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 

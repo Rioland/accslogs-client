@@ -4,10 +4,24 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 
 export default function WarningModal() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const lastShown = localStorage.getItem('warningModalLastShown');
+      if (!lastShown) {
+        return true;
+      } else {
+        const lastTime = parseInt(lastShown);
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        return now - lastTime > twentyFourHours;
+      }
+    }
+    return false;
+  });
 
   const closeModal = () => {
     setIsOpen(false);
+    localStorage.setItem('warningModalLastShown', Date.now().toString());
   };
 
   if (!isOpen) return null;
