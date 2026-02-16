@@ -21,38 +21,6 @@ export default function Home() {
     console.log("Selected:", category, subcategory);
   };
 
-  const products = [
-    {
-      year: 2015,
-      description: "Old Gmail account with backup email",
-      stock: 150,
-      price: 5.99,
-      isNoPhone: true,
-      hasBackupEmail: true,
-      isSmsVerified: false,
-      genderMention: "Male"
-    },
-    {
-      year: 2018,
-      description: "Gmail account SMS verified",
-      stock: 200,
-      price: 7.50,
-      isNoPhone: false,
-      hasBackupEmail: false,
-      isSmsVerified: true,
-      genderMention: "Female"
-    },
-    {
-      year: 2020,
-      description: "Recent Gmail account",
-      stock: 50,
-      price: 10.00,
-      isNoPhone: true,
-      hasBackupEmail: true,
-      isSmsVerified: false,
-      genderMention: "Male or female"
-    }
-  ];
 
   return (
     <div className="flex flex-col min-h-screen">
