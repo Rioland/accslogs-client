@@ -1,12 +1,7 @@
-- [x] Delete app/api/admin/products/route.ts
-- [x] Delete app/api/admin/products/[id]/route.ts
-- [x] Remove product-related code from app/admin/page.tsx
-  - [x] Remove Product interface
-  - [x] Remove ProductConfiguration interface
-  - [x] Remove product state variables
-  - [x] Remove product functions
-  - [x] Remove "products" from adminItems
-  - [x] Remove products from overview stats
-  - [x] Remove products section in render
-  - [x] Remove product modals
-  - [x] Remove fetchProducts from useEffect
+# TODO: Create Sell Account Flow
+
+- [x] Add "Sell Account" menu item to admin sidebar (admin/layout.tsx)
+- [x] Create app/admin/sell/ directory
+- [x] Create app/admin/sell/page.tsx with SellAccountForm component
+- [x] Create table for submitted accounts in database.sql
+- [x] Modify SellAccountForm to support multiple accounts per product

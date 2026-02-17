@@ -3,12 +3,15 @@ import React, { useState } from 'react';
 
 type Step = 'add-account' | 'credentials' | 'review';
 
-interface AccountData {
+interface ProductData {
   category: string;
   name: string;
   description: string;
   price: string;
   releaseOption: 'auto' | 'manual';
+}
+
+interface AccountData {
   username: string;
   password: string;
   email?: string;
@@ -19,22 +22,46 @@ interface AccountData {
 
 const SellAccountForm: React.FC = () => {
   const [step, setStep] = useState<Step>('add-account');
-  const [formData, setFormData] = useState<AccountData>({
+  const [productData, setProductData] = useState<ProductData>({
     category: '',
     name: '',
     description: '',
     price: '',
     releaseOption: 'auto',
-    username: '',
-    password: '',
-    email: '',
-    emailPassword: '',
-    additionalInfo: '',
-    previewLink: '',
   });
+  const [accounts, setAccounts] = useState<AccountData[]>([
+    {
+      username: '',
+      password: '',
+      email: '',
+      emailPassword: '',
+      additionalInfo: '',
+      previewLink: '',
+    },
+  ]);
 
-  const updateForm = (field: keyof AccountData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const updateProduct = (field: keyof ProductData, value: string) => {
+    setProductData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateAccount = (index: number, field: keyof AccountData, value: string) => {
+    setAccounts((prev) =>
+      prev.map((acc, i) => (i === index ? { ...acc, [field]: value } : acc))
+    );
+  };
+
+  const addAccount = () => {
+    setAccounts((prev) => [
+      ...prev,
+      {
+        username: '',
+        password: '',
+        email: '',
+        emailPassword: '',
+        additionalInfo: '',
+        previewLink: '',
+      },
+    ]);
   };
 
   const nextStep = () => {
@@ -49,7 +76,7 @@ const SellAccountForm: React.FC = () => {
 
   const handleSubmit = () => {
     // Here you would normally send data to backend
-    console.log('Submitting account:', formData);
+    console.log('Submitting product:', productData, 'accounts:', accounts);
     alert('Account submitted for review!');
   };
 
@@ -121,8 +148,8 @@ const SellAccountForm: React.FC = () => {
                     Select Account Category
                   </label>
                   <select
-                    value={formData.category}
-                    onChange={(e) => updateForm('category', e.target.value)}
+                    value={productData.category}
+                    onChange={(e) => updateProduct('category', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     <option value="">Select Account Category</option>
@@ -139,8 +166,8 @@ const SellAccountForm: React.FC = () => {
                   <input
                     type="text"
                     placeholder="e.g., 4 Years Facebook Account"
-                    value={formData.name}
-                    onChange={(e) => updateForm('name', e.target.value)}
+                    value={productData.name}
+                    onChange={(e) => updateProduct('name', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
@@ -150,8 +177,8 @@ const SellAccountForm: React.FC = () => {
                   <textarea
                     rows={4}
                     placeholder="Perfect for products that need login..."
-                    value={formData.description}
-                    onChange={(e) => updateForm('description', e.target.value)}
+                    value={productData.description}
+                    onChange={(e) => updateProduct('description', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
@@ -163,8 +190,8 @@ const SellAccountForm: React.FC = () => {
                     <input
                       type="number"
                       placeholder="Enter your price"
-                      value={formData.price}
-                      onChange={(e) => updateForm('price', e.target.value)}
+                      value={productData.price}
+                      onChange={(e) => updateProduct('price', e.target.value)}
                       className="w-full pl-10 border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
@@ -177,8 +204,8 @@ const SellAccountForm: React.FC = () => {
                       <input
                         type="radio"
                         name="release"
-                        checked={formData.releaseOption === 'auto'}
-                        onChange={() => updateForm('releaseOption', 'auto')}
+                        checked={productData.releaseOption === 'auto'}
+                        onChange={() => updateProduct('releaseOption', 'auto')}
                         className="mt-1 h-5 w-5 text-indigo-600 border-gray-300 focus:ring-indigo-500"
                       />
                       <div className="ml-3">
@@ -193,8 +220,8 @@ const SellAccountForm: React.FC = () => {
                       <input
                         type="radio"
                         name="release"
-                        checked={formData.releaseOption === 'manual'}
-                        onChange={() => updateForm('releaseOption', 'manual')}
+                        checked={productData.releaseOption === 'manual'}
+                        onChange={() => updateProduct('releaseOption', 'manual')}
                         className="mt-1 h-5 w-5 text-indigo-600 border-gray-300 focus:ring-indigo-500"
                       />
                       <div className="ml-3">
@@ -211,7 +238,7 @@ const SellAccountForm: React.FC = () => {
               <div className="mt-10 flex justify-end">
                 <button
                   onClick={nextStep}
-                  disabled={!formData.category || !formData.name || !formData.price}
+                  disabled={!productData.category || !productData.name || !productData.price}
                   className="px-8 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
                 >
                   Continue
@@ -224,105 +251,108 @@ const SellAccountForm: React.FC = () => {
             <>
               <h2 className="text-2xl font-semibold mb-6">Account Credentials</h2>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left - Summary Card */}
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 h-fit">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-yellow-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                      C
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{formData.name || 'Account Name'}</h3>
-                      <p className="text-green-600 font-bold">${formData.price || '0'}</p>
-                      <p className="text-sm text-gray-500">Delivery in Minutes</p>
-                    </div>
+              {/* Product Summary */}
+              <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-yellow-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                    C
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{productData.name || 'Account Name'}</h3>
+                    <p className="text-green-600 font-bold">${productData.price || '0'}</p>
+                    <p className="text-sm text-gray-500">Delivery in Minutes</p>
                   </div>
                 </div>
+              </div>
 
-                {/* Right - Inputs */}
-                <div className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input
-                      type="text"
-                      value={formData.username}
-                      onChange={(e) => updateForm('username', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Account Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => updateForm('password', e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500 pr-10"
-                      />
-                      <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">👁</button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Preview link of account (optional)
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.previewLink}
-                      onChange={(e) => updateForm('previewLink', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div className="pt-4 border-t">
-                    <h4 className="font-medium mb-4">Additional information (optional)</h4>
-
-                    <div className="space-y-5">
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">
-                          Email attached to account
-                        </label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => updateForm('email', e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">Password</label>
-                        <div className="relative">
+              {/* Accounts */}
+              <div className="space-y-8">
+                {accounts.map((account, index) => (
+                  <div key={index} className="bg-white border border-gray-200 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold mb-4">Account {index + 1}</h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="space-y-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                           <input
-                            type="password"
-                            value={formData.emailPassword}
-                            onChange={(e) => updateForm('emailPassword', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10"
+                            type="text"
+                            value={account.username}
+                            onChange={(e) => updateAccount(index, 'username', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500"
                           />
-                          <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                            👁
-                          </button>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Account Password
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="password"
+                              value={account.password}
+                              onChange={(e) => updateAccount(index, 'password', e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500 pr-10"
+                            />
+                            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">👁</button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Preview link of account (optional)
+                          </label>
+                          <input
+                            type="url"
+                            value={account.previewLink}
+                            onChange={(e) => updateAccount(index, 'previewLink', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">
-                          Additional information
-                        </label>
-                        <textarea
-                          value={formData.additionalInfo}
-                          onChange={(e) => updateForm('additionalInfo', e.target.value)}
-                          rows={3}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-                        />
+                      <div className="space-y-5">
+                        <div>
+                          <label className="block text-sm text-gray-600 mb-1">
+                            Email attached to account
+                          </label>
+                          <input
+                            type="email"
+                            value={account.email}
+                            onChange={(e) => updateAccount(index, 'email', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm text-gray-600 mb-1">Email Password</label>
+                          <div className="relative">
+                            <input
+                              type="password"
+                              value={account.emailPassword}
+                              onChange={(e) => updateAccount(index, 'emailPassword', e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10"
+                            />
+                            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                              👁
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm text-gray-600 mb-1">
+                            Additional information
+                          </label>
+                          <textarea
+                            value={account.additionalInfo}
+                            onChange={(e) => updateAccount(index, 'additionalInfo', e.target.value)}
+                            rows={3}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
 
               <div className="mt-10 flex justify-between">
@@ -333,12 +363,15 @@ const SellAccountForm: React.FC = () => {
                   Back
                 </button>
                 <div className="space-x-4">
-                  <button className="px-6 py-3 border border-indigo-600 text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition">
+                  <button
+                    onClick={addAccount}
+                    className="px-6 py-3 border border-indigo-600 text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition"
+                  >
                     Add another account
                   </button>
                   <button
                     onClick={nextStep}
-                    disabled={!formData.username || !formData.password}
+                    disabled={accounts.some(acc => !acc.username || !acc.password)}
                     className="px-8 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-400 transition"
                   >
                     Review
@@ -350,34 +383,36 @@ const SellAccountForm: React.FC = () => {
 
           {step === 'review' && (
             <>
-              <h2 className="text-2xl font-semibold mb-8 text-center">Review Account</h2>
+              <h2 className="text-2xl font-semibold mb-8 text-center">Review Accounts</h2>
 
-              <div className="max-w-2xl mx-auto bg-gray-50 p-8 rounded-xl border border-gray-200">
+              <div className="max-w-4xl mx-auto bg-gray-50 p-8 rounded-xl border border-gray-200">
                 <div className="flex items-center gap-5 mb-8 pb-6 border-b">
                   <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
                     C
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">{formData.name || 'Account Name'}</h3>
-                    <p className="text-green-600 font-bold text-lg">${formData.price || '0'}</p>
+                    <h3 className="text-xl font-bold">{productData.name || 'Account Name'}</h3>
+                    <p className="text-green-600 font-bold text-lg">${productData.price || '0'}</p>
                     <p className="text-gray-600">Delivery in Minutes</p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <div className="bg-white p-5 rounded-lg border">
-                    <h4 className="font-semibold mb-3">Account 1</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600">Email / UserName</p>
-                        <p className="font-medium">{formData.email || formData.username}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Password</p>
-                        <p className="font-medium">••••••••••</p>
+                  {accounts.map((account, index) => (
+                    <div key={index} className="bg-white p-5 rounded-lg border">
+                      <h4 className="font-semibold mb-3">Account {index + 1}</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-600">Email / UserName</p>
+                          <p className="font-medium">{account.email || account.username}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Password</p>
+                          <p className="font-medium">••••••••••</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
