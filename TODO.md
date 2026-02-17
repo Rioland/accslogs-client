@@ -1,3 +1,12 @@
-- [x] Update app/components/FooterLinks.tsx to change FAQ's href to "/faq"
-- [x] Update app/components/Navbar1.tsx to add FAQ link in desktop and mobile menus
-- [x] Create app/faq/page.tsx with FAQ content including navbar and footer
+- [x] Delete app/api/admin/products/route.ts
+- [x] Delete app/api/admin/products/[id]/route.ts
+- [x] Remove product-related code from app/admin/page.tsx
+  - [x] Remove Product interface
+  - [x] Remove ProductConfiguration interface
+  - [x] Remove product state variables
+  - [x] Remove product functions
+  - [x] Remove "products" from adminItems
+  - [x] Remove products from overview stats
+  - [x] Remove products section in render
+  - [x] Remove product modals
+  - [x] Remove fetchProducts from useEffect
