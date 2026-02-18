@@ -1,5 +1,8 @@
 // src/components/SellAccountForm.tsx
+"use client";
+
 import React, { useState } from 'react';
+import Wrapper from './Wrapper';
 
 type Step = 'add-account' | 'credentials' | 'review';
 
@@ -122,7 +125,7 @@ const SellAccountForm: React.FC = () => {
   const currentStepIndex = steps.findIndex((s) => s.id === step);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div >
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
