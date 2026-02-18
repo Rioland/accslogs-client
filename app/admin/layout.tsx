@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Sidebar from "../dashboard/Sidebar";
-import { Menu, X, Home, Users, Folder, Settings, Upload } from "lucide-react";
+import { Menu, X, Home, Users, Folder, Settings, Upload, List } from "lucide-react";
 import Navbar1 from "../components/Navbar1";
 import Navbar2 from "../components/Navbar2";
 import TopBar from "../components/TopBar";
@@ -12,7 +12,7 @@ import supabaseClient from "@/lib/supabaseClient";
 
 const adminItems = [
   { key: "overview", label: "Overview", icon: Home, path: "/admin/overview" },
-  { key: "sell-account", label: "Sell Account", icon: Upload, path: "/admin/sell" },
+  { key: "manage-sell-accounts", label: "Manage Sell Accounts", icon: List, path: "/admin/manage-sell-accounts" },
   { key: "users", label: "Users", icon: Users, path: "/admin/users" },
   { key: "categories", label: "Categories", icon: Folder, path: "/admin/categories" },
   { key: "settings", label: "Settings", icon: Settings, path: "/admin/settings" },

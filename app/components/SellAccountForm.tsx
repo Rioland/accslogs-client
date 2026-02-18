@@ -74,10 +74,43 @@ const SellAccountForm: React.FC = () => {
     else if (step === 'credentials') setStep('add-account');
   };
 
-  const handleSubmit = () => {
-    // Here you would normally send data to backend
-    console.log('Submitting product:', productData, 'accounts:', accounts);
-    alert('Account submitted for review!');
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('/api/admin/sell-accounts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ productData, accounts }),
+      });
+
+      if (response.ok) {
+        alert('Account submitted for review!');
+        // Reset form
+        setStep('add-account');
+        setProductData({
+          category: '',
+          name: '',
+          description: '',
+          price: '',
+          releaseOption: 'auto',
+        });
+        setAccounts([{
+          username: '',
+          password: '',
+          email: '',
+          emailPassword: '',
+          additionalInfo: '',
+          previewLink: '',
+        }]);
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      alert('Failed to submit. Please try again.');
+    }
   };
 
   const steps = [
@@ -269,7 +302,17 @@ const SellAccountForm: React.FC = () => {
               <div className="space-y-8">
                 {accounts.map((account, index) => (
                   <div key={index} className="bg-white border border-gray-200 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold mb-4">Account {index + 1}</h3>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Account {index + 1}</h3>
+                      {accounts.length > 1 && (
+                        <button
+                          onClick={() => setAccounts(prev => prev.filter((_, i) => i !== index))}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div className="space-y-5">
                         <div>
