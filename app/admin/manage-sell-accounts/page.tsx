@@ -3,98 +3,76 @@
 import { useState, useEffect } from 'react';
 import supabaseClient from '@/lib/supabaseClient';
 
-interface Product {
+interface Account {
   id: number;
-  name: string;
-  category: string;
-  price: number;
-  status: string;
+  product_id: number;
+  username: string;
+  password: string;
+  email?: string;
+  email_password?: string;
+  additional_info?: string;
+  preview_link?: string;
   created_at: string;
-  seller_product_accounts: Array<{
+  seller_products: {
     id: number;
-    username: string;
-    password: string;
-    email?: string;
-  }>;
+    user_id: string;
+    category: string;
+    subcategory?: string;
+    name: string;
+    description: string;
+    price: number;
+    release_option: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+  };
 }
 
 export default function ManageSellAccountsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
   useEffect(() => {
-    fetchProducts();
+    fetchAccounts();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchAccounts = async () => {
     try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        alert('Not authenticated');
-        setProducts([]);
-        setLoading(false);
-        return;
-      }
+      const { data, error } = await supabaseClient
+        .from('seller_product_accounts')
+        .select('*, seller_products(*)')
+        .order('created_at', { ascending: false });
 
-      const response = await fetch('/api/admin/sell-accounts', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
+      if (error) {
+        console.error('Fetch error:', error);
+        alert('Error fetching accounts');
+        setAccounts([]);
       } else {
-        let errorMessage = 'Failed to fetch products';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          // If response is not JSON, use status text
-          errorMessage = `Failed to fetch products: ${response.status} ${response.statusText}`;
-        }
-        alert(errorMessage);
-        setProducts([]);
+        setAccounts(data || []);
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      alert('Error fetching products');
-      setProducts([]);
+      alert('Error fetching accounts');
+      setAccounts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateStatus = async (id: number, status: string) => {
+  const updateStatus = async (productId: number, status: string) => {
     try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        alert('Not authenticated');
-        return;
-      }
+      const { error } = await supabaseClient
+        .from('seller_products')
+        .update({ status })
+        .eq('id', productId);
 
-      const response = await fetch('/api/admin/sell-accounts', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ id, status }),
-      });
-
-      if (response.ok) {
-        alert('Status updated');
-        fetchProducts(); // Refresh
+      if (error) {
+        console.error('Update error:', error);
+        alert('Failed to update status');
       } else {
-        let errorMessage = 'Failed to update status';
-        try {
-          const error = await response.json();
-          errorMessage = error.error || errorMessage;
-        } catch (e) {
-          errorMessage = `Failed to update status: ${response.status} ${response.statusText}`;
-        }
-        alert(errorMessage);
+        alert('Status updated');
+        fetchAccounts(); // Refresh
       }
     } catch (error) {
       console.error('Update error:', error);
@@ -102,41 +80,55 @@ export default function ManageSellAccountsPage() {
     }
   };
 
-  const deleteProduct = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+  const deleteAccount = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this account?')) return;
 
     try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        alert('Not authenticated');
-        return;
-      }
+      const { error } = await supabaseClient
+        .from('seller_product_accounts')
+        .delete()
+        .eq('id', id);
 
-      const response = await fetch('/api/admin/sell-accounts', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ id }),
-      });
-
-      if (response.ok) {
-        alert('Product deleted');
-        fetchProducts(); // Refresh
+      if (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete account');
       } else {
-        let errorMessage = 'Failed to delete product';
-        try {
-          const error = await response.json();
-          errorMessage = error.error || errorMessage;
-        } catch (e) {
-          errorMessage = `Failed to delete product: ${response.status} ${response.statusText}`;
-        }
-        alert(errorMessage);
+        alert('Account deleted');
+        fetchAccounts(); // Refresh
       }
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Failed to delete product');
+      alert('Failed to delete account');
+    }
+  };
+
+  const saveEdit = async () => {
+    if (!editingAccount) return;
+
+    try {
+      const { error } = await supabaseClient
+        .from('seller_product_accounts')
+        .update({
+          username: editingAccount.username,
+          password: editingAccount.password,
+          email: editingAccount.email,
+          email_password: editingAccount.email_password,
+          additional_info: editingAccount.additional_info,
+          preview_link: editingAccount.preview_link,
+        })
+        .eq('id', editingAccount.id);
+
+      if (error) {
+        console.error('Update error:', error);
+        alert('Failed to update account');
+      } else {
+        alert('Account updated');
+        setEditingAccount(null);
+        fetchAccounts(); // Refresh
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      alert('Failed to update account');
     }
   };
 
@@ -163,7 +155,7 @@ export default function ManageSellAccountsPage() {
 
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Submitted Products</h2>
+          <h2 className="text-lg font-medium text-gray-900">Submitted Accounts</h2>
         </div>
 
         <div className="overflow-x-auto">
@@ -177,10 +169,13 @@ export default function ManageSellAccountsPage() {
                   Category
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
+                  Username
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Accounts
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Price
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -191,42 +186,47 @@ export default function ManageSellAccountsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {products.map((product) => (
-                <tr key={product.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
+              {accounts.map((account) => (
+                <tr key={account.id}>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-gray-900">{account.seller_products.name}</div>
+                    <div className="text-sm text-gray-500 truncate max-w-xs">{account.seller_products.description}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{product.category}</div>
+                    <div className="text-sm text-gray-500">{account.seller_products.category}</div>
+                    {account.seller_products.subcategory && <div className="text-sm text-gray-400">{account.seller_products.subcategory}</div>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">${product.price}</div>
+                    <div className="text-sm text-gray-900">{account.username}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{product.seller_product_accounts.length} accounts</div>
+                    <div className="text-sm text-gray-500">{account.email || '-'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">${account.seller_products.price}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      product.status === 'pending'
+                      account.seller_products.status === 'pending'
                         ? 'bg-yellow-100 text-yellow-800'
-                        : product.status === 'approved'
+                        : account.seller_products.status === 'approved'
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {product.status}
+                      {account.seller_products.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    {product.status === 'pending' && (
+                    {account.seller_products.status === 'pending' && (
                       <>
                         <button
-                          onClick={() => updateStatus(product.id, 'approved')}
+                          onClick={() => updateStatus(account.seller_products.id, 'approved')}
                           className="text-green-600 hover:text-green-900"
                         >
                           Approve
                         </button>
                         <button
-                          onClick={() => updateStatus(product.id, 'rejected')}
+                          onClick={() => updateStatus(account.seller_products.id, 'rejected')}
                           className="text-red-600 hover:text-red-900"
                         >
                           Reject
@@ -234,7 +234,13 @@ export default function ManageSellAccountsPage() {
                       </>
                     )}
                     <button
-                      onClick={() => deleteProduct(product.id)}
+                      onClick={() => setEditingAccount(account)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteAccount(account.id)}
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete
@@ -246,12 +252,92 @@ export default function ManageSellAccountsPage() {
           </table>
         </div>
 
-        {products.length === 0 && (
+        {accounts.length === 0 && (
           <div className="px-6 py-12 text-center text-gray-500">
-            No products submitted yet.
+            No accounts submitted yet.
           </div>
         )}
       </div>
+
+      {editingAccount && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Account</h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Username</label>
+                  <input
+                    type="text"
+                    value={editingAccount.username}
+                    onChange={(e) => setEditingAccount({ ...editingAccount, username: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Password</label>
+                  <input
+                    type="text"
+                    value={editingAccount.password}
+                    onChange={(e) => setEditingAccount({ ...editingAccount, password: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={editingAccount.email || ''}
+                    onChange={(e) => setEditingAccount({ ...editingAccount, email: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email Password</label>
+                  <input
+                    type="text"
+                    value={editingAccount.email_password || ''}
+                    onChange={(e) => setEditingAccount({ ...editingAccount, email_password: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Additional Info</label>
+                  <textarea
+                    value={editingAccount.additional_info || ''}
+                    onChange={(e) => setEditingAccount({ ...editingAccount, additional_info: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Preview Link</label>
+                  <input
+                    type="url"
+                    value={editingAccount.preview_link || ''}
+                    onChange={(e) => setEditingAccount({ ...editingAccount, preview_link: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end mt-6 space-x-3">
+                <button
+                  onClick={() => setEditingAccount(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEdit}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

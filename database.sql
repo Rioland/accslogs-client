@@ -137,17 +137,14 @@ comment on table public.admins is 'List of admin users allowed to manage certain
 -- Enable RLS for admins
 alter table public.admins enable row level security;
 
+-- Drop problematic policy if exists
+drop policy if exists "Admins can read all admins" on public.admins;
+
 -- Allow users to check if they are admin (select their own row)
 drop policy if exists "Users can check own admin status" on public.admins;
 create policy "Users can check own admin status" on public.admins
 for select
 using (auth.uid() = user_id);
-
--- Allow admins to read all admin statuses
-drop policy if exists "Admins can read all admins" on public.admins;
-create policy "Admins can read all admins" on public.admins
-for select to authenticated
-using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 
 -- Allow admins to assign admin roles
 drop policy if exists "Admins can insert admins" on public.admins;
@@ -338,10 +335,10 @@ using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 
 -- Drop old tables if exist
 drop table if exists public.seller_product_accounts cascade;
-drop table if exists public.seller_products cascade;
+drop table if exists public.seller_accounts cascade;
 
--- 11) Seller accounts table for user-submitted accounts for sale
-create table if not exists public.seller_accounts (
+-- 11) Seller products table
+create table if not exists public.seller_products (
   id bigserial primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   category text not null,
@@ -351,62 +348,107 @@ create table if not exists public.seller_accounts (
   price numeric(10,2) not null,
   release_option text not null check (release_option in ('auto', 'manual')),
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 12) Seller product accounts table
+create table if not exists public.seller_product_accounts (
+  id bigserial primary key,
+  product_id bigint not null references public.seller_products(id) on delete cascade,
   username text not null,
   password text not null,
   email text,
   email_password text,
   additional_info text,
   preview_link text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  created_at timestamptz not null default now()
 );
 
--- Add subcategory column if not exists
-alter table public.seller_accounts add column if not exists subcategory text;
-
--- Maintain updated_at for seller_accounts
-drop trigger if exists set_updated_at_seller_accounts on public.seller_accounts;
-create trigger set_updated_at_seller_accounts before update on public.seller_accounts
+-- Maintain updated_at for seller_products
+drop trigger if exists set_updated_at_seller_products on public.seller_products;
+create trigger set_updated_at_seller_products before update on public.seller_products
 for each row execute function public.set_updated_at();
 
--- Enable RLS for seller_accounts
-alter table public.seller_accounts enable row level security;
+-- Enable RLS for seller_products
+alter table public.seller_products enable row level security;
 
--- Users can read their own submitted accounts
-drop policy if exists "Users can read own seller accounts" on public.seller_accounts;
-create policy "Users can read own seller accounts" on public.seller_accounts
+-- Users can read their own submitted products
+drop policy if exists "Users can read own seller products" on public.seller_products;
+create policy "Users can read own seller products" on public.seller_products
 for select
 using (auth.uid() = user_id);
 
--- Users can insert their own seller accounts
-drop policy if exists "Users can insert own seller accounts" on public.seller_accounts;
-create policy "Users can insert own seller accounts" on public.seller_accounts
+-- Users can insert their own seller products
+drop policy if exists "Users can insert own seller products" on public.seller_products;
+create policy "Users can insert own seller products" on public.seller_products
 for insert to authenticated
 with check (auth.uid() = user_id);
 
--- Users can update their own pending seller accounts
-drop policy if exists "Users can update own pending seller accounts" on public.seller_accounts;
-create policy "Users can update own pending seller accounts" on public.seller_accounts
+-- Users can update their own pending seller products
+drop policy if exists "Users can update own pending seller products" on public.seller_products;
+create policy "Users can update own pending seller products" on public.seller_products
 for update to authenticated
 using (auth.uid() = user_id and status = 'pending')
 with check (auth.uid() = user_id and status = 'pending');
 
--- Admins can read all seller accounts
-drop policy if exists "Admins can read all seller accounts" on public.seller_accounts;
-create policy "Admins can read all seller accounts" on public.seller_accounts
+-- Admins can read all seller products
+drop policy if exists "Admins can read all seller products" on public.seller_products;
+create policy "Admins can read all seller products" on public.seller_products
 for select to authenticated
-using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+using (true);
 
--- Admins can update seller accounts (approve/reject)
-drop policy if exists "Admins can update seller accounts" on public.seller_accounts;
-create policy "Admins can update seller accounts" on public.seller_accounts
+-- Admins can update seller products (approve/reject)
+drop policy if exists "Admins can update seller products" on public.seller_products;
+create policy "Admins can update seller products" on public.seller_products
 for update to authenticated
 using (exists (select 1 from public.admins a where a.user_id = auth.uid()))
 with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 
--- Admins can delete seller accounts
-drop policy if exists "Admins can delete seller accounts" on public.seller_accounts;
-create policy "Admins can delete seller accounts" on public.seller_accounts
+-- Admins can delete seller products
+drop policy if exists "Admins can delete seller products" on public.seller_products;
+create policy "Admins can delete seller products" on public.seller_products
+for delete to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Enable RLS for seller_product_accounts
+alter table public.seller_product_accounts enable row level security;
+
+-- Users can read accounts for their own products
+drop policy if exists "Users can read accounts for own products" on public.seller_product_accounts;
+create policy "Users can read accounts for own products" on public.seller_product_accounts
+for select
+using (exists (select 1 from public.seller_products p where p.id = product_id and p.user_id = auth.uid()));
+
+-- Users can insert accounts for their own pending products
+drop policy if exists "Users can insert accounts for own pending products" on public.seller_product_accounts;
+create policy "Users can insert accounts for own pending products" on public.seller_product_accounts
+for insert to authenticated
+with check (exists (select 1 from public.seller_products p where p.id = product_id and p.user_id = auth.uid() and p.status = 'pending'));
+
+-- Users can update accounts for their own pending products
+drop policy if exists "Users can update accounts for own pending products" on public.seller_product_accounts;
+create policy "Users can update accounts for own pending products" on public.seller_product_accounts
+for update to authenticated
+using (exists (select 1 from public.seller_products p where p.id = product_id and p.user_id = auth.uid() and p.status = 'pending'))
+with check (exists (select 1 from public.seller_products p where p.id = product_id and p.user_id = auth.uid() and p.status = 'pending'));
+
+-- Admins can read all seller product accounts
+drop policy if exists "Admins can read all seller product accounts" on public.seller_product_accounts;
+create policy "Admins can read all seller product accounts" on public.seller_product_accounts
+for select to authenticated
+using (true);
+
+-- Admins can update seller product accounts
+drop policy if exists "Admins can update seller product accounts" on public.seller_product_accounts;
+create policy "Admins can update seller product accounts" on public.seller_product_accounts
+for update to authenticated
+using (exists (select 1 from public.admins a where a.user_id = auth.uid()))
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
+-- Admins can delete seller product accounts
+drop policy if exists "Admins can delete seller product accounts" on public.seller_product_accounts;
+create policy "Admins can delete seller product accounts" on public.seller_product_accounts
 for delete to authenticated
 using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 

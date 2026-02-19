@@ -27,16 +27,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Insert product
+    const { data: product, error: productError } = await supabase
+      .from('seller_products')
+      .insert({
+        user_id: user.id,
+        name: productData.name,
+        category: productData.category,
+        subcategory: productData.subcategory,
+        description: productData.description,
+        price: parseFloat(productData.price),
+        release_option: productData.releaseOption,
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (productError) {
+      console.error('Product insert error:', productError);
+      return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+    }
+
     // Insert accounts
     const accountsToInsert = accounts.map((acc: { username: string; password: string; email?: string; emailPassword?: string; additionalInfo?: string; previewLink?: string }) => ({
-      user_id: user.id,
-      name: productData.name,
-      category: productData.category,
-      subcategory: productData.subcategory,
-      description: productData.description,
-      price: parseFloat(productData.price),
-      release_option: productData.releaseOption,
-      status: 'pending',
+      product_id: product.id,
       username: acc.username,
       password: acc.password,
       email: acc.email,
@@ -46,7 +60,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const { error: accountsError } = await supabase
-      .from('seller_accounts')
+      .from('seller_product_accounts')
       .insert(accountsToInsert);
 
     if (accountsError) {
@@ -71,18 +85,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if admin
-    const { data: admin, error: adminError } = await supabase
-      .from('admins')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (adminError || !admin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Get all seller accounts
+    // Get all seller accounts (assuming admin panel)
     const { data: accounts, error: accountsError } = await supabase
       .from('seller_accounts')
       .select('*')
@@ -125,7 +128,7 @@ export async function PUT(request: NextRequest) {
 
     // Update status
     const { error: updateError } = await supabase
-      .from('seller_accounts')
+      .from('seller_products')
       .update({ status })
       .eq('id', id);
 
@@ -164,9 +167,9 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Delete account
+    // Delete product (accounts will cascade)
     const { error: deleteError } = await supabase
-      .from('seller_accounts')
+      .from('seller_products')
       .delete()
       .eq('id', id);
 
