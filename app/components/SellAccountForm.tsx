@@ -1,13 +1,14 @@
 // src/components/SellAccountForm.tsx
 "use client";
 
-import React, { useState } from 'react';
-import Wrapper from './Wrapper';
+import React, { useState, useEffect } from 'react';
 
+import supabaseClient from '@/lib/supabaseClient';
 type Step = 'add-account' | 'credentials' | 'review';
 
 interface ProductData {
   category: string;
+  subcategory: string;
   name: string;
   description: string;
   price: string;
@@ -25,8 +26,11 @@ interface AccountData {
 
 const SellAccountForm: React.FC = () => {
   const [step, setStep] = useState<Step>('add-account');
+  const [categories, setCategories] = useState<{ name: string }[]>([]);
+  const [subcategories, setSubcategories] = useState<{ name: string }[]>([]);
   const [productData, setProductData] = useState<ProductData>({
     category: '',
+    subcategory: '',
     name: '',
     description: '',
     price: '',
@@ -42,6 +46,59 @@ const SellAccountForm: React.FC = () => {
       previewLink: '',
     },
   ]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabaseClient
+          .from('socialmedia_account_category')
+          .select('name')
+          .order('name');
+        if (error) {
+          console.error('Error fetching categories:', error);
+        } else {
+          setCategories(data || []);
+        }
+      } catch (error) {
+        console.error('Fetch categories error:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (!productData.category) {
+        setSubcategories([]);
+        return;
+      }
+      try {
+        const { data: catData, error: catError } = await supabaseClient
+          .from('socialmedia_account_category')
+          .select('id')
+          .eq('name', productData.category)
+          .single();
+        if (catError || !catData) {
+          console.error('Error fetching category id:', catError);
+          setSubcategories([]);
+          return;
+        }
+        const { data, error } = await supabaseClient
+          .from('socialmedia_account_subcategory')
+          .select('name')
+          .eq('category_id', catData.id)
+          .order('name');
+        if (error) {
+          console.error('Error fetching subcategories:', error);
+        } else {
+          setSubcategories(data || []);
+        }
+      } catch (error) {
+        console.error('Fetch subcategories error:', error);
+      }
+    };
+    fetchSubcategories();
+  }, [productData.category]);
 
   const updateProduct = (field: keyof ProductData, value: string) => {
     setProductData((prev) => ({ ...prev, [field]: value }));
@@ -78,11 +135,29 @@ const SellAccountForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    // Validation
+    if (!productData.category || !productData.name || !productData.price || isNaN(parseFloat(productData.price))) {
+      alert('Please fill in all required fields with valid data.');
+      return;
+    }
+
+    if (accounts.some(acc => !acc.username || !acc.password)) {
+      alert('Please provide username and password for all accounts.');
+      return;
+    }
+
     try {
+      const { data: { session }, error } = await supabaseClient.auth.getSession();
+      if (error || !session) {
+        alert('You must be logged in to submit.');
+        return;
+      }
+
       const response = await fetch('/api/admin/sell-accounts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ productData, accounts }),
       });
@@ -93,6 +168,7 @@ const SellAccountForm: React.FC = () => {
         setStep('add-account');
         setProductData({
           category: '',
+          subcategory: '',
           name: '',
           description: '',
           price: '',
@@ -107,8 +183,8 @@ const SellAccountForm: React.FC = () => {
           previewLink: '',
         }]);
       } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Submit error:', error);
@@ -161,7 +237,7 @@ const SellAccountForm: React.FC = () => {
         </div>
 
         {/* Warning Banner - shown on credentials & review */}
-        {(step === 'credentials' || step === 'review') && (
+        {/* {(step === 'credentials' || step === 'review') && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
             <strong>Warning:</strong> You are in <strong>DEFAULT PLAN</strong>, your account upload limit
             number for today is {step === 'credentials' ? '0' : '1'}. If you want to upload more
@@ -170,7 +246,7 @@ const SellAccountForm: React.FC = () => {
               Choose Your Plan Here
             </a>
           </div>
-        )}
+        )} */}
 
         {/* Form Content */}
         <div className="bg-white shadow rounded-xl p-8">
@@ -189,13 +265,34 @@ const SellAccountForm: React.FC = () => {
                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     <option value="">Select Account Category</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="instagram">Instagram</option>
-                    <option value="gmail">Gmail</option>
-                    <option value="twitter">Twitter / X</option>
-                    <option value="other">Other</option>
+                    {categories.map((cat) => (
+                      <option key={cat.name} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
+
+                {subcategories.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Select Account Subcategory
+                    </label>
+                    <select
+                      value={productData.subcategory}
+                      onChange={(e) => updateProduct('subcategory', e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      disabled={!productData.category}
+                    >
+                      <option value="">Select Account Subcategory</option>
+                      {subcategories.map((sub) => (
+                        <option key={sub.name} value={sub.name}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -226,6 +323,8 @@ const SellAccountForm: React.FC = () => {
                     <input
                       type="number"
                       placeholder="Enter your price"
+                      min={1000}
+
                       value={productData.price}
                       onChange={(e) => updateProduct('price', e.target.value)}
                       className="w-full pl-10 border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-indigo-500 focus:border-indigo-500"

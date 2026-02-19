@@ -27,29 +27,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Insert product
-    const { data: product, error: productError } = await supabase
-      .from('seller_products')
-      .insert({
-        user_id: user.id,
-        name: productData.name,
-        category: productData.category,
-        description: productData.description,
-        price: parseFloat(productData.price),
-        release_option: productData.releaseOption,
-        status: 'pending',
-      })
-      .select()
-      .single();
-
-    if (productError) {
-      console.error('Product insert error:', productError);
-      return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
-    }
-
     // Insert accounts
     const accountsToInsert = accounts.map((acc: { username: string; password: string; email?: string; emailPassword?: string; additionalInfo?: string; previewLink?: string }) => ({
-      product_id: product.id,
+      user_id: user.id,
+      name: productData.name,
+      category: productData.category,
+      subcategory: productData.subcategory,
+      description: productData.description,
+      price: parseFloat(productData.price),
+      release_option: productData.releaseOption,
+      status: 'pending',
       username: acc.username,
       password: acc.password,
       email: acc.email,
@@ -59,17 +46,15 @@ export async function POST(request: NextRequest) {
     }));
 
     const { error: accountsError } = await supabase
-      .from('seller_product_accounts')
+      .from('seller_accounts')
       .insert(accountsToInsert);
 
     if (accountsError) {
       console.error('Accounts insert error:', accountsError);
-      // Optionally delete the product if accounts fail
-      await supabase.from('seller_products').delete().eq('id', product.id);
       return NextResponse.json({ error: 'Failed to create accounts' }, { status: 500 });
     }
 
-    return NextResponse.json({ message: 'Submitted successfully', productId: product.id }, { status: 201 });
+    return NextResponse.json({ message: 'Submitted successfully' }, { status: 201 });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -97,21 +82,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get all seller products with accounts
-    const { data: products, error: productsError } = await supabase
-      .from('seller_products')
-      .select(`
-        *,
-        seller_product_accounts (*)
-      `)
+    // Get all seller accounts
+    const { data: accounts, error: accountsError } = await supabase
+      .from('seller_accounts')
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (productsError) {
-      console.error('Products fetch error:', productsError);
-      return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    if (accountsError) {
+      console.error('Accounts fetch error:', accountsError);
+      return NextResponse.json({ error: 'Failed to fetch accounts' }, { status: 500 });
     }
 
-    return NextResponse.json({ products }, { status: 200 });
+    return NextResponse.json({ accounts }, { status: 200 });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -143,7 +125,7 @@ export async function PUT(request: NextRequest) {
 
     // Update status
     const { error: updateError } = await supabase
-      .from('seller_products')
+      .from('seller_accounts')
       .update({ status })
       .eq('id', id);
 
@@ -182,9 +164,9 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Delete product (accounts will cascade)
+    // Delete account
     const { error: deleteError } = await supabase
-      .from('seller_products')
+      .from('seller_accounts')
       .delete()
       .eq('id', id);
 
