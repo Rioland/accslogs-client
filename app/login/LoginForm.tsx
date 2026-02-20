@@ -71,7 +71,8 @@ export default function LoginForm() {
       }
 
       if (adminData && adminData.length > 0) {
-        router.push('/admin')
+        const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001';
+        window.location.href = adminUrl;
       } else {
         router.push('/dashboard')
       }
