@@ -288,27 +288,27 @@ for delete to authenticated
 using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 
 -- Enable RLS and policies for products: anyone can read; only admins can insert/update/delete
-alter table public.products enable row level security;
+-- alter table public.products enable row level security;
 
-drop policy if exists "Anyone can read products" on public.products;
-create policy "Anyone can read products" on public.products
-for select using (true);
+-- drop policy if exists "Anyone can read products" on public.products;
+-- create policy "Anyone can read products" on public.products
+-- for select using (true);
 
-drop policy if exists "Only admins can insert products" on public.products;
-create policy "Only admins can insert products" on public.products
-for insert to authenticated
-with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+-- drop policy if exists "Only admins can insert products" on public.products;
+-- create policy "Only admins can insert products" on public.products
+-- for insert to authenticated
+-- with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 
-drop policy if exists "Only admins can update products" on public.products;
-create policy "Only admins can update products" on public.products
-for update to authenticated
-using (exists (select 1 from public.admins a where a.user_id = auth.uid()))
-with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+-- drop policy if exists "Only admins can update products" on public.products;
+-- create policy "Only admins can update products" on public.products
+-- for update to authenticated
+-- using (exists (select 1 from public.admins a where a.user_id = auth.uid()))
+-- with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 
-drop policy if exists "Only admins can delete products" on public.products;
-create policy "Only admins can delete products" on public.products
-for delete to authenticated
-using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+-- drop policy if exists "Only admins can delete products" on public.products;
+-- create policy "Only admins can delete products" on public.products
+-- for delete to authenticated
+-- using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 
 -- Enable RLS and policies for product_configurations: anyone can read; only admins can insert/update/delete
 alter table public.product_configurations enable row level security;

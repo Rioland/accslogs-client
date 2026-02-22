@@ -28,10 +28,12 @@ on conflict (slug) do nothing;
 -- 2) Add columns to admins table (migration for existing admins)
 alter table public.admins
   add column if not exists is_super_admin boolean not null default false,
+  add column if not exists is_primary boolean not null default false,
   add column if not exists created_by uuid references auth.users(id) on delete set null,
   add column if not exists updated_at timestamptz not null default now();
 
 comment on column public.admins.is_super_admin is 'When true, admin has all privileges and can manage other admins.';
+comment on column public.admins.is_primary is 'When true, this is the primary admin that cannot be deleted.';
 
 -- 3) Admin privilege assignments (for non-super-admins)
 create table if not exists public.admin_privilege_assignments (
@@ -58,6 +60,34 @@ stable
 as $$
   select coalesce(
     (select a.is_super_admin from public.admins a where a.user_id = uid),
+    false
+  );
+$$;
+
+-- 4b) Helper: check if user is primary admin
+create or replace function public.is_primary_admin(uid uuid default auth.uid())
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce(
+    (select a.is_primary from public.admins a where a.user_id = uid),
+    false
+  );
+$$;
+
+-- 4c) Helper: check if an admin is primary (used in delete policies)
+create or replace function public.is_primary_admin_by_id(uid uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce(
+    (select a.is_primary from public.admins a where a.user_id = uid),
     false
   );
 $$;
@@ -129,6 +159,7 @@ using (public.is_super_admin(auth.uid()))
 with check (public.is_super_admin(auth.uid()));
 
 -- 7) Restrict insert/delete to super admins only (so only super admins can create/remove other admins)
+-- Delete is also restricted: cannot delete primary admins
 drop policy if exists "Admins can insert admins" on public.admins;
 create policy "Super admins can insert admins" on public.admins
 for insert to authenticated
@@ -137,7 +168,7 @@ with check (public.is_super_admin(auth.uid()));
 drop policy if exists "Admins can delete admins" on public.admins;
 create policy "Super admins can delete admins" on public.admins
 for delete to authenticated
-using (public.is_super_admin(auth.uid()));
+using (public.is_super_admin(auth.uid()) and not public.is_primary_admin_by_id(auth.uid()));
 
 -- 8) For bootstrap: allow service role to insert first admin (bypass RLS - service role bypasses RLS by default)
 -- No change needed - bootstrap will use service role which bypasses RLS.

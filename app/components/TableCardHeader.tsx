@@ -1,20 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import Wrapper from './Wrapper';
 
-interface AccountProduct {
-  year: number | string;
-  description: string;
-  stock: number;
-  price: number;
-  isNoPhone?: boolean;
-  hasBackupEmail?: boolean;
-  isSmsVerified?: boolean;
-  genderMention?: 'Male or female' | string;
-}
+// interface AccountProduct {
+//   year: number | string;
+//   description: string;
+//   stock: number;
+//   price: number;
+//   isNoPhone?: boolean;
+//   hasBackupEmail?: boolean;
+//   isSmsVerified?: boolean;
+//   genderMention?: 'Male or female' | string;
+// }
 
 interface TablCardHeaderProps {
   title?: string;
-  products: AccountProduct[];
+  products: any[];
   className?: string;
 }
 
@@ -49,7 +50,7 @@ const TableCardHeader: React.FC<TablCardHeaderProps> = ({
 
               <div className="space-y-1 text-xs sm:text-sm md:text-base">
                 <div className="font-medium text-gray-900">
-                  {product.description || `GMail Accounts | Registered in ${product.year}`}
+                  {product.name || `GMail Accounts | Registered in ${product.year}`}
                   {product.genderMention && (
                     <span className="text-gray-500 ml-1.5">• {product.genderMention}</span>
                   )}
@@ -73,9 +74,9 @@ const TableCardHeader: React.FC<TablCardHeaderProps> = ({
                   </div>
                 )}
 
-                <div className="text-gray-500 text-xs sm:text-sm">
+                {/* <div className="text-gray-500 text-xs sm:text-sm">
                   USA IP registration
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -88,7 +89,7 @@ const TableCardHeader: React.FC<TablCardHeaderProps> = ({
             <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
               <div className="text-xs text-gray-500">from</div>
               <div className="text-base sm:text-lg md:text-xl font-semibold text-red-600">
-                ${product.price.toFixed(2)}
+                <del>N</del>{product.price.toFixed(2)}
               </div>
               <button
                 className="
