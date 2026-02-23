@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,22 +9,16 @@ import TableCardHeader from "../components/TableCardHeader";
 import TopBar from "../components/TopBar";
 import WarningModal from "../components/WarningModal";
 import { supabase } from "@/lib/supabaseClient";
+import { SellerProduct } from "@/types/callabelTypes";
 
 const Navbar2 = dynamic(() => import("../components/Navbar2"), { ssr: false });
-
-// Type for seller product
-
 
 
 
 export default function MarketPlace() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<SellerProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const handleSelectCategory = (category: any, subcategory: any) => {
-    console.log("Selected:", category, subcategory);
-  };
 
   useEffect(() => {
     fetchSellerProducts();
@@ -36,114 +29,67 @@ export default function MarketPlace() {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from("seller_products")
-        .select(
-          `*,seller_product_accounts(count)`
-        )
+        .select(`*, seller_product_accounts(count)`)
         .eq("status", "approved")
-        .order("category_id", { ascending: true }) // group visually
+        .order("category_id", { ascending: true })
         .order("created_at", { ascending: false });
 
-      if (fetchError) {
-        console.error("Error fetching seller products:", fetchError);
-        // Fallback: try without account count
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from("seller_products")
-          .select("*")
-          .eq("status", "approved")
-          .order("created_at", { ascending: false });
-
-        if (fallbackError) {
-          setError("Failed to load products");
-          return;
-        }
-
-        const transformedProducts: any[] = (fallbackData || []).map(
-          (product: any) => {
-            const createdYear = new Date(product.created_at).getFullYear();
-            return {
-              year: createdYear,
-              description: product.description || product.name,
-              stock: 1,
-              price: product.price,
-              isNoPhone: false,
-              hasBackupEmail: true,
-              isSmsVerified: false,
-              genderMention: "Male or female" as const,
-            };
-          }
-        );
-
-        setProducts(transformedProducts);
-        setLoading(false);
+      if (error) {
+        setError("Failed to load products");
         return;
       }
 
-      // Transform data to match AccountProduct interface
-      const transformedProducts: any[] = (data || []).map((product: any) => {
-        const createdYear = new Date(product.created_at).getFullYear();
-        const accountCount = product.seller_product_accounts?.[0]?.count || 1;
-
-        return {
-          year: createdYear,
-          description: product.description || product.name,
-          stock: accountCount,
-          price: product.price,
-          isNoPhone: false,
-          hasBackupEmail: true,
-          isSmsVerified: false,
-          genderMention: "Male or female" as const,
-        };
-      });
-
-      setProducts(transformedProducts);
+      setProducts(data || []);
     } catch (err) {
-      console.error("Error:", err);
       setError("Failed to load products");
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ GROUP BY CATEGORY
+  const groupedProducts = products.reduce<Record<string, SellerProduct[]>>(
+    (acc, product) => {
+      const categoryName = product.category || "Uncategorized";
+
+      if (!acc[categoryName]) {
+        acc[categoryName] = [];
+      }
+
+      acc[categoryName].push(product);
+      return acc;
+    },
+    {},
+  );
+
   return (
     <div className="flex flex-col min-h-screen">
       <TopBar />
       <Navbar1 />
-      <Navbar2 onSelectCategory={handleSelectCategory} />
+      <Navbar2 onSelectCategory={() => {}} />
 
       {loading && (
-        <div className="flex justify-center items-center py-10">
-          <div className="text-gray-500">Loading products...</div>
+        <div className="flex justify-center py-10 text-gray-500">
+          Loading products...
         </div>
       )}
 
       {error && (
-        <div className="flex justify-center items-center py-10">
-          <div className="text-red-500">{error}</div>
-        </div>
+        <div className="flex justify-center py-10 text-red-500">{error}</div>
       )}
 
-      {!loading && !error && products.length === 0 && (
-        <div className="flex justify-center items-center py-10">
-          <div className="text-gray-500">
-            No products available at the moment.
-          </div>
-        </div>
-      )}
-
-      {!loading && !error && products.length > 0 && (
-        <>
-          {products.map((product, index) => (
-            <TableCardHeader
-              key={index}
-              title={product.category}
-              products={[product]}
-              className="mt-6"
-            />
-          ))}
-        </>
-      )}
+      {!loading &&
+        !error &&
+        Object.entries(groupedProducts).map(([category, items]) => (
+          <TableCardHeader
+            key={category}
+            title={category}
+            products={items}
+            className="mt-8"
+          />
+        ))}
 
       <SocialMediaAcquisition />
       <Footer />
