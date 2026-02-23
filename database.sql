@@ -426,6 +426,12 @@ create policy "Users can insert accounts for own pending products" on public.sel
 for insert to authenticated
 with check (exists (select 1 from public.seller_products p where p.id = product_id and p.user_id = auth.uid() and p.status = 'pending'));
 
+-- Admins can insert accounts to any product
+drop policy if exists "Admins can insert accounts to any product" on public.seller_product_accounts;
+create policy "Admins can insert accounts to any product" on public.seller_product_accounts
+for insert to authenticated
+with check (exists (select 1 from public.admins a where a.user_id = auth.uid()));
+
 -- Users can update accounts for their own pending products
 drop policy if exists "Users can update accounts for own pending products" on public.seller_product_accounts;
 create policy "Users can update accounts for own pending products" on public.seller_product_accounts
