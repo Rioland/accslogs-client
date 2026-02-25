@@ -26,9 +26,9 @@ const PremiumAccountsHero: React.FC = () => {
           </h1>
 
           <p className="mt-6 text-gray-600 max-w-xl leading-relaxed">
-            Leosmartdigitals Marketplace offers authentic, verified social
-            media accounts across all major platforms. Grow your online
-            presence instantly with our premium selection.
+            Leosmartdigitals Marketplace offers authentic, verified social media
+            accounts across all major platforms. Grow your online presence
+            instantly with our premium selection.
           </p>
 
           <div className="flex flex-wrap items-center gap-4 mt-8">
@@ -52,10 +52,23 @@ const PremiumAccountsHero: React.FC = () => {
 
             {/* Platforms */}
             <div className="grid grid-cols-2 gap-4 mt-4">
-              <PlatformCard icon={<Instagram size="32" color="#FF8A65"/>} label="Instagram" />
-              <PlatformCard icon={<span>🎵</span>} label="TikTok" />
-              <PlatformCard icon={<Twitter size="32" color="#FF8A65"/>} label="Twitter" />
-              <PlatformCard icon={<Facebook color="#FF8A65" variant="Outline"/>} label="Facebook" />
+              <a href="https://www.instagram.com/topnotchlogs?iigsh=MTZ2bmpyb3QyaWc2Yw%3D%3D&utm_source=q">
+                <PlatformCard
+                  icon={<Instagram size="32" color="#FF8A65" />}
+                  label="Instagram"
+                />
+              </a>
+              <a href="hwww.tiktok.com/@topnotchlogs.com">
+                <PlatformCard icon={<span>🎵</span>} label="TikTok" />
+              </a>
+              <PlatformCard
+                icon={<Twitter size="32" color="#FF8A65" />}
+                label="Twitter"
+              />
+              <PlatformCard
+                icon={<Facebook color="#FF8A65" variant="Outline" />}
+                label="Facebook"
+              />
             </div>
 
             {/* Stats */}
@@ -71,7 +84,8 @@ const PremiumAccountsHero: React.FC = () => {
 
             {/* Secure Badge */}
             <div className="absolute -bottom-5 left-6 bg-orange-500 text-white px-5 py-2 rounded-full shadow-md text-sm flex flex-row gap-2 items-center">
-              <ShieldCheck size="32" color="#ffffff" /> <p>Secure Transactions</p>
+              <ShieldCheck size="32" color="#ffffff" />{" "}
+              <p>Secure Transactions</p>
             </div>
           </div>
         </div>
