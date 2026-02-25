@@ -1,7 +1,7 @@
 export default function FooterBrand() {
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Accslogs</h2>
+      <h2 className="text-2xl font-bold mb-4">Topnotchlogs</h2>
 
       <p className="font-semibold mb-3">Customer Support</p>
 
@@ -9,8 +9,6 @@ export default function FooterBrand() {
         <button className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm">
           New Ticket / Ask a Question
         </button>
-
-       
       </div>
     </div>
   );

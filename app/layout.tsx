@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Accslogs - Buy Social media Accounts with Backup Email and 2FA",
+  title: "Topnotchlogs - Buy Social media Accounts with Backup Email and 2FA",
   description: "Developed by Riotech'",
 };
 

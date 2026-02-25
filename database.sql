@@ -1,4 +1,4 @@
--- Database setup for AccsLogs: profiles table, RLS policies, and optional triggers
+-- Database setup forTopnotchlogs: profiles table, RLS policies, and optional triggers
 -- Run this entire script in the Supabase SQL editor.
 
 begin;
