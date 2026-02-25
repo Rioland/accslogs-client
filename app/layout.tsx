@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Topnotchlogs - Buy Social media Accounts with Backup Email and 2FA",
   description: "Developed by Riotech'",
+  icons: {
+    icon: "/images/favicon.png",
+  },
 };
 
 export default function RootLayout({
