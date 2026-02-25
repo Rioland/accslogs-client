@@ -64,7 +64,7 @@ export default function Navbar2({ onSelectCategory }: Props) {
           <img
             src="/images/logo.png"
             alt="logo"
-            className="w-full md:w-36  md:h-12"
+            className="object-contain w-48 h-48 md:w-38 md:h-38 "
           />
           <div className="relative w-full md:w-max-content ">
             <div

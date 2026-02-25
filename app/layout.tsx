@@ -31,6 +31,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <link
+          rel="shortcut icon"
+          href="/images/favicon.png"
+          type="image/x-icon"
+        />
         {children}
         <Toaster />
       </body>
