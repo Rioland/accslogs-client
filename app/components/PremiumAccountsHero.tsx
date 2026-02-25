@@ -58,7 +58,7 @@ const PremiumAccountsHero: React.FC = () => {
                   label="Instagram"
                 />
               </a>
-              <a href="hwww.tiktok.com/@topnotchlogs.com">
+              <a href="https://www.tiktok.com/@topnotchlogs.com">
                 <PlatformCard icon={<span>🎵</span>} label="TikTok" />
               </a>
               <PlatformCard

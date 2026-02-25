@@ -2,7 +2,7 @@ const links = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
   { label: "Contact Us", href: "/contact" },
-  { label: "Market Place", href: "/market-place" },
+  { label: "MarketPlace", href: "/market-place" },
   { label: "Terms", href: "/terms" },
   { label: "FAQ's", href: "/faq" },
   // { label: "Supplier Register", href: "/supplier-register" },
