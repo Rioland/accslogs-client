@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Topnotchlogs - Buy Social media Accounts with Backup Email and 2FA",
   description: "Developed by Riotech'",
   icons: {
-    icon: "/images/favicon.png",
+    icon: "/favicon.png",
   },
 };
 
@@ -31,11 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <link
-          rel="shortcut icon"
-          href="/images/favicon.png"
-          type="image/x-icon"
-        />
+        <link rel="shortcut icon" href="/favicon.png" type="image/x-icon" />
         {children}
         <Toaster />
       </body>
