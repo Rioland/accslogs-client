@@ -136,6 +136,7 @@ export default function MarketPlace() {
             className="mt-8"
           />
         ))}
+      <div className="py-10" />
 
       <SocialMediaAcquisition />
       <Footer />
