@@ -110,53 +110,11 @@ export default function MarketPlace() {
       <TopBar />
       <Navbar1 />
       <Navbar2
-        onSelectCategory={(category) => {
-          console.log("Selected category:", category);
+        onSelectCategory={(category, subcategory) => {
+          setSelectedCategory(category.name);
+          setSelectedSubcategory(subcategory?.name || "");
         }}
       />
-
-      {!loading && !error && (
-        <div className="bg-white shadow rounded-lg p-6 mx-4 mt-6">
-          <h2 className="text-lg font-semibold mb-4">Filter Products</h2>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Subcategory
-              </label>
-              <select
-                value={selectedSubcategory}
-                onChange={(e) => setSelectedSubcategory(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                disabled={!selectedCategory}
-              >
-                <option value="">All Subcategories</option>
-                {subcategories.map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
 
       {loading && (
         <div className="flex justify-center py-10 text-gray-500">
