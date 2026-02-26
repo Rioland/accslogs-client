@@ -26,7 +26,7 @@ const PremiumAccountsHero: React.FC = () => {
           </h1>
 
           <p className="mt-6 text-gray-600 max-w-xl leading-relaxed">
-            Leosmartdigitals Marketplace offers authentic, verified social media
+            Topnotchlogs Marketplace offers authentic, verified social media
             accounts across all major platforms. Grow your online presence
             instantly with our premium selection.
           </p>

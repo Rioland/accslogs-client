@@ -25,13 +25,9 @@ const StepCard: React.FC<StepCardProps> = ({
       <div className="bg-white rounded-2xl shadow-md p-6 mt-6 w-full max-w-xs">
         <p className="text-orange-500 font-semibold mb-1">{step}</p>
 
-        <h3 className="text-teal-800 font-semibold text-lg mb-2">
-          {title}
-        </h3>
+        <h3 className="text-teal-800 font-semibold text-lg mb-2">{title}</h3>
 
-        <p className="text-gray-600 text-sm leading-relaxed">
-          {description}
-        </p>
+        <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
       </div>
     </div>
   );
@@ -48,8 +44,7 @@ const StepsSection: React.FC = () => {
           </h2>
 
           <p className="text-gray-600 mt-3 max-w-2xl mx-auto">
-            Our streamlined process makes acquiring premium accounts
-            effortless.
+            Our streamlined process makes acquiring premium accounts effortless.
           </p>
         </div>
 
@@ -61,14 +56,14 @@ const StepsSection: React.FC = () => {
           <StepCard
             step="Step 1"
             title="Create Account"
-            description="Sign up for a free Leosmartdigitals account."
+            description="Sign up for a free Topnotchlogs account."
             icon={<UserPlus size={28} />}
           />
 
           <StepCard
             step="Step 2"
             title="Browse Marketplace"
-            description="Explore our verified social media accounts on Leosmartdigitals."
+            description="Explore our verified social media accounts on Topnotchlogs."
             icon={<Search size={28} />}
           />
 

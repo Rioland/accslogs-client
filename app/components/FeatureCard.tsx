@@ -1,5 +1,12 @@
 import React from "react";
-import { ShieldCheck, Users, LineChart, Lock, Headphones, Shield } from "lucide-react";
+import {
+  ShieldCheck,
+  Users,
+  LineChart,
+  Lock,
+  Headphones,
+  Shield,
+} from "lucide-react";
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -18,13 +25,9 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
         {icon}
       </div>
 
-      <h3 className="text-lg font-semibold text-teal-800 mb-2">
-        {title}
-      </h3>
+      <h3 className="text-lg font-semibold text-teal-800 mb-2">{title}</h3>
 
-      <p className="text-gray-600 text-sm leading-relaxed">
-        {description}
-      </p>
+      <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
     </div>
   );
 };
@@ -36,12 +39,12 @@ const WhyChooseSection: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-teal-800">
-            Why Choose Leosmartdigitals?
+            Why Choose Topnotchlogs?
           </h2>
 
           <p className="text-gray-600 mt-3 max-w-2xl mx-auto">
-            We provide the most reliable and authentic social media accounts
-            in the market.
+            We provide the most reliable and authentic social media accounts in
+            the market.
           </p>
         </div>
 

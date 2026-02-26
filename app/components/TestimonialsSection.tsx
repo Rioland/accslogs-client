@@ -16,9 +16,7 @@ const Stars: React.FC<{ rating: number }> = ({ rating }) => {
           key={i}
           size={16}
           className={
-            i < rating
-              ? "text-orange-500 fill-orange-500"
-              : "text-gray-300"
+            i < rating ? "text-orange-500 fill-orange-500" : "text-gray-300"
           }
         />
       ))}
@@ -69,14 +67,14 @@ const TestimonialsSection: React.FC = () => {
         <div className="grid md:grid-cols-3 gap-8">
           <TestimonialCard
             rating={5}
-            text="The Instagram account I purchased from Leosmartdigitals had real, active followers. My engagement skyrocketed within a week!"
+            text="The Instagram account I purchased from Topnotchlogs had real, active followers. My engagement skyrocketed within a week!"
             name="Sarah Johnson"
             role="Digital Marketer"
           />
 
           <TestimonialCard
             rating={5}
-            text="As an agency, we regularly purchase accounts from Leosmartdigitals. Their verification process is unmatched in the industry."
+            text="As an agency, we regularly purchase accounts from Topnotchlogs. Their verification process is unmatched in the industry."
             name="Michael Chen"
             role="Marketing Agency Owner"
           />
