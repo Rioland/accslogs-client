@@ -458,6 +458,52 @@ create policy "Admins can delete seller product accounts" on public.seller_produ
 for delete to authenticated
 using (exists (select 1 from public.admins a where a.user_id = auth.uid()));
 
+-- 13) Product orders table
+create table if not exists public.product_orders (
+  id bigserial primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  product_id bigint not null references public.seller_products(id) on delete cascade,
+  quantity int not null default 1,
+  promo_code text,
+  discount numeric(10,2) default 0,
+  grand_total numeric(10,2) not null,
+  status text not null default 'pending' check (status in ('pending', 'completed', 'cancelled', 'refunded')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Maintain updated_at for product_orders
+drop trigger if exists set_updated_at_product_orders on public.product_orders;
+create trigger set_updated_at_product_orders before update on public.product_orders
+for each row execute function public.set_updated_at();
+
+-- Enable RLS for product_orders
+alter table public.product_orders enable row level security;
+
+-- Users can read their own orders
+drop policy if exists "Users can read own orders" on public.product_orders;
+create policy "Users can read own orders" on public.product_orders
+for select
+using (auth.uid() = user_id);
+
+-- Users can insert their own orders
+drop policy if exists "Users can insert own orders" on public.product_orders;
+create policy "Users can insert own orders" on public.product_orders
+for insert to authenticated
+with check (auth.uid() = user_id);
+
+-- 14) Add buyer_id column to seller_product_accounts
+alter table public.seller_product_accounts add column if not exists buyer_id uuid references auth.users(id) on delete set null;
+
+-- Add index for buyer_id
+create index if not exists seller_product_accounts_buyer_id_idx on public.seller_product_accounts (buyer_id);
+
+-- Users can read accounts they purchased
+drop policy if exists "Users can read purchased accounts" on public.seller_product_accounts;
+create policy "Users can read purchased accounts" on public.seller_product_accounts
+for select
+using (auth.uid() = buyer_id);
+
 commit;
 
 -- end of profile here

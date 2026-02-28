@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 import RichTextRenderer from "./RichTextRenderer";
 
 interface ProductCheckoutCardProps {
+  productId: number;
   title: string;
   price: number;
   stock: number;
