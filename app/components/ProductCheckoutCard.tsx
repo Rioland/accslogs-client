@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import RichTextRenderer from "./RichTextRenderer";
 
 interface ProductCheckoutCardProps {
   title: string;
@@ -109,8 +110,8 @@ export default function ProductCheckoutCard({
           Product Description
         </div>
 
-        <div className="p-4 text-gray-700 whitespace-pre-line">
-          {description}
+        <div className="p-4 text-gray-700">
+          <RichTextRenderer content={description} />
         </div>
       </div>
     </div>
