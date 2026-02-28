@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import Footer from "../components/Footer";
 import Navbar1 from "../components/Navbar1";
 import SocialMediaAcquisition from "../components/SocialMediaAcquisition";
@@ -14,6 +15,7 @@ import { SellerProduct } from "@/types/callabelTypes";
 const Navbar2 = dynamic(() => import("../components/Navbar2"), { ssr: false });
 
 export default function MarketPlace() {
+  const router = useRouter();
   const [products, setProducts] = useState<SellerProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +93,11 @@ export default function MarketPlace() {
     return true;
   });
 
+  // Handle buy button click - redirect to product detail page
+  const handleBuyClick = (productId: number) => {
+    router.push(`/market-place/${productId}`);
+  };
+
   // ✅ GROUP BY CATEGORY
   const groupedProducts = filteredProducts.reduce<
     Record<string, SellerProduct[]>
@@ -134,6 +141,7 @@ export default function MarketPlace() {
             title={category}
             products={items}
             className="mt-8"
+            onBuyClick={handleBuyClick}
           />
         ))}
       <div className="my-10" />
