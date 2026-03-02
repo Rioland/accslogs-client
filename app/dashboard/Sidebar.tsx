@@ -35,18 +35,48 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
   const defaultItems: SidebarItem[] = useMemo(
     () => [
       { key: "home", label: "Home", icon: Home, path: "/dashboard" },
-      { key: "add-funds", label: "Add Funds", icon: Wallet, path: "/dashboard/add-funds" },
-      { key: "my-orders", label: "My Orders", icon: ShoppingCart, path: "/dashboard/my-orders" },
-      { key: "tickets", label: "Tickets", icon: Ticket, path: "/dashboard/tickets" },
-      { key: "referral", label: "Referral Program", icon: Users, path: "/dashboard/referral" },
-      { key: "transaction-history", label: "Transactions History", icon: RotateCcw, path: "/dashboard/transaction-history" },
-      { key: "balance-history", label: "Balance History", icon: FileText, path: "/dashboard/balance-history" },
-      { key: "payouts", label: "Payouts", icon: DollarSign, path: "/dashboard/payouts" },
-      { key: "manual-transactions", label: "Manual Transactions", icon: SlidersHorizontal, path: "/dashboard/manual-transactions" },
-      { key: "profile", label: "Profile", icon: User, path: "/dashboard/profile" },
+      {
+        key: "add-funds",
+        label: "Add Funds",
+        icon: Wallet,
+        path: "/dashboard/add-funds",
+      },
+      {
+        key: "my-orders",
+        label: "My Orders",
+        icon: ShoppingCart,
+        path: "/dashboard/my-orders",
+      },
+      {
+        key: "tickets",
+        label: "Tickets",
+        icon: Ticket,
+        path: "/dashboard/tickets",
+      },
+      {
+        key: "referral",
+        label: "Referral Program",
+        icon: Users,
+        path: "/dashboard/referral",
+      },
+      {
+        key: "transaction-history",
+        label: "Transactions History",
+        icon: RotateCcw,
+        path: "/dashboard/transaction-history",
+      },
+      // { key: "balance-history", label: "Balance History", icon: FileText, path: "/dashboard/balance-history" },
+      // { key: "payouts", label: "Payouts", icon: DollarSign, path: "/dashboard/payouts" },
+      // { key: "manual-transactions", label: "Manual Transactions", icon: SlidersHorizontal, path: "/dashboard/manual-transactions" },
+      {
+        key: "profile",
+        label: "Profile",
+        icon: User,
+        path: "/dashboard/profile",
+      },
       { key: "sign-out", label: "Sign out", icon: LogOut },
     ],
-    []
+    [],
   );
 
   const sidebarItems = items || defaultItems;
