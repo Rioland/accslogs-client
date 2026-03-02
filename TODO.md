@@ -1,9 +1,8 @@
-# TODO: Create Sell Account Flow
+# Purchase & Orders Feature - TODO
 
-- [x] Add "Sell Account" menu item to dashboard sidebar
-- [x] Create app/dashboard/sell/page.tsx with SellAccountForm component
-- [x] Create table for seller_accounts in database.sql
-- [x] Modify SellAccountForm to support multiple accounts per product
-- [x] Add CRUD API for sell accounts (/api/admin/sell-accounts)
-- [x] Add "Manage Sell Accounts" to admin sidebar
-- [x] Create manage page at /admin/manage-sell-accounts
+## Steps
+
+- [x] 1. Append `purchase_product` RPC function to `client/database.sql`
+- [x] 2. Update `client/app/components/ProductCheckoutCard.tsx` — add payment handler, auth check, balance check, loading/error/success states
+- [x] 3. Fix `client/app/market-place/[id]/page.tsx` — pass correct `productId={product.id}` instead of `0`
+- [x] 4. Create `client/app/dashboard/my-orders/page.tsx` — orders page with sidebar, order summary + account credentials

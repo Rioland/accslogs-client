@@ -506,4 +506,92 @@ using (auth.uid() = buyer_id);
 
 commit;
 
+-- 15) purchase_product RPC — atomic purchase: check balance, deduct, create order, assign accounts
+create or replace function public.purchase_product(
+  p_product_id bigint,
+  p_quantity    int,
+  p_grand_total numeric
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id        uuid    := auth.uid();
+  v_funds          numeric;
+  v_order_id       bigint;
+  v_assigned_count int;
+begin
+  -- Must be authenticated
+  if v_user_id is null then
+    return jsonb_build_object('success', false, 'error', 'Not authenticated');
+  end if;
+
+  -- Lock the profile row and read current funds
+  select funds
+    into v_funds
+    from public.profiles
+   where id = v_user_id
+     for update;
+
+  if not found then
+    return jsonb_build_object('success', false, 'error', 'Profile not found');
+  end if;
+
+  -- Check sufficient balance
+  if v_funds < p_grand_total then
+    return jsonb_build_object('success', false, 'error', 'Insufficient balance');
+  end if;
+
+  -- Check enough unassigned accounts exist
+  select count(*)
+    into v_assigned_count
+    from public.seller_product_accounts
+   where product_id = p_product_id
+     and buyer_id is null;
+
+  if v_assigned_count < p_quantity then
+    return jsonb_build_object('success', false, 'error', 'Not enough accounts in stock');
+  end if;
+
+  -- Deduct funds
+  update public.profiles
+     set funds = funds - p_grand_total
+   where id = v_user_id;
+
+  -- Create order (status = completed immediately after payment)
+  insert into public.product_orders
+    (user_id, product_id, quantity, grand_total, status)
+  values
+    (v_user_id, p_product_id, p_quantity, p_grand_total, 'completed')
+  returning id into v_order_id;
+
+  -- Assign accounts to buyer (skip locked rows to avoid race conditions)
+  with accounts_to_assign as (
+    select id
+      from public.seller_product_accounts
+     where product_id = p_product_id
+       and buyer_id is null
+     limit p_quantity
+       for update skip locked
+  )
+  update public.seller_product_accounts spa
+     set buyer_id = v_user_id
+    from accounts_to_assign a
+   where spa.id = a.id;
+
+  get diagnostics v_assigned_count = row_count;
+
+  return jsonb_build_object(
+    'success',          true,
+    'order_id',         v_order_id,
+    'accounts_assigned', v_assigned_count
+  );
+end;
+$$;
+
+-- Grant execute to authenticated users
+grant execute on function public.purchase_product(bigint, int, numeric) to authenticated;
+
 -- end of profile here

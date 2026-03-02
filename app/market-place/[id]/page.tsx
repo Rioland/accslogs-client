@@ -79,10 +79,12 @@ export default function ClientProductDetailPage() {
       {!loading && !error && product && (
         <div className="container mx-auto px-4 py-8">
           <ProductCheckoutCard
+            productId={product.id}
             title={product.name}
             price={product.price}
             stock={product.seller_product_accounts?.[0]?.count ?? 0}
-            description={product.description} productId={0}          />
+            description={product.description}
+          />
         </div>
       )}
 
