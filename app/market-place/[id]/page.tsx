@@ -13,6 +13,7 @@ import ProductCheckoutCard from "@/app/components/ProductCheckoutCard";
 export default function ClientProductDetailPage() {
   const params = useParams();
   const [product, setProduct] = useState<SellerProduct | null>(null);
+  const [availableStock, setAvailableStock] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,19 +30,31 @@ export default function ClientProductDetailPage() {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
+      // Fetch product details
+      const { data, error: productError } = await supabase
         .from("seller_products")
-        .select(`*, seller_product_accounts(count)`)
+        .select("*")
         .eq("id", id)
         .single();
 
-      if (error) {
+      if (productError) {
         setError("Failed to load product details");
         return;
       }
 
       setProduct(data);
-    } catch (err) {
+
+      // Count only unassigned accounts (buyer_id is null = available stock)
+      const { count, error: stockError } = await supabase
+        .from("seller_product_accounts")
+        .select("*", { count: "exact", head: true })
+        .eq("product_id", id)
+        .is("buyer_id", null);
+
+      if (!stockError) {
+        setAvailableStock(count ?? 0);
+      }
+    } catch {
       setError("Failed to load product details");
     } finally {
       setLoading(false);
@@ -82,7 +95,7 @@ export default function ClientProductDetailPage() {
             productId={product.id}
             title={product.name}
             price={product.price}
-            stock={product.seller_product_accounts?.[0]?.count ?? 0}
+            stock={availableStock}
             description={product.description}
           />
         </div>
