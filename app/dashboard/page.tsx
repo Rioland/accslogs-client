@@ -26,6 +26,8 @@ export default function DashboardPage() {
   const [activeKey, setActiveKey] = useState<string>(tabs[0].key);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [orderCount, setOrderCount] = useState<number>(0);
+  const [openTicketCount, setOpenTicketCount] = useState<number>(0);
+  const [closedTicketCount, setClosedTicketCount] = useState<number>(0);
   const [userName, setUserName] = useState<string>("");
   const router = useRouter();
 
@@ -51,12 +53,30 @@ export default function DashboardPage() {
       }
 
       // Fetch real order count for current user
-      const { count } = await supabaseClient
+      const { count: orders } = await supabaseClient
         .from("product_orders")
         .select("*", { count: "exact", head: true })
         .eq("user_id", session.user.id);
 
-      setOrderCount(count ?? 0);
+      setOrderCount(orders ?? 0);
+
+      // Fetch open tickets count
+      const { count: openCount } = await supabaseClient
+        .from("tickets")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id)
+        .in("status", ["open", "in_progress"]);
+
+      setOpenTicketCount(openCount ?? 0);
+
+      // Fetch closed tickets count
+      const { count: closedCount } = await supabaseClient
+        .from("tickets")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id)
+        .eq("status", "closed");
+
+      setClosedTicketCount(closedCount ?? 0);
     };
 
     fetchDashboardData();
@@ -177,13 +197,13 @@ export default function DashboardPage() {
                 {
                   title: "Open Tickets",
                   icon: "🎟️",
-                  value: 0,
+                  value: openTicketCount,
                   href: "/dashboard/tickets",
                 },
                 {
-                  title: "Close Tickets",
+                  title: "Closed Tickets",
                   icon: "✔️",
-                  value: 0,
+                  value: closedTicketCount,
                   href: "/dashboard/tickets",
                 },
               ].map((c) => (
