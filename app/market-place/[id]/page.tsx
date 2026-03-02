@@ -82,8 +82,7 @@ export default function ClientProductDetailPage() {
             title={product.name}
             price={product.price}
             stock={product.seller_product_accounts?.[0]?.count ?? 0}
-            description={product.description}
-          />
+            description={product.description} productId={0}          />
         </div>
       )}
 

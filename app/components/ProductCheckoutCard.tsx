@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import RichTextRenderer from "./RichTextRenderer";
-
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 interface ProductCheckoutCardProps {
   productId: number;
   title: string;
@@ -113,8 +113,24 @@ export default function ProductCheckoutCard({
           Product Description
         </div>
 
+        {/* <div className="p-4 text-gray-700">
+          <RichTextRenderer
+            content={description}
+          
+            readOnly={true}
+            theme="snow"
+            modules={{ toolbar: false }}
+          />
+         
+        </div> */}
+
         <div className="p-4 text-gray-700">
-          <RichTextRenderer content={description} />
+          <ReactQuill
+            value={description || ""}
+            readOnly={true}
+            theme="snow"
+            modules={{ toolbar: false }}
+          />
         </div>
       </div>
     </div>
