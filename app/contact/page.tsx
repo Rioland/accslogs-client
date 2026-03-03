@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import TopBar from "../components/TopBar";
 import Footer from "../components/Footer";
 import { Mail, Send, CheckCircle2 } from "lucide-react";
+import AnimatedSection from "../components/AnimatedSection";
 
 const Navbar2 = dynamic(() => import("../components/Navbar2"), { ssr: false });
 
@@ -77,6 +78,9 @@ const socialLinks = [
   },
 ];
 
+const socialDelays = [0, 100, 200, 300] as const;
+const infoDelays = [0, 200, 400] as const;
+
 /* ------------------------------------------------------------------ */
 /*  Contact Form                                                        */
 /* ------------------------------------------------------------------ */
@@ -109,7 +113,6 @@ function ContactForm() {
     setSubmitting(true);
     setError(null);
 
-    // Simulate submission (replace with actual API call / Supabase insert if needed)
     await new Promise((res) => setTimeout(res, 1200));
 
     setSubmitting(false);
@@ -237,7 +240,11 @@ export default function ContactPage() {
       <Navbar2 onSelectCategory={handleSelectCategory} />
 
       {/* Hero */}
-      <div className="bg-gradient-to-br from-[#194572] to-[#1e5490] py-14 px-4 text-center">
+      <AnimatedSection
+        animation="fade-down"
+        threshold={0.1}
+        className="bg-gradient-to-br from-[#194572] to-[#1e5490] py-14 px-4 text-center"
+      >
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
           Contact Us
         </h1>
@@ -245,63 +252,75 @@ export default function ContactPage() {
           Have a question or need support? We&apos;re here to help. Reach out
           through any of our channels below.
         </p>
-      </div>
+      </AnimatedSection>
 
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-12 space-y-12">
         {/* Social / Contact Channels */}
         <section>
-          <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
-            Reach Us On
-          </h2>
+          <AnimatedSection animation="fade-down" className="text-center mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Reach Us On</h2>
+          </AnimatedSection>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {socialLinks.map((link) => (
-              <a
+            {socialLinks.map((link, i) => (
+              <AnimatedSection
                 key={link.name}
-                href={link.href}
-                target={link.href.startsWith("mailto") ? "_self" : "_blank"}
-                rel="noopener noreferrer"
-                className={`flex flex-col items-center gap-3 rounded-2xl ${link.color} ${link.hoverColor} p-6 text-center transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5`}
+                animation="fade-up"
+                delay={socialDelays[i]}
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20">
-                  {link.icon}
-                </div>
-                <div>
-                  <p className={`font-bold text-base ${link.textColor}`}>
-                    {link.name}
-                  </p>
-                  <p className={`text-xs mt-0.5 opacity-85 ${link.textColor}`}>
-                    {link.description}
-                  </p>
-                </div>
-              </a>
+                <a
+                  href={link.href}
+                  target={link.href.startsWith("mailto") ? "_self" : "_blank"}
+                  rel="noopener noreferrer"
+                  className={`flex flex-col items-center gap-3 rounded-2xl ${link.color} ${link.hoverColor} p-6 text-center transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5`}
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20">
+                    {link.icon}
+                  </div>
+                  <div>
+                    <p className={`font-bold text-base ${link.textColor}`}>
+                      {link.name}
+                    </p>
+                    <p
+                      className={`text-xs mt-0.5 opacity-85 ${link.textColor}`}
+                    >
+                      {link.description}
+                    </p>
+                  </div>
+                </a>
+              </AnimatedSection>
             ))}
           </div>
         </section>
 
         {/* Divider */}
-        <div className="flex items-center gap-4">
+        <AnimatedSection
+          animation="fade-up"
+          className="flex items-center gap-4"
+        >
           <div className="flex-1 h-px bg-gray-300" />
           <span className="text-sm text-gray-500 font-medium">
             Or send us a message
           </span>
           <div className="flex-1 h-px bg-gray-300" />
-        </div>
+        </AnimatedSection>
 
         {/* Contact Form */}
-        <section>
-          <div className="bg-white rounded-2xl shadow-[0_6px_24px_rgba(0,0,0,0.08)] border border-gray-200 p-6 md:p-10 max-w-2xl mx-auto">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                Send a Message
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Fill out the form below and we&apos;ll get back to you within 24
-                hours.
-              </p>
+        <AnimatedSection animation="fade-up" delay={100}>
+          <section>
+            <div className="bg-white rounded-2xl shadow-[0_6px_24px_rgba(0,0,0,0.08)] border border-gray-200 p-6 md:p-10 max-w-2xl mx-auto">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Send a Message
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Fill out the form below and we&apos;ll get back to you within
+                  24 hours.
+                </p>
+              </div>
+              <ContactForm />
             </div>
-            <ContactForm />
-          </div>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Quick info strip */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
@@ -321,17 +340,20 @@ export default function ContactPage() {
               title: "Secure",
               desc: "Your data is always protected",
             },
-          ].map((item) => (
-            <div
+          ].map((item, i) => (
+            <AnimatedSection
               key={item.title}
-              className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5"
+              animation="zoom-in"
+              delay={infoDelays[i]}
             >
-              <div className="text-3xl mb-2">{item.icon}</div>
-              <p className="font-semibold text-gray-800 text-sm">
-                {item.title}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
-            </div>
+              <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5">
+                <div className="text-3xl mb-2">{item.icon}</div>
+                <p className="font-semibold text-gray-800 text-sm">
+                  {item.title}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+              </div>
+            </AnimatedSection>
           ))}
         </section>
       </div>

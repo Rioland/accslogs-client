@@ -9,6 +9,7 @@ import SocialMediaAcquisition from "../components/SocialMediaAcquisition";
 import TableCardHeader from "../components/TableCardHeader";
 import TopBar from "../components/TopBar";
 import WarningModal from "../components/WarningModal";
+import AnimatedSection from "../components/AnimatedSection";
 import { supabase } from "@/lib/supabaseClient";
 import { SellerProduct } from "@/types/callabelTypes";
 
@@ -135,14 +136,21 @@ export default function MarketPlace() {
 
       {!loading &&
         !error &&
-        Object.entries(groupedProducts).map(([category, items]) => (
-          <TableCardHeader
+        Object.entries(groupedProducts).map(([category, items], index) => (
+          <AnimatedSection
             key={category}
-            title={category}
-            products={items}
-            className="mt-8"
-            onBuyClick={handleBuyClick}
-          />
+            animation="fade-up"
+            delay={
+              index < 6 ? ([0, 100, 200, 300, 400, 500] as const)[index] : 0
+            }
+          >
+            <TableCardHeader
+              title={category}
+              products={items}
+              className="mt-8"
+              onBuyClick={handleBuyClick}
+            />
+          </AnimatedSection>
         ))}
       <div className="my-10" />
 

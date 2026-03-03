@@ -1,16 +1,31 @@
+"use client";
+
 import React from "react";
 import Wrapper from "../Wrapper";
+import AnimatedSection from "../AnimatedSection";
 
 interface AboutSectionProps {
   className?: string;
 }
 
+const stats = [
+  { value: "100%", label: "Satisfaction" },
+  { value: "Instant", label: "Delivery" },
+  { value: "Secure", label: "Accounts" },
+  { value: "24/7", label: "Support" },
+];
+
+const delays = [0, 100, 200, 300] as const;
+
 const TopCard: React.FC<AboutSectionProps> = () => {
   return (
     <Wrapper>
-      <div className="min-w-full md:min-w-7xl bg-white rounded-lg shadow-lg   my-10 p-8 md:p-12 lg:p-16">
+      <div className="min-w-full md:min-w-7xl bg-white rounded-lg shadow-lg my-10 p-8 md:p-12 lg:p-16">
         {/* Header / Title */}
-        <div className="text-center mb-12 md:mb-16">
+        <AnimatedSection
+          animation="fade-down"
+          className="text-center mb-12 md:mb-16"
+        >
           <h1
             className="
               text-4xl sm:text-5xl md:text-6xl lg:text-7xl 
@@ -23,13 +38,13 @@ const TopCard: React.FC<AboutSectionProps> = () => {
           </h1>
 
           <div className="mt-6 text-xl sm:text-2xl font-semibold text-[#F87D1F]">
-            Your Instant, Reliable Source for Premium Social Media & Digital
+            Your Instant, Reliable Source for Premium Social Media &amp; Digital
             Accounts
           </div>
-        </div>
+        </AnimatedSection>
 
         {/* Main Content */}
-        <div className="">
+        <AnimatedSection animation="fade-up" delay={200}>
           <div className="prose prose-lg md:prose-xl lg:prose-2xl prose-gray mx-auto text-center">
             <p className="text-gray-700 leading-relaxed mb-8">
               At Topnotchlogs, we empower individuals and businesses with
@@ -54,42 +69,24 @@ const TopCard: React.FC<AboutSectionProps> = () => {
             </p>
           </div>
 
-          {/* Optional subtle stats or trust badges - can be removed if not needed */}
+          {/* Stats */}
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-[#F87D1F]">
-                100%
-              </div>
-              <div className="text-sm md:text-base text-gray-600 mt-1">
-                Satisfaction
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-[#F87D1F]">
-                Instant
-              </div>
-              <div className="text-sm md:text-base text-gray-600 mt-1">
-                Delivery
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-[#F87D1F]">
-                Secure
-              </div>
-              <div className="text-sm md:text-base text-gray-600 mt-1">
-                Accounts
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-[#F87D1F]">
-                24/7
-              </div>
-              <div className="text-sm md:text-base text-gray-600 mt-1">
-                Support
-              </div>
-            </div>
+            {stats.map((stat, i) => (
+              <AnimatedSection
+                key={stat.label}
+                animation="zoom-in"
+                delay={delays[i]}
+              >
+                <div className="text-3xl md:text-4xl font-bold text-[#F87D1F]">
+                  {stat.value}
+                </div>
+                <div className="text-sm md:text-base text-gray-600 mt-1">
+                  {stat.label}
+                </div>
+              </AnimatedSection>
+            ))}
           </div>
-        </div>
+        </AnimatedSection>
       </div>
     </Wrapper>
   );

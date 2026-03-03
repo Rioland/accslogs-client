@@ -1,8 +1,17 @@
-# Purchase & Orders Feature - TODO
+# Scroll Animation Implementation
 
 ## Steps
 
-- [x] 1. Append `purchase_product` RPC function to `client/database.sql`
-- [x] 2. Update `client/app/components/ProductCheckoutCard.tsx` — add payment handler, auth check, balance check, loading/error/success states
-- [x] 3. Fix `client/app/market-place/[id]/page.tsx` — pass correct `productId={product.id}` instead of `0`
-- [x] 4. Create `client/app/dashboard/my-orders/page.tsx` — orders page with sidebar, order summary + account credentials
+- [x] Plan approved
+- [ ] 1. Add animation keyframes & smooth scroll to globals.css
+- [ ] 2. Create useScrollAnimation hook
+- [ ] 3. Create AnimatedSection component
+- [ ] 4. Animate PremiumAccountsHero component
+- [ ] 5. Animate FeatureCard (WhyChooseSection) component
+- [ ] 6. Animate StepsSection component
+- [ ] 7. Animate TestimonialsSection component
+- [ ] 8. Animate About/TopCard component
+- [ ] 9. Animate About/WhyChooseAccsLogs component
+- [ ] 10. Animate contact/page.tsx
+- [ ] 11. Animate faq/page.tsx
+- [ ] 12. Animate market-place/page.tsx

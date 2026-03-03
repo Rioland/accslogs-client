@@ -1,6 +1,9 @@
+"use client";
+
 import { Facebook, Instagram } from "iconsax-reactjs";
 import { ShieldCheck, Twitter } from "lucide-react";
 import React from "react";
+import AnimatedSection from "./AnimatedSection";
 
 const PlatformCard: React.FC<{
   icon: React.ReactNode;
@@ -17,11 +20,11 @@ const PremiumAccountsHero: React.FC = () => {
     <section className="w-full bg-[#f3f1ef] py-16 px-6 md:px-12 lg:px-20">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
         {/* Left Content */}
-        <div>
+        <AnimatedSection animation="fade-left" threshold={0.1}>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-teal-800">
             Premium Social Accounts
             <span className="block text-[#F87D1F]">
-              Verified & Ready to Use
+              Verified &amp; Ready to Use
             </span>
           </h1>
 
@@ -40,10 +43,15 @@ const PremiumAccountsHero: React.FC = () => {
               How It Works
             </button>
           </div>
-        </div>
+        </AnimatedSection>
 
         {/* Right Card */}
-        <div className="relative flex justify-center md:justify-end">
+        <AnimatedSection
+          animation="fade-right"
+          delay={200}
+          threshold={0.1}
+          className="relative flex justify-center md:justify-end"
+        >
           <div className="relative bg-white rounded-2xl shadow-lg p-6 w-80">
             {/* Verified Badge */}
             <div className="absolute -top-5 right-4 bg-teal-700 text-white text-sm px-4 py-1 rounded-full shadow">
@@ -88,7 +96,7 @@ const PremiumAccountsHero: React.FC = () => {
               <p>Secure Transactions</p>
             </div>
           </div>
-        </div>
+        </AnimatedSection>
       </div>
     </section>
   );
