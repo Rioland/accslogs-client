@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --brand-blue: #194572;
+  --brand-orange: #F87D1F;
 }
 
 @theme inline {

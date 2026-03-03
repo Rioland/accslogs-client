@@ -84,13 +84,13 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
   return (
     <aside className="w-full md:w-[320px] md:shrink-0 p-4 md:sticky md:top-0 md:h-screen">
       {/* Funds header */}
-      <div className="rounded-xl bg-neutral-800 text-white shadow-md">
+      <div className="rounded-xl bg-[#194572] text-white shadow-md">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="text-sm opacity-85">Total Funds:</div>
           <div className="text-sm font-semibold">$ 0.00</div>
           <button
             type="button"
-            className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-amber-500 hover:bg-amber-600 transition-colors"
+            className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#F87D1F] hover:bg-[#e06b10] transition-colors"
             aria-label="Add funds"
             onClick={(e) => e.preventDefault()}
           >
@@ -113,8 +113,8 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
                   className={[
                     "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors",
                     isActive
-                      ? "bg-amber-500/90 text-white"
-                      : "text-gray-700 hover:bg-amber-50 hover:text-gray-900",
+                      ? "bg-[#F87D1F] text-white"
+                      : "text-gray-700 hover:bg-orange-50 hover:text-[#F87D1F]",
                   ].join(" ")}
                   aria-current={isActive ? "page" : undefined}
                 >
@@ -134,8 +134,8 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
                   className={[
                     "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors",
                     isActive
-                      ? "bg-amber-500/90 text-white"
-                      : "text-gray-700 hover:bg-amber-50 hover:text-gray-900",
+                      ? "bg-[#F87D1F] text-white"
+                      : "text-gray-700 hover:bg-orange-50 hover:text-[#F87D1F]",
                   ].join(" ")}
                   aria-current={isActive ? "page" : undefined}
                 >

@@ -18,7 +18,7 @@ export default function FooterLinks() {
           <li key={link.label}>
             <a
               href={link.href}
-              className="hover:text-orange-500 transition"
+              className="hover:text-[#F87D1F] transition-colors"
             >
               › {link.label}
             </a>

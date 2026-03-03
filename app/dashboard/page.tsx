@@ -171,7 +171,7 @@ export default function DashboardPage() {
 
           <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="text-amber-600 font-semibold">
+              <div className="text-[#F87D1F] font-semibold">
                 Hello, {userName || "…"}!
               </div>
               <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                 </span>
                 <label className="inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:block after:w-5 after:h-5 after:bg-white after:rounded-full after:shadow after:transition peer-checked:bg-amber-500" />
+                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:block after:w-5 after:h-5 after:bg-white after:rounded-full after:shadow after:transition peer-checked:bg-[#F87D1F]" />
                 </label>
               </div>
             </div>
@@ -210,9 +210,9 @@ export default function DashboardPage() {
                 <a
                   key={c.title}
                   href={c.href}
-                  className="rounded-xl border border-amber-300/60 bg-white p-5 md:p-6 shadow-[0_6px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.10)] transition-shadow"
+                  className="rounded-xl border border-[#F87D1F]/30 bg-white p-5 md:p-6 shadow-[0_6px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.10)] transition-shadow"
                 >
-                  <div className="flex flex-col items-center justify-center gap-2 text-amber-600">
+                  <div className="flex flex-col items-center justify-center gap-2 text-[#F87D1F]">
                     <div className="text-2xl md:text-3xl" aria-hidden>
                       {c.icon}
                     </div>

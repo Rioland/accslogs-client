@@ -13,10 +13,10 @@ export default function Footer() {
           <NewsletterForm />
         </div>
       </Wrapper>
-      <div className="bg-black ">
+      <div className="bg-[#194572]">
         <Wrapper>
           <div className="flex flex-col md:flex-row justify-between items-center py-5 text-white text-sm">
-            <p>© 2026Topnotchlogs. All rights reserved.</p>
+            <p>© 2026 Topnotchlogs. All rights reserved.</p>
             <p>Developed by riotech</p>
             <p>Copying is prohibited!</p>
           </div>

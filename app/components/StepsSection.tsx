@@ -17,13 +17,13 @@ const StepCard: React.FC<StepCardProps> = ({
   return (
     <div className="relative flex flex-col items-center text-center">
       {/* Icon Circle */}
-      <div className="z-10 w-20 h-20 rounded-full border-4 border-orange-500 bg-white flex items-center justify-center text-orange-500 shadow-sm">
+      <div className="z-10 w-20 h-20 rounded-full border-4 border-[#F87D1F] bg-white flex items-center justify-center text-[#F87D1F] shadow-sm">
         {icon}
       </div>
 
       {/* Card */}
       <div className="bg-white rounded-2xl shadow-md p-6 mt-6 w-full max-w-xs">
-        <p className="text-orange-500 font-semibold mb-1">{step}</p>
+        <p className="text-[#F87D1F] font-semibold mb-1">{step}</p>
 
         <h3 className="text-teal-800 font-semibold text-lg mb-2">{title}</h3>
 
@@ -51,7 +51,7 @@ const StepsSection: React.FC = () => {
         {/* Steps */}
         <div className="relative grid md:grid-cols-4 gap-10">
           {/* Connecting Line (desktop) */}
-          <div className="hidden md:block absolute top-10 left-0 right-0 h-1 bg-orange-500/60 z-0" />
+          <div className="hidden md:block absolute top-10 left-0 right-0 h-1 bg-[#F87D1F]/60 z-0" />
 
           <StepCard
             step="Step 1"

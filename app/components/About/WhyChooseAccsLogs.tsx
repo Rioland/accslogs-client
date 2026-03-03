@@ -14,7 +14,7 @@ export default function WhyChooseAccsZone() {
     <Wrapper>
       <section className="bg-gray-100 py-14 px-6 rounded-2xl shadow-lg mb-6 min-w-full md:min-w-7xl">
         {/* Title */}
-        <h2 className="text-2xl md:text-3xl font-bold text-center text-orange-500 mb-12">
+        <h2 className="text-2xl md:text-3xl font-bold text-center text-[#F87D1F] mb-12">
           Why Choose Topnotchlogs?
         </h2>
 

@@ -68,7 +68,7 @@ export default function Navbar2({ onSelectCategory }: Props) {
           />
           <div className="relative w-full md:w-max-content ">
             <div
-              className="bg-amber-500 text-white p-2  rounded-md hover:bg-amber-600 cursor-pointer flex flex-row gap-2 items-center justify-between"
+              className="bg-[#F87D1F] text-white p-2 rounded-md hover:bg-[#e06b10] cursor-pointer flex flex-row gap-2 items-center justify-between"
               onClick={() => setIsOpen(!isOpen)}
             >
               <div className="flex flex-row gap-2 items-center">

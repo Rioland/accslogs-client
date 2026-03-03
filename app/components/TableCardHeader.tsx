@@ -75,7 +75,7 @@ const TableCardHeader: React.FC<TableCardHeaderProps> = ({
 
                   <button
                     onClick={() => handleBuyClick(product.id)}
-                    className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition"
+                    className="px-5 py-2 bg-[#F87D1F] hover:bg-[#e06b10] text-white rounded-lg text-sm font-medium transition"
                   >
                     Buy
                   </button>

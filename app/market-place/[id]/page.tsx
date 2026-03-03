@@ -80,7 +80,7 @@ export default function ClientProductDetailPage() {
       <Navbar2 />
 
       {loading && (
-        <div className="flex justify-center py-10 text-gray-500">
+        <div className="flex justify-center py-10 text-gray-500 flex-1">
           Loading product details...
         </div>
       )}
@@ -90,7 +90,7 @@ export default function ClientProductDetailPage() {
       )}
 
       {!loading && !error && product && (
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 flex-1">
           <ProductCheckoutCard
             productId={product.id}
             title={product.name}

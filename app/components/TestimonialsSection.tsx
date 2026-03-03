@@ -16,7 +16,7 @@ const Stars: React.FC<{ rating: number }> = ({ rating }) => {
           key={i}
           size={16}
           className={
-            i < rating ? "text-orange-500 fill-orange-500" : "text-gray-300"
+            i < rating ? "text-[#F87D1F] fill-[#F87D1F]" : "text-gray-300"
           }
         />
       ))}

@@ -16,13 +16,13 @@ const TopCard: React.FC<AboutSectionProps> = () => {
               text-4xl sm:text-5xl md:text-6xl lg:text-7xl 
               font-extrabold tracking-tight
               bg-clip-text text-transparent 
-              bg-linear-to-r from-gray-900 via-amber-600 to-amber-700
+              bg-linear-to-r from-gray-900 via-[#194572] to-[#F87D1F]
             "
           >
             About Topnotchlogs
           </h1>
 
-          <div className="mt-6 text-xl sm:text-2xl font-semibold text-amber-700">
+          <div className="mt-6 text-xl sm:text-2xl font-semibold text-[#F87D1F]">
             Your Instant, Reliable Source for Premium Social Media & Digital
             Accounts
           </div>
@@ -44,10 +44,10 @@ const TopCard: React.FC<AboutSectionProps> = () => {
 
             <p className="text-gray-700 leading-relaxed">
               With a focus on{" "}
-              <span className="font-semibold text-amber-700">speed</span>,{" "}
-              <span className="font-semibold text-amber-700">security</span>,
+              <span className="font-semibold text-[#F87D1F]">speed</span>,{" "}
+              <span className="font-semibold text-[#F87D1F]">security</span>,
               and{" "}
-              <span className="font-semibold text-amber-700">
+              <span className="font-semibold text-[#F87D1F]">
                 100% customer satisfaction
               </span>
               , we&apos;re here to simplify your journey in the digital world.
@@ -57,7 +57,7 @@ const TopCard: React.FC<AboutSectionProps> = () => {
           {/* Optional subtle stats or trust badges - can be removed if not needed */}
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-amber-600">
+              <div className="text-3xl md:text-4xl font-bold text-[#F87D1F]">
                 100%
               </div>
               <div className="text-sm md:text-base text-gray-600 mt-1">
@@ -65,7 +65,7 @@ const TopCard: React.FC<AboutSectionProps> = () => {
               </div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-amber-600">
+              <div className="text-3xl md:text-4xl font-bold text-[#F87D1F]">
                 Instant
               </div>
               <div className="text-sm md:text-base text-gray-600 mt-1">
@@ -73,7 +73,7 @@ const TopCard: React.FC<AboutSectionProps> = () => {
               </div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-amber-600">
+              <div className="text-3xl md:text-4xl font-bold text-[#F87D1F]">
                 Secure
               </div>
               <div className="text-sm md:text-base text-gray-600 mt-1">
@@ -81,7 +81,7 @@ const TopCard: React.FC<AboutSectionProps> = () => {
               </div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-amber-600">
+              <div className="text-3xl md:text-4xl font-bold text-[#F87D1F]">
                 24/7
               </div>
               <div className="text-sm md:text-base text-gray-600 mt-1">

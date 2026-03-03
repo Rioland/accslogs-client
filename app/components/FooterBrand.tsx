@@ -6,9 +6,12 @@ export default function FooterBrand() {
       <p className="font-semibold mb-3">Customer Support</p>
 
       <div className="flex flex-col gap-3 max-w-xs">
-        <button className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm">
+        <a
+          href="/dashboard/tickets"
+          className="bg-[#194572] hover:bg-[#153a61] text-white px-4 py-2 rounded-md text-sm transition-colors inline-block"
+        >
           New Ticket / Ask a Question
-        </button>
+        </a>
       </div>
     </div>
   );

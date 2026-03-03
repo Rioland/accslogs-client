@@ -7,7 +7,7 @@ const PlatformCard: React.FC<{
   label: string;
 }> = ({ icon, label }) => (
   <div className="flex flex-col items-center justify-center gap-2 bg-gray-100 rounded-xl p-4 w-28 h-24">
-    <div className="text-orange-500 text-xl">{icon}</div>
+    <div className="text-[#F87D1F] text-xl">{icon}</div>
     <span className="text-sm font-medium text-gray-700">{label}</span>
   </div>
 );
@@ -20,7 +20,7 @@ const PremiumAccountsHero: React.FC = () => {
         <div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-teal-800">
             Premium Social Accounts
-            <span className="block text-orange-500">
+            <span className="block text-[#F87D1F]">
               Verified & Ready to Use
             </span>
           </h1>
@@ -32,7 +32,7 @@ const PremiumAccountsHero: React.FC = () => {
           </p>
 
           <div className="flex flex-wrap items-center gap-4 mt-8">
-            <button className="bg-orange-500 hover:bg-orange-600 transition text-white font-medium px-6 py-3 rounded-full shadow-md">
+            <button className="bg-[#F87D1F] hover:bg-[#e06b10] transition text-white font-medium px-6 py-3 rounded-full shadow-md">
               🛒 Browse Marketplace
             </button>
 
@@ -54,7 +54,7 @@ const PremiumAccountsHero: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 mt-4">
               <a href="https://www.instagram.com/topnotchlogs?iigsh=MTZ2bmpyb3QyaWc2Yw%3D%3D&utm_source=q">
                 <PlatformCard
-                  icon={<Instagram size="32" color="#FF8A65" />}
+                  icon={<Instagram size="32" color="#F87D1F" />}
                   label="Instagram"
                 />
               </a>
@@ -62,11 +62,11 @@ const PremiumAccountsHero: React.FC = () => {
                 <PlatformCard icon={<span>🎵</span>} label="TikTok" />
               </a>
               <PlatformCard
-                icon={<Twitter size="32" color="#FF8A65" />}
+                icon={<Twitter size="32" color="#F87D1F" />}
                 label="Twitter"
               />
               <PlatformCard
-                icon={<Facebook color="#FF8A65" variant="Outline" />}
+                icon={<Facebook color="#F87D1F" variant="Outline" />}
                 label="Facebook"
               />
             </div>
@@ -77,13 +77,13 @@ const PremiumAccountsHero: React.FC = () => {
                 Premium Accounts Available
               </p>
 
-              <div className="inline-block mt-3 bg-orange-100 text-orange-600 px-4 py-1 rounded-full text-sm font-medium">
+              <div className="inline-block mt-3 bg-orange-100 text-[#F87D1F] px-4 py-1 rounded-full text-sm font-medium">
                 500+ Verified Accounts
               </div>
             </div>
 
             {/* Secure Badge */}
-            <div className="absolute -bottom-5 left-6 bg-orange-500 text-white px-5 py-2 rounded-full shadow-md text-sm flex flex-row gap-2 items-center">
+            <div className="absolute -bottom-5 left-6 bg-[#F87D1F] text-white px-5 py-2 rounded-full shadow-md text-sm flex flex-row gap-2 items-center">
               <ShieldCheck size="32" color="#ffffff" />{" "}
               <p>Secure Transactions</p>
             </div>

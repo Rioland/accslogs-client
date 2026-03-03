@@ -124,7 +124,7 @@ export default function MarketPlace() {
       />
 
       {loading && (
-        <div className="flex justify-center py-10 text-gray-500">
+        <div className="flex justify-center py-10 text-gray-500 flex-1">
           Loading products...
         </div>
       )}
