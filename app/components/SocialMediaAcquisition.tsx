@@ -15,7 +15,7 @@ export default function SocialMediaAcquisition() {
             At{" "}
             <a
               href="https://Topnotchlogs.com"
-              className="text-blue-600 font-medium hover:underline"
+              className="text-[#194572] font-medium hover:underline"
             >
               Topnotchlogs.com
             </a>
@@ -67,7 +67,7 @@ export default function SocialMediaAcquisition() {
 
           {/* Why Choose */}
           <h2 className="text-lg font-semibold">
-            Why Choose <span className="text-blue-600">Topnotchlogs.com</span>?
+            Why Choose <span className="text-[#194572]">Topnotchlogs.com</span>?
           </h2>
 
           <ol className="list-decimal pl-5 space-y-4">
@@ -90,13 +90,13 @@ export default function SocialMediaAcquisition() {
               run-of-the-mill profiles. We craft each one meticulously, using
               our own proprietary methods to make them robust, secure, and ready
               for action. You&apos;ll feel the difference when you use an{" "}
-              <span className="text-blue-600">Topnotchlogs.com</span> account.
+              <span className="text-[#194572]">Topnotchlogs.com</span> account.
             </li>
 
             <li>
               <strong>Strong and Reliable:</strong> Our accounts are designed to
               withstand the rigors of the online world. With{" "}
-              <span className="text-blue-600">Topnotchlogs.com</span> accounts,
+              <span className="text-[#194572]">Topnotchlogs.com</span> accounts,
               you can confidently engage with your audience, market your
               products or services, and build your brand without any worries.
             </li>
@@ -126,8 +126,8 @@ export default function SocialMediaAcquisition() {
           {/* Closing */}
           <p>
             At{" "}
-            <span className="text-blue-600 font-medium">Topnotchlogs.com</span>,
-            we are more than just a marketplace for social media accounts; we
+            <span className="text-[#194572] font-medium">Topnotchlogs.com</span>
+            , we are more than just a marketplace for social media accounts; we
             are your partners in achieving online success. Whether you&apos;re
             an entrepreneur, influencer, marketer, or business owner, our
             accounts will empower you to take your online presence to the next
@@ -137,7 +137,7 @@ export default function SocialMediaAcquisition() {
           <p>
             Don&apos;t settle for subpar accounts that may compromise your
             online goals. Choose{" "}
-            <span className="text-blue-600 font-medium">Topnotchlogs.com</span>{" "}
+            <span className="text-[#194572] font-medium">Topnotchlogs.com</span>{" "}
             for strong, authentic, and reliable social media accounts that will
             set you up for success.
           </p>

@@ -112,7 +112,7 @@ export default function ProductCheckoutCard({
       <h2 className="text-xl font-semibold">{title}</h2>
 
       {/* Price Banner */}
-      <div className="bg-orange-500 text-white font-semibold rounded-md px-6 py-4">
+      <div className="bg-[#F87D1F] text-white font-semibold rounded-md px-6 py-4">
         Price for 1 Piece: ₦{price.toFixed(2)}
       </div>
 
@@ -138,7 +138,7 @@ export default function ProductCheckoutCard({
           />
         </div>
 
-        <button className="text-blue-600 hover:underline flex items-center gap-2">
+        <button className="text-[#194572] hover:underline flex items-center gap-2">
           🏷 Have a promo code?
         </button>
       </div>
@@ -172,7 +172,7 @@ export default function ProductCheckoutCard({
           />
           <span>
             I agree to the public offer and{" "}
-            <span className="text-blue-600 underline cursor-pointer">
+            <span className="text-[#194572] underline cursor-pointer">
               terms of use
             </span>
           </span>
