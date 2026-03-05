@@ -172,9 +172,12 @@ export default function ProductCheckoutCard({
           />
           <span>
             I agree to the public offer and{" "}
-            <span className="text-[#194572] underline cursor-pointer">
+            <a
+              href="/terms"
+              className="text-[#194572] underline cursor-pointer"
+            >
               terms of use
-            </span>
+            </a>
           </span>
         </label>
       </div>
