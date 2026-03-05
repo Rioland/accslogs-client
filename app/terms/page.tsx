@@ -5,6 +5,7 @@ import Navbar1 from "../components/Navbar1";
 import dynamic from "next/dynamic";
 import TopBar from "../components/TopBar";
 import Footer from "../components/Footer";
+import Wrapper from "../components/Wrapper";
 
 const Navbar2 = dynamic(() => import("../components/Navbar2"), { ssr: false });
 
@@ -20,7 +21,7 @@ export default function TermsPage() {
       <Navbar2 onSelectCategory={handleSelectCategory} />
 
       <div className="flex-1 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Wrapper >
           <div className="bg-white rounded-xl shadow-lg p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
               Terms and Conditions
@@ -177,13 +178,15 @@ export default function TermsPage() {
               </h2>
               <p className="mb-6">
                 If you have questions about this disclaimer or our services,
-                please contact us at support@Topnotchlogs.com. For secure
+                please contact us at <a href="mailto:support@topnotchlogs.com" className="text-[#194572] underline">
+                  support@topnotchlogs.com
+                </a>. For secure
                 communication, avoid sharing sensitive information via social
                 media.
               </p>
             </div>
           </div>
-        </div>
+        </Wrapper>
       </div>
 
       <Footer />
