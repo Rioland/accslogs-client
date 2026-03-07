@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Home,
@@ -17,6 +17,7 @@ import {
   LogOut,
   LucideIcon,
 } from "lucide-react";
+import supabaseClient from "@/lib/supabaseClient";
 
 interface SidebarItem {
   key: string;
@@ -32,6 +33,29 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
+  const [funds, setFunds] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchFunds = async () => {
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("funds")
+          .eq("id", session.user.id)
+          .single();
+
+        if (profile) {
+          setFunds(profile.funds || 0);
+        }
+      }
+    };
+
+    fetchFunds();
+  }, []);
+
   const defaultItems: SidebarItem[] = useMemo(
     () => [
       { key: "home", label: "Home", icon: Home, path: "/dashboard" },
@@ -87,7 +111,9 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
       <div className="rounded-xl bg-[#194572] text-white shadow-md">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="text-sm opacity-85">Total Funds:</div>
-          <div className="text-sm font-semibold">$ 0.00</div>
+          <div className="text-sm font-semibold">
+            ₦ {funds.toLocaleString()}
+          </div>
           <button
             type="button"
             className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#F87D1F] hover:bg-[#e06b10] transition-colors"
