@@ -10,6 +10,10 @@ create table if not exists public.profiles (
   first_name text not null,
   last_name text,
   referral_code text,
+  paystack_customer_id text,
+  dedicated_account_number text,
+  dedicated_account_name text,
+  dedicated_bank text,
   funds numeric(10,2) default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -18,6 +22,10 @@ create table if not exists public.profiles (
 comment on table public.profiles is 'Public profile data for users (1:1 with auth.users).';
 comment on column public.profiles.id is 'Matches auth.users.id';
 comment on column public.profiles.funds is 'User funds balance';
+comment on column public.profiles.paystack_customer_id is 'Paystack customer ID for linking dedicated virtual accounts';
+comment on column public.profiles.dedicated_account_number is 'Paystack dedicated virtual account number';
+comment on column public.profiles.dedicated_account_name is 'Paystack dedicated virtual account name';
+comment on column public.profiles.dedicated_bank is 'Bank name for the dedicated virtual account';
 
 -- 2) Maintain updated_at automatically
 create or replace function public.set_updated_at()

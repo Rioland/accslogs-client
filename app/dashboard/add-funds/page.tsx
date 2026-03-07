@@ -10,19 +10,14 @@ import dynamic from "next/dynamic";
 import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
+import { generatePaystackDedicatedAccount } from "@/lib/paystackServerActions";
 import toast from "react-hot-toast";
 
 const Navbar2 = dynamic(() => import("../../components/Navbar2"), {
   ssr: false,
 });
 
-const tabs = [
-  { key: "home", label: "home" },
-  { key: "add-funds", label: "add funds" },
-  { key: "my-orders", label: "my orders" },
-  { key: "tickets", label: "tickets" },
-  { key: "transaction-history", label: "transaction history" },
-];
+
 
 export default function AddFundsPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -31,7 +26,7 @@ export default function AddFundsPage() {
   const [accountName, setAccountName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const router = useRouter();
+  const router = useRouter()
 
   useEffect(() => {
     const fetchAccountDetails = async () => {
@@ -62,23 +57,21 @@ export default function AddFundsPage() {
   const handleGenerateAccount = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/paystack/generate-account", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setAccountNumber(data.account_number);
-        setAccountBank(data.account_bank);
-        setAccountName(data.account_name);
-        toast.success("Account number generated successfully!");
-      } else {
-        toast.error(data.error || "Failed to generate account number");
+      if (!session) {
+        router.push("/login");
+        return;
       }
+
+      const data = await generatePaystackDedicatedAccount(session.user.id);
+
+      setAccountNumber(data.accountNumber);
+      setAccountBank(data.accountBank);
+      setAccountName(data.accountName);
+      toast.success("Account number generated successfully!");
     } catch (error) {
       console.error("Error generating account:", error);
       toast.error("An error occurred while generating account number");

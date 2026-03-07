@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { generatePaystackDedicatedAccount } from "@/lib/paystackServerActions";
 
 const AdFundsPage = () => {
   const [accountNumber, setAccountNumber] = useState<string | null>(null);
@@ -11,15 +12,14 @@ const AdFundsPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/paystack/generate-account');
-      const data = await response.json();
-      if (response.ok) {
-        setAccountNumber(data.accountNumber);
-      } else {
-        setError(data.error || 'Failed to generate account number.');
-      }
+      const data = await generatePaystackDedicatedAccount();
+      setAccountNumber(data.accountNumber);
     } catch (error) {
-      setError('An unexpected error occurred.');
+      setError(
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -43,7 +43,7 @@ const AdFundsPage = () => {
           disabled={isLoading}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
-          {isLoading ? 'Generating...' : 'Generate Account Number'}
+          {isLoading ? "Generating..." : "Generate Account Number"}
         </button>
       )}
 

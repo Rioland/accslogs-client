@@ -7,11 +7,19 @@ begin;
 alter table public.profiles
   add column if not exists account_number text,
   add column if not exists account_bank text,
-  add column if not exists account_name text;
+  add column if not exists account_name text,
+  add column if not exists paystack_customer_id text,
+  add column if not exists dedicated_account_number text,
+  add column if not exists dedicated_account_name text,
+  add column if not exists dedicated_bank text;
 
 comment on column public.profiles.account_number is 'Paystack dedicated virtual account number';
 comment on column public.profiles.account_bank is 'Bank name for the virtual account';
 comment on column public.profiles.account_name is 'Account name for the virtual account';
+comment on column public.profiles.paystack_customer_id is 'Paystack customer ID for linking dedicated virtual accounts';
+comment on column public.profiles.dedicated_account_number is 'Paystack dedicated virtual account number';
+comment on column public.profiles.dedicated_account_name is 'Paystack dedicated virtual account name';
+comment on column public.profiles.dedicated_bank is 'Bank name for the dedicated virtual account';
 
 -- Create deposits table for transaction history
 create table if not exists public.deposits (
