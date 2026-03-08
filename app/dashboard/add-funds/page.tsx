@@ -10,14 +10,12 @@ import dynamic from "next/dynamic";
 import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
-import { generatePaystackDedicatedAccount } from "@/lib/paystackServerActions";
+import { generateKorapayDedicatedAccount } from "@/lib/KorapayServerActions";
 import toast from "react-hot-toast";
 
 const Navbar2 = dynamic(() => import("../../components/Navbar2"), {
   ssr: false,
 });
-
-
 
 export default function AddFundsPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -26,7 +24,7 @@ export default function AddFundsPage() {
   const [accountName, setAccountName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const router = useRouter()
+  const router = useRouter();
 
   useEffect(() => {
     const fetchAccountDetails = async () => {
@@ -66,7 +64,7 @@ export default function AddFundsPage() {
         return;
       }
 
-      const data = await generatePaystackDedicatedAccount(session.user.id);
+      const data = await generateKorapayDedicatedAccount(session.user.id);
 
       setAccountNumber(data.accountNumber);
       setAccountBank(data.accountBank);

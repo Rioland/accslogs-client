@@ -22,7 +22,7 @@ export default function TableOfContents() {
   ];
 
   return (
-    <div className="bg-gray-200 rounded-2xl shadow-md p-10">
+    <div className="bg-gray-100 rounded-2xl shadow-md p-10">
       <h2 className="text-3xl font-semibold text-orange-500 text-center mb-10">
         Table of Contents
       </h2>

@@ -173,7 +173,7 @@ export default function ProductCheckoutCard({
           <span>
             I agree to the public offer and{" "}
             <a
-              href="/terms"
+              href="/policy"
               className="text-[#194572] underline cursor-pointer"
             >
               terms of use

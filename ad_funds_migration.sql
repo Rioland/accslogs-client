@@ -3,23 +3,15 @@
 
 begin;
 
--- Add account_number to profiles (for Paystack dedicated virtual accounts)
+-- Add korapay_customer_id and account_reference to profiles (for Korapay dedicated virtual accounts)
 alter table public.profiles
-  add column if not exists account_number text,
-  add column if not exists account_bank text,
-  add column if not exists account_name text,
-  add column if not exists paystack_customer_id text,
-  add column if not exists dedicated_account_number text,
-  add column if not exists dedicated_account_name text,
-  add column if not exists dedicated_bank text;
+  add column if not exists korapay_customer_id text,
+  add column if not exists account_reference text,
 
-comment on column public.profiles.account_number is 'Paystack dedicated virtual account number';
-comment on column public.profiles.account_bank is 'Bank name for the virtual account';
-comment on column public.profiles.account_name is 'Account name for the virtual account';
-comment on column public.profiles.paystack_customer_id is 'Paystack customer ID for linking dedicated virtual accounts';
-comment on column public.profiles.dedicated_account_number is 'Paystack dedicated virtual account number';
-comment on column public.profiles.dedicated_account_name is 'Paystack dedicated virtual account name';
-comment on column public.profiles.dedicated_bank is 'Bank name for the dedicated virtual account';
+
+
+comment on column public.profiles.korapay_customer_id is 'Korapay customer ID for linking dedicated virtual accounts';
+comment on column public.profiles.account_reference is 'Korapay account reference for linking dedicated virtual accounts';
 
 -- Create deposits table for transaction history
 create table if not exists public.deposits (
@@ -28,12 +20,12 @@ create table if not exists public.deposits (
   amount numeric(10,2) not null,
   reference text not null unique,
   status text not null default 'pending' check (status in ('pending', 'successful', 'failed')),
-  paystack_data jsonb,
+  korapay_data jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-comment on table public.deposits is 'Deposit transactions via Paystack virtual accounts';
+comment on table public.deposits is 'Deposit transactions via Korapay virtual accounts';
 
 -- Maintain updated_at for deposits
 drop trigger if exists set_updated_at_deposits on public.deposits;

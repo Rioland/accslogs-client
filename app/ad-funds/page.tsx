@@ -1,19 +1,37 @@
 "use client";
 
 import React, { useState } from "react";
-import { generatePaystackDedicatedAccount } from "@/lib/paystackServerActions";
+import { generateKorapayDedicatedAccount } from "@/lib/KorapayServerActions";
+import supabaseClient from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 const AdFundsPage = () => {
   const [accountNumber, setAccountNumber] = useState<string | null>(null);
+  const [accountBank, setAccountBank] = useState<string>("");
+  const [accountName, setAccountName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+
+   const router = useRouter();
+
+  
 
   const generateAccountNumber = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await generatePaystackDedicatedAccount();
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+      const data = await generateKorapayDedicatedAccount(session.user.id);
       setAccountNumber(data.accountNumber);
+      setAccountBank(data.accountBank);
+      setAccountName(data.accountName);
     } catch (error) {
       setError(
         error instanceof Error
@@ -36,6 +54,8 @@ const AdFundsPage = () => {
         <div>
           <h2 className="text-2xl font-bold">Your Account Number:</h2>
           <p className="text-lg">{accountNumber}</p>
+          <p className="text-lg">{accountBank}</p>
+          <p className="text-lg">{accountName}</p>
         </div>
       ) : (
         <button

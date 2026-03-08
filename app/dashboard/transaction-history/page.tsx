@@ -23,13 +23,6 @@ interface Deposit {
   created_at: string;
 }
 
-const tabs = [
-  { key: "home", label: "home" },
-  { key: "add-funds", label: "add funds" },
-  { key: "my-orders", label: "my orders" },
-  { key: "tickets", label: "tickets" },
-  { key: "transaction-history", label: "transaction history" },
-];
 
 export default function TransactionHistoryPage() {
   const [mobileOpen, setMobileOpen] = useState(false);

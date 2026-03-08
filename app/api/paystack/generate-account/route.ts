@@ -3,9 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!
-const PAYSTACK_BASE_URL =
-  process.env.PAYSTACK_BASE_URL ?? 'https://api.paystack.co'
+const KORAPAY_SECRET_KEY = process.env.KORAPAY_SECRET_KEY!
+const KORAPAY_BASE_URL =
+  process.env.KORAPAY_BASE_URL ?? 'https://api.korapay.com/merchant/api/v1'
 
 export async function POST (request: NextRequest) {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -21,7 +21,7 @@ export async function POST (request: NextRequest) {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('paystack_customer_id, dedicated_account_number, email, full_name')
+    .select('korapay_customer_id, account_reference, email, first_name, last_name')
     .eq('id', user.id)
     .single()
 
@@ -30,26 +30,26 @@ export async function POST (request: NextRequest) {
   }
 
   // If user already has a dedicated account, return it.
-  if (profile.dedicated_account_number) {
+  if (profile.account_reference) {
     return NextResponse.json({
-      accountNumber: profile.dedicated_account_number
+      accountNumber: profile.account_reference
     })
   }
 
-  let customerId = profile.paystack_customer_id
+  let customerId = profile.korapay_customer_id
 
   if (!customerId) {
     // Create a new customer on Paystack
-    const response = await fetch(`${PAYSTACK_BASE_URL}/customer`, {
+    const response = await fetch(`${KORAPAY_BASE_URL}/customer`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${KORAPAY_SECRET_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         email: profile.email,
-        first_name: profile.full_name?.split(' ')[0],
-        last_name: profile.full_name?.split(' ').slice(1).join(' ')
+        first_name: profile.first_name,
+        last_name: profile.last_name
       })
     })
 
@@ -70,15 +70,15 @@ export async function POST (request: NextRequest) {
     // Save the customer ID in the user's profile
     await supabase
       .from('profiles')
-      .update({ paystack_customer_id: customerId })
+      .update({ korapay_customer_id: customerId })
       .eq('id', user.id)
   }
 
   // Create a new dedicated virtual account for the customer
-  const response = await fetch(`${PAYSTACK_BASE_URL}/dedicated_account`, {
+  const response = await fetch(`${KORAPAY_BASE_URL}/virtual-bank-account/${profile.account_reference}`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      Authorization: `Bearer ${KORAPAY_SECRET_KEY}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
