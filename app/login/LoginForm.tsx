@@ -88,8 +88,8 @@ export default function LoginForm() {
       {/* Header */}
       <div className="px-8 pt-10 pb-6 bg-linear-to-b from-white to-gray-50 text-center">
         <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-          <span className="text-gray-900">Topn</span>
-          <span className="text-amber-600">otch</span>
+          <span className="text-gray-900">Top</span>
+          <span className="text-amber-600">notch</span>
           <span className="text-gray-900">logs</span>
         </h1>
 
