@@ -52,8 +52,8 @@ const socialLinks = [
   },
   {
     name: "Email",
-    href: "mailto:support@topnotch.com",
-    description: "support@topnotch.com",
+    href: "mailto:support@topnotchlogs.com",
+    description: "support@topnotchlogs.com",
     color: "bg-[#F87D1F]",
     hoverColor: "hover:bg-[#e06b10]",
     textColor: "text-white",
