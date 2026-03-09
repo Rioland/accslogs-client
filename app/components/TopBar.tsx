@@ -1,4 +1,4 @@
-import { Send2 } from "iconsax-reactjs";
+import { Whatsapp } from "iconsax-reactjs";
 import React from "react";
 import Wrapper from "./Wrapper";
 
@@ -8,9 +8,9 @@ export default function TopBar() {
       <Wrapper>
         <div className="flex flex-row justify-start items-center ml-3 gap-2 md:gap-3">
           <p className="text-sm md:text-base">Topnotchlogs - Accounts store</p>
-          <Send2 size="32" color="#F87D1F" variant="Bold" />
+          <Whatsapp size="32" color="#F87D1F" variant="Bold" />
           <a
-            href=""
+            href="https://chat.whatsapp.com/ExDtiilSCUv6BL09xBaJQx"
             className="text-sm md:text-base text-[#F87D1F] hover:underline"
           >
             @Topnotchlogs1
