@@ -10,7 +10,10 @@ import dynamic from "next/dynamic";
 import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
-import { generateKorapayDedicatedAccount } from "@/lib/KorapayServerActions";
+import {
+  generateKorapayDedicatedAccount,
+  getKorapayDedicatedAccount,
+} from "@/lib/KorapayServerActions";
 import toast from "react-hot-toast";
 
 const Navbar2 = dynamic(() => import("../../components/Navbar2"), {
@@ -23,6 +26,7 @@ export default function AddFundsPage() {
   const [accountBank, setAccountBank] = useState<string>("");
   const [accountName, setAccountName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
 
@@ -36,17 +40,13 @@ export default function AddFundsPage() {
         return;
       }
 
-      const { data: profile } = await supabaseClient
-        .from("profiles")
-        .select("account_number, account_bank, account_name")
-        .eq("id", session.user.id)
-        .single();
-
-      if (profile) {
-        setAccountNumber(profile.account_number || "");
-        setAccountBank(profile.account_bank || "");
-        setAccountName(profile.account_name || "");
+      const account = await getKorapayDedicatedAccount(session.user.id);
+      if (account) {
+        setAccountNumber(account.accountNumber);
+        setAccountBank(account.accountBank);
+        setAccountName(account.accountName);
       }
+      setIsFetching(false);
     };
 
     fetchAccountDetails();
@@ -69,7 +69,7 @@ export default function AddFundsPage() {
       setAccountNumber(data.accountNumber);
       setAccountBank(data.accountBank);
       setAccountName(data.accountName);
-      toast.success("Account number generated successfully!");
+      toast.success("Account ready!");
     } catch (error) {
       console.error("Error generating account:", error);
       toast.error("An error occurred while generating account number");
@@ -189,7 +189,12 @@ export default function AddFundsPage() {
                 </p>
               </div>
 
-              {!accountNumber ? (
+              {isFetching ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F87D1F] mx-auto"></div>
+                  <p className="mt-3 text-gray-600">Loading account...</p>
+                </div>
+              ) : !accountNumber ? (
                 <div className="text-center">
                   <button
                     onClick={handleGenerateAccount}

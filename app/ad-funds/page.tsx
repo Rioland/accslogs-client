@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { generateKorapayDedicatedAccount } from "@/lib/KorapayServerActions";
+import React, { useState, useEffect } from "react";
+import {
+  generateKorapayDedicatedAccount,
+  getKorapayDedicatedAccount,
+} from "@/lib/KorapayServerActions";
 import supabaseClient from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
@@ -10,12 +13,30 @@ const AdFundsPage = () => {
   const [accountBank, setAccountBank] = useState<string>("");
   const [accountName, setAccountName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const router = useRouter();
 
-   const router = useRouter();
-
-  
+  useEffect(() => {
+    const fetchExisting = async () => {
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+      const account = await getKorapayDedicatedAccount(session.user.id);
+      if (account) {
+        setAccountNumber(account.accountNumber);
+        setAccountBank(account.accountBank);
+        setAccountName(account.accountName);
+      }
+      setIsFetching(false);
+    };
+    fetchExisting();
+  }, [router]);
 
   const generateAccountNumber = async () => {
     setIsLoading(true);
@@ -50,7 +71,9 @@ const AdFundsPage = () => {
         Generate a dedicated virtual account number to fund your account.
       </p>
 
-      {accountNumber ? (
+      {isFetching ? (
+        <p className="text-gray-600">Loading account...</p>
+      ) : accountNumber ? (
         <div>
           <h2 className="text-2xl font-bold">Your Account Number:</h2>
           <p className="text-lg">{accountNumber}</p>
