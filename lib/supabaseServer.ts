@@ -15,6 +15,15 @@ function requireEnv(name: string): string {
 const SUPABASE_URL = requireEnv('NEXT_PUBLIC_SUPABASE_URL');
 const SUPABASE_ANON_KEY = requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
+/** Server client with service role - bypasses RLS. Use only in server routes (e.g. webhooks). */
+export function getSupabaseAdminClient() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY');
+  return createClient(SUPABASE_URL, key, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}
+
 // For server usage, disable client-side auth features.
 export function getSupabaseServerClient() {
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
