@@ -88,23 +88,23 @@ export default function LoginForm() {
       {/* Header */}
       <div className="px-8 pt-10 pb-6 bg-linear-to-b from-white to-gray-50 text-center">
         <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-          <span className="text-gray-900">A</span>
-          <span className="text-amber-600">CCCS</span>
-          <span className="text-gray-900">Logis</span>
+          <span className="text-gray-900">Topn</span>
+          <span className="text-amber-600">otch</span>
+          <span className="text-gray-900">logs</span>
         </h1>
 
         <h2 className="mt-6 text-2xl font-bold text-gray-900">Login</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Sign in to your account
-        </p>
+        <p className="mt-2 text-sm text-gray-600">Sign in to your account</p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-6">
-
         {/* Email */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Email Address
           </label>
           <input
@@ -124,7 +124,10 @@ export default function LoginForm() {
 
         {/* Password */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Password
           </label>
           <input
@@ -149,28 +152,36 @@ export default function LoginForm() {
           className={`
             w-full py-3 px-6 font-medium text-white rounded-lg
             transition-all duration-200 shadow-md
-            ${isSubmitting || !email || !password
-              ? 'bg-amber-400 cursor-not-allowed' 
-              : 'bg-amber-600 hover:bg-amber-700 active:bg-amber-800'}
+            ${
+              isSubmitting || !email || !password
+                ? "bg-amber-400 cursor-not-allowed"
+                : "bg-amber-600 hover:bg-amber-700 active:bg-amber-800"
+            }
           `}
         >
-          {isSubmitting ? 'Signing in...' : 'Login'}
+          {isSubmitting ? "Signing in..." : "Login"}
         </button>
 
         {/* Links */}
         <div className="text-center space-y-3 text-sm">
-          <a href="/forgot-password" className="text-amber-700 hover:text-amber-800 hover:underline">
+          <a
+            href="/forgot-password"
+            className="text-amber-700 hover:text-amber-800 hover:underline"
+          >
             Forgot Password?
           </a>
 
           <div className="text-gray-600">
-            Don&apos;t have an account?{' '}
-            <a href="/signup" className="text-amber-700 hover:text-amber-800 font-medium hover:underline">
+            Don&apos;t have an account?{" "}
+            <a
+              href="/signup"
+              className="text-amber-700 hover:text-amber-800 font-medium hover:underline"
+            >
               Sign Up
             </a>
           </div>
         </div>
       </form>
     </div>
-  )
+  );
 }
