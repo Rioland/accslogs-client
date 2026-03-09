@@ -21,7 +21,7 @@ export default function TermsPage() {
       <Navbar2 onSelectCategory={handleSelectCategory} />
 
       <div className="flex-1 py-8">
-        <Wrapper >
+        <Wrapper>
           <div className="bg-white rounded-xl shadow-lg p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
               Terms and Conditions
@@ -113,7 +113,7 @@ export default function TermsPage() {
               </h2>
               <p className="mb-6">
                 All content on Topnotchlogs.com, including text, graphics,
-                logos, and software, is the property of Quickplugz.com or its
+                logos, and software, is the property of Topnotchlogs.com or its
                 licensors and is protected by copyright and trademark laws. You
                 may not reproduce, distribute, or modify our content without
                 prior written permission. If you list accounts containing
@@ -178,11 +178,15 @@ export default function TermsPage() {
               </h2>
               <p className="mb-6">
                 If you have questions about this disclaimer or our services,
-                please contact us at <a href="mailto:support@topnotchlogs.com" className="text-[#194572] underline">
+                please contact us at{" "}
+                <a
+                  href="mailto:support@topnotchlogs.com"
+                  className="text-[#194572] underline"
+                >
                   support@topnotchlogs.com
-                </a>. For secure
-                communication, avoid sharing sensitive information via social
-                media.
+                </a>
+                . For secure communication, avoid sharing sensitive information
+                via social media.
               </p>
             </div>
           </div>
