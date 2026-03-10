@@ -33,7 +33,7 @@ __turbopack_context__.s([
     ()=>TopBar
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/client/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$iconsax$2d$reactjs$2f$dist$2f$esm$2f$Send2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Send2$3e$__ = __turbopack_context__.i("[project]/client/node_modules/iconsax-reactjs/dist/esm/Send2.js [app-client] (ecmascript) <export default as Send2>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$iconsax$2d$reactjs$2f$dist$2f$esm$2f$Whatsapp$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Whatsapp$3e$__ = __turbopack_context__.i("[project]/client/node_modules/iconsax-reactjs/dist/esm/Whatsapp.js [app-client] (ecmascript) <export default as Whatsapp>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$2f$Wrapper$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/client/app/components/Wrapper.tsx [app-client] (ecmascript)");
 ;
 ;
@@ -53,7 +53,7 @@ function TopBar() {
                         lineNumber: 10,
                         columnNumber: 11
                     }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$iconsax$2d$reactjs$2f$dist$2f$esm$2f$Send2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Send2$3e$__["Send2"], {
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$iconsax$2d$reactjs$2f$dist$2f$esm$2f$Whatsapp$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Whatsapp$3e$__["Whatsapp"], {
                         size: "32",
                         color: "#F87D1F",
                         variant: "Bold"
@@ -63,7 +63,7 @@ function TopBar() {
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("a", {
-                        href: "",
+                        href: "https://chat.whatsapp.com/ExDtiilSCUv6BL09xBaJQx",
                         className: "text-sm md:text-base text-[#F87D1F] hover:underline",
                         children: "@Topnotchlogs1"
                     }, void 0, false, {

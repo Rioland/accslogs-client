@@ -6,7 +6,7 @@ type Props = {
 
 export default function TermsSection({ id, title, children }: Props) {
   return (
-    <div id={`section-${id}`} className="bg-gray-200 rounded-2xl shadow-md p-8">
+    <div id={`section-${id}`} className="bg-white rounded-2xl shadow-md p-8">
       <h3 className="text-2xl font-bold text-orange-500 mb-4">
         {id}. {title}
       </h3>

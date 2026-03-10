@@ -5,7 +5,7 @@ type Props = {
 
 export default function TermsHeader({ effectiveDate, lastUpdated }: Props) {
   return (
-    <div className="bg-gray-100 rounded-2xl shadow-md p-10 text-center">
+    <div className="bg-white rounded-2xl shadow-md p-10 text-center">
       <h1 className="text-4xl font-bold text-orange-500 mb-6">
         Terms & Conditions
       </h1>
