@@ -16,7 +16,9 @@ import TermsSection from "../components/TermsSection";
 import TermsBlock from "../components/terms/TermsBlock";
 import SubSectionCard from "../components/terms/SubSectionCard";
 import BulletList from "../components/terms/BulletList";
-
+import SupportCard from "../components/terms/SupportCard";
+import { MessageCircle } from "iconsax-reactjs";
+import { Mail } from "lucide-react";
 
 export default function Policy() {
   const handleSelectCategory = (category: any, subcategory: any) => {
@@ -231,6 +233,66 @@ export default function Policy() {
               items={[
                 "Our Privacy Policy governs data collection, use, and protection.",
                 "Buyer data is retained only as necessary for order fulfillment and legal compliance.",
+              ]}
+            />
+          </TermsBlock>
+          <br />
+
+          <TermsBlock number="10" title="Termination">
+            <dl>
+              <dt>Topnotchlogs.com reserves the right to:</dt>
+              <dd>
+                <BulletList
+                  items={[
+                    "Suspend or terminate Buyer access for violations of these Terms.",
+                    "Discontinue the Service or Website at any time without notice.",
+                  ]}
+                />
+              </dd>
+            </dl>
+          </TermsBlock>
+          <br />
+          <TermsBlock number="11" title="Contact Us">
+            <BulletList
+              items={[
+                "Mediation: Disputes shall first be resolved through good-faith negotiation or mediation.",
+              ]}
+            />
+          </TermsBlock>
+          <br />
+          <TermsBlock number="12" title="Amendments">
+            <BulletList
+              items={[
+                "Topnotchlogs may revise these Terms at any time. Continued use after changes constitutes acceptance. Users are responsible for reviewing Terms periodically.",
+              ]}
+            />
+          </TermsBlock>
+          <br />
+          <TermsBlock number="13" title="Contact Information">
+            <dl>
+              <dt>For questions or disputes:</dt>
+              <dd>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <SupportCard
+                    icon={<MessageCircle size={40} />}
+                    title="24/7 Support"
+                    description="Live chat via Topnotchlogs.com"
+                  />
+
+                  <SupportCard
+                    icon={<Mail size={40} />}
+                    title="Email"
+                    description="support@topnotchlogs.com"
+                  />
+                </div>
+              </dd>
+            </dl>
+          </TermsBlock>
+          <br />
+          <TermsBlock number="14" title="Entire Agreement">
+            <BulletList
+              items={[
+                "These Terms constitute the entire agreement between Topnotchlogs and the Buyer, superseding prior agreements or understandings.",
               ]}
             />
           </TermsBlock>
