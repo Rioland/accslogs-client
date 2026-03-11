@@ -7,24 +7,15 @@ const KORAPAY_BASE_URL =
   process.env.NEXT_PUBLIC_KORAPAY_BASE_URL ??
   "https://api.korapay.com/merchant/api/v1";
 
-// To avoid guessing the exact path, read it from env based on your
-// "Pay with bank transfer" API docs, e.g. "/bank-transfers".
-const KORAPAY_BANK_TRANSFER_PATH = process.env.KORAPAY_BANK_TRANSFER_PATH;
-
-if (!KORAPAY_BANK_TRANSFER_PATH) {
-  // eslint-disable-next-line no-console
-  console.warn(
-    "KORAPAY_BANK_TRANSFER_PATH is not set; configure it based on the Pay with Bank Transfer API endpoint.",
-  );
-}
+// Static path from Korapay docs: /charges/bank-transfer
+const KORAPAY_BANK_TRANSFER_PATH = "/charges/bank-transfer";
 
 export async function POST(req: Request) {
-  if (!KORAPAY_SECRET_KEY || !KORAPAY_BANK_TRANSFER_PATH) {
+  if (!KORAPAY_SECRET_KEY) {
     return NextResponse.json(
       {
         status: "error",
-        message:
-          "Korapay bank transfer is not configured. Please set KORAPAY_SECRET_KEY and KORAPAY_BANK_TRANSFER_PATH.",
+        message: "Korapay bank transfer is not configured on the server.",
       },
       { status: 500 },
     );

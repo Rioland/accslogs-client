@@ -33,6 +33,13 @@ export default function AddFundsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [bankAmount, setBankAmount] = useState<string>("");
+  const [bankAccountNumber, setBankAccountNumber] = useState<string>("");
+  const [bankAccountName, setBankAccountName] = useState<string>("");
+  const [bankBankName, setBankBankName] = useState<string>("");
+  const [bankReference, setBankReference] = useState<string>("");
+  const [bankExpiry, setBankExpiry] = useState<string>("");
+  const [isBankLoading, setIsBankLoading] = useState(false);
   const [payAmount, setPayAmount] = useState<string>("");
   const [isPaying, setIsPaying] = useState(false);
   const [isKorapayReady, setIsKorapayReady] = useState(false);
@@ -181,6 +188,69 @@ export default function AddFundsPage() {
       toast.error("An error occurred while initializing payment.");
     } finally {
       setIsPaying(false);
+    }
+  };
+
+  const handleBankTransferGenerate = async () => {
+    try {
+      const amountNumber = Number(bankAmount);
+      if (!bankAmount || Number.isNaN(amountNumber) || amountNumber <= 0) {
+        toast.error("Please enter a valid amount.");
+        return;
+      }
+
+      setIsBankLoading(true);
+
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+
+      const user = session.user;
+      const reference = `BT-${user.id}-${Date.now()}`;
+
+      const customerName =
+        (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) ||
+        user.email ||
+        "Customer";
+
+      const res = await fetch("/api/bank-transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: Math.floor(amountNumber),
+          reference,
+          userId: user.id,
+          email: user.email,
+          name: customerName,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || json.status !== "success") {
+        toast.error(json.message || "Failed to generate bank transfer account.");
+        return;
+      }
+
+      const bankAccount = json.bankAccount || {};
+
+      setBankAccountNumber(bankAccount.account_number || "");
+      setBankBankName(bankAccount.bank_name || "");
+      setBankAccountName(bankAccount.account_name || "");
+      setBankReference(json.reference || reference);
+      setBankExpiry(bankAccount.expiry_date_in_utc || "");
+
+      toast.success("Bank transfer account generated.");
+    } catch (error) {
+      console.error("Error generating bank transfer account:", error);
+      toast.error("An error occurred while generating bank transfer account.");
+    } finally {
+      setIsBankLoading(false);
     }
   };
 
@@ -437,6 +507,120 @@ export default function AddFundsPage() {
                   After a successful payment, your wallet balance and transaction history
                   will be updated automatically once we receive confirmation from Korapay.
                 </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
+            <div className="max-w-md mx-auto">
+              <div className="text-center mb-6">
+                <CreditCard className="h-12 w-12 text-[#0f766e] mx-auto mb-4" />
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                  Bank Transfer (One-Time Account)
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Generate a temporary bank account for a single transfer via Korapay.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Amount (NGN)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={bankAmount}
+                    onChange={(e) => setBankAmount(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                    placeholder="Enter amount you want to add"
+                  />
+                </div>
+
+                <button
+                  onClick={handleBankTransferGenerate}
+                  disabled={
+                    isBankLoading ||
+                    !bankAmount ||
+                    Number.isNaN(Number(bankAmount)) ||
+                    Number(bankAmount) <= 0
+                  }
+                  className="w-full bg-[#0f766e] hover:bg-[#115e59] disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
+                >
+                  {isBankLoading
+                    ? "Generating bank account..."
+                    : "Generate Bank Transfer Account"}
+                </button>
+
+                {bankAccountNumber && (
+                  <div className="space-y-3 mt-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Account Number
+                      </label>
+                      <input
+                        type="text"
+                        value={bankAccountNumber}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bank Name
+                      </label>
+                      <input
+                        type="text"
+                        value={bankBankName}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Account Name
+                      </label>
+                      <input
+                        type="text"
+                        value={bankAccountName}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
+                      />
+                    </div>
+                    {bankReference && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Payment Reference
+                        </label>
+                        <input
+                          type="text"
+                          value={bankReference}
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
+                        />
+                      </div>
+                    )}
+                    {bankExpiry && (
+                      <p className="text-xs text-gray-500">
+                        Expires at:{" "}
+                        {new Date(bankExpiry).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      Use these details to make a one-time transfer. Once Korapay confirms
+                      the payment, your balance and transaction history will update
+                      automatically.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
