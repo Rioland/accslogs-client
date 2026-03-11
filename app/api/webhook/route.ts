@@ -47,20 +47,34 @@ export async function POST(req: Request) {
       });
     }
 
-    const { amount, status, reference } = data;
+    const { amount, status, reference, metadata, payment_reference } = data;
+
+    // Determine the user this payment belongs to.
+    // 1) Virtual account deposits: use virtual bank account_reference (we set this to the user id)
+    // 2) Checkout/redirect payments: use metadata.userId or, as a fallback, parse payment_reference
     const accountReference =
       data?.virtual_bank_account_details?.virtual_bank_account?.account_reference;
 
-    if (!accountReference) {
-      console.error("Webhook: Missing account_reference in payload");
+    let userId: string | null = null;
+
+    if (accountReference && typeof accountReference === "string") {
+      userId = accountReference;
+    } else if (metadata && typeof metadata.userId === "string") {
+      userId = metadata.userId;
+    } else if (typeof payment_reference === "string") {
+      const possibleUserId = payment_reference.split("-")[0];
+      if (possibleUserId) {
+        userId = possibleUserId;
+      }
+    }
+
+    if (!userId) {
+      console.error("Webhook: Unable to determine user from payload", data);
       return NextResponse.json(
-        { status: "error", message: "Missing account_reference" },
+        { status: "error", message: "Missing user identifier" },
         { status: 400 },
       );
     }
-
-    // account_reference is the user id (uuid) we used when creating the virtual account
-    const userId = accountReference;
 
     const supabase = getSupabaseAdminClient();
     const { error: insertError } = await supabase

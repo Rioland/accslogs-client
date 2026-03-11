@@ -16,6 +16,11 @@ import {
 } from "@/lib/KorapayServerActions";
 import toast from "react-hot-toast";
 
+const KORAPAY_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_KORAPAY_PUBLIC_KEY ||
+  process.env.KORAPAY_PUBLIC_KEY ||
+  "";
+
 const Navbar2 = dynamic(() => import("../../components/Navbar2"), {
   ssr: false,
 });
@@ -28,6 +33,9 @@ export default function AddFundsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [payAmount, setPayAmount] = useState<string>("");
+  const [isPaying, setIsPaying] = useState(false);
+  const [isKorapayReady, setIsKorapayReady] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -51,6 +59,32 @@ export default function AddFundsPage() {
 
     fetchAccountDetails();
   }, [router]);
+
+  // Load Korapay Checkout Standard script for direct payments
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if ((window as any).Korapay) {
+      setIsKorapayReady(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src =
+      "https://korablobstorage.blob.core.windows.net/modal-bucket/korapay-collections.min.js";
+    script.async = true;
+    script.onload = () => setIsKorapayReady(true);
+    script.onerror = () => {
+      console.error("Failed to load Korapay collections script");
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      script.onload = null;
+      script.onerror = null;
+    };
+  }, []);
 
   const handleGenerateAccount = async () => {
     setIsLoading(true);
@@ -78,13 +112,85 @@ export default function AddFundsPage() {
     }
   };
 
+  const handleKorapayPay = async () => {
+    try {
+      if (!KORAPAY_PUBLIC_KEY) {
+        toast.error("Payment configuration missing. Please try again later.");
+        return;
+      }
+
+      const amountNumber = Number(payAmount);
+      if (!payAmount || Number.isNaN(amountNumber) || amountNumber <= 0) {
+        toast.error("Please enter a valid amount.");
+        return;
+      }
+
+      if (!isKorapayReady || typeof window === "undefined" || !(window as any).Korapay) {
+        toast.error("Payment service is not ready yet. Please wait a moment and try again.");
+        return;
+      }
+
+      setIsPaying(true);
+
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+
+      const user = session.user;
+      const reference = `KPY-${user.id}-${Date.now()}`;
+
+      const customerName =
+        (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) ||
+        user.email ||
+        "Customer";
+
+      (window as any).Korapay.initialize({
+        key: KORAPAY_PUBLIC_KEY,
+        reference,
+        amount: Math.floor(amountNumber),
+        currency: "NGN",
+        customer: {
+          name: customerName,
+          email: user.email,
+        },
+        notification_url: `${window.location.origin}/api/webhook`,
+        metadata: {
+          userId: user.id,
+          source: "checkout_standard",
+        },
+        onSuccess: function () {
+          toast.success(
+            "Payment successful. Your balance and transactions will update shortly.",
+          );
+          setPayAmount("");
+        },
+        onFailed: function () {
+          toast.error("Payment failed or was cancelled.");
+        },
+        onClose: function () {
+          // Optional: you can show a message here if desired
+        },
+      });
+    } catch (error) {
+      console.error("Korapay checkout error:", error);
+      toast.error("An error occurred while initializing payment.");
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       toast.success("Copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       toast.error("Failed to copy");
     }
   };
@@ -111,7 +217,7 @@ export default function AddFundsPage() {
       <Navbar2 onSelectCategory={handleSelectCategory} />
 
       {/* Top bar for mobile with menu toggle */}
-      <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-[backdrop-filter]:bg-[#e4e9ee]/60">
+      <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-backdrop-filter:bg-[#e4e9ee]/60">
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between">
           <button
             type="button"
@@ -237,9 +343,13 @@ export default function AddFundsPage() {
                         <button
                           onClick={() => copyToClipboard(accountNumber)}
                           className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                          title="Copy account number"
+                          title={copied ? "Copied!" : "Copy account number"}
                         >
-                          <Copy className="h-4 w-4 text-gray-600" />
+                          <Copy
+                            className={`h-4 w-4 ${
+                              copied ? "text-green-600" : "text-gray-600"
+                            }`}
+                          />
                         </button>
                       </div>
                     </div>
@@ -278,6 +388,55 @@ export default function AddFundsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
+            <div className="max-w-md mx-auto">
+              <div className="text-center mb-6">
+                <CreditCard className="h-12 w-12 text-[#194572] mx-auto mb-4" />
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                  Pay Directly with Korapay
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Make an instant payment with card, bank transfer, or other channels.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Amount (NGN)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                    placeholder="Enter amount you want to add"
+                  />
+                </div>
+
+                <button
+                  onClick={handleKorapayPay}
+                  disabled={
+                    isPaying ||
+                    !payAmount ||
+                    Number.isNaN(Number(payAmount)) ||
+                    Number(payAmount) <= 0
+                  }
+                  className="w-full bg-[#194572] hover:bg-[#153657] disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
+                >
+                  {isPaying ? "Initializing payment..." : "Pay with Korapay"}
+                </button>
+
+                <p className="text-xs text-gray-500">
+                  After a successful payment, your wallet balance and transaction history
+                  will be updated automatically once we receive confirmation from Korapay.
+                </p>
+              </div>
             </div>
           </div>
         </div>
