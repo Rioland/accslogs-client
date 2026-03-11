@@ -81,6 +81,10 @@ export default function TransactionHistoryPage() {
       return "Virtual Account";
     }
 
+    if (sourceMeta === "bank_transfer_dynamic") {
+      return "Bank Transfer (Dynamic)";
+    }
+
     if (sourceMeta === "checkout_standard") {
       return "Korapay Checkout";
     }
