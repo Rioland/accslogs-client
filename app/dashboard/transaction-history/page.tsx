@@ -21,6 +21,7 @@ interface Deposit {
   reference: string;
   status: "pending" | "successful" | "failed";
   created_at: string;
+  korapay_data?: any;
 }
 
 
@@ -42,7 +43,7 @@ export default function TransactionHistoryPage() {
 
       const { data, error } = await supabaseClient
         .from("deposits")
-        .select("id, amount, reference, status, created_at")
+        .select("id, amount, reference, status, created_at, korapay_data")
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false });
 
@@ -66,6 +67,29 @@ export default function TransactionHistoryPage() {
       default:
         return <Clock className="h-5 w-5 text-yellow-600" />;
     }
+  };
+
+  const getSourceLabel = (deposit: Deposit) => {
+    const payload = deposit.korapay_data as any;
+
+    const hasVirtualAccount =
+      payload?.virtual_bank_account_details?.virtual_bank_account;
+
+    const sourceMeta = payload?.metadata?.source;
+
+    if (hasVirtualAccount) {
+      return "Virtual Account";
+    }
+
+    if (sourceMeta === "checkout_standard") {
+      return "Korapay Checkout";
+    }
+
+    if (payload) {
+      return "Korapay";
+    }
+
+    return "Unknown";
   };
 
   const getStatusColor = (status: string) => {
@@ -111,7 +135,7 @@ export default function TransactionHistoryPage() {
       <Navbar2 onSelectCategory={handleSelectCategory} />
 
       {/* Top bar for mobile with menu toggle */}
-      <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-[backdrop-filter]:bg-[#e4e9ee]/60">
+      <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-backdrop-filter:bg-[#e4e9ee]/60">
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between">
           <button
             type="button"
@@ -221,8 +245,13 @@ export default function TransactionHistoryPage() {
                           <div className="text-sm text-gray-600">
                             {formatDate(deposit.created_at)}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            Ref: {deposit.reference}
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <span className="text-xs text-gray-500">
+                              Ref: {deposit.reference}
+                            </span>
+                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-100">
+                              {getSourceLabel(deposit)}
+                            </span>
                           </div>
                         </div>
                       </div>
