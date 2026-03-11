@@ -10,16 +10,12 @@ import dynamic from "next/dynamic";
 import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
-import {
-  generateKorapayDedicatedAccount,
-  getKorapayDedicatedAccount,
-} from "@/lib/KorapayServerActions";
 import toast from "react-hot-toast";
 
 const KORAPAY_PUBLIC_KEY =
   process.env.NEXT_PUBLIC_KORAPAY_PUBLIC_KEY ||
   process.env.KORAPAY_PUBLIC_KEY ||
-  "";
+  "pk_live_tLyzjGeuw63zfKsQctoi8vKJdcT9MoVtvR84AM7W";
 
 const Navbar2 = dynamic(() => import("../../components/Navbar2"), {
   ssr: false,
@@ -33,6 +29,8 @@ export default function AddFundsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [bankAmount, setBankAmount] = useState<string>("");
+  const [bankReference, setBankReference] = useState<string>("");
   const [payAmount, setPayAmount] = useState<string>("");
   const [isPaying, setIsPaying] = useState(false);
   const [isKorapayReady, setIsKorapayReady] = useState(false);
@@ -46,13 +44,6 @@ export default function AddFundsPage() {
       if (!session) {
         router.push("/login");
         return;
-      }
-
-      const account = await getKorapayDedicatedAccount(session.user.id);
-      if (account) {
-        setAccountNumber(account.accountNumber);
-        setAccountBank(account.accountBank);
-        setAccountName(account.accountName);
       }
       setIsFetching(false);
     };
@@ -89,6 +80,12 @@ export default function AddFundsPage() {
   const handleGenerateAccount = async () => {
     setIsLoading(true);
     try {
+      const amountNumber = Number(bankAmount);
+      if (!bankAmount || Number.isNaN(amountNumber) || amountNumber <= 0) {
+        toast.error("Please enter a valid amount for this transfer.");
+        return;
+      }
+
       const {
         data: { session },
       } = await supabaseClient.auth.getSession();
@@ -98,15 +95,44 @@ export default function AddFundsPage() {
         return;
       }
 
-      const data = await generateKorapayDedicatedAccount(session.user.id);
+      const user = session.user;
+      const reference = `BT-${user.id}-${Date.now()}`;
 
-      setAccountNumber(data.accountNumber);
-      setAccountBank(data.accountBank);
-      setAccountName(data.accountName);
-      toast.success("Account ready!");
+      const customerName =
+        (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) ||
+        user.email ||
+        "Customer";
+
+      const res = await fetch("/api/bank-transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: Math.floor(amountNumber),
+          reference,
+          userId: user.id,
+          email: user.email,
+          name: customerName,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || json.status !== "success") {
+        toast.error(json.message || "Failed to generate bank account.");
+        return;
+      }
+
+      const bankAccount = json.bankAccount || {};
+
+      setAccountNumber(bankAccount.account_number || "");
+      setAccountBank(bankAccount.bank_name || "");
+      setAccountName(bankAccount.account_name || "");
+      const effectiveReference = json.reference || reference;
+      setBankReference(effectiveReference);
+      toast.success("Bank account generated. Pay using these details.");
     } catch (error) {
-      console.error("Error generating account:", error);
-      toast.error("An error occurred while generating account number");
+      console.error("Error generating bank transfer account:", error);
+      toast.error("An error occurred while generating bank account");
     } finally {
       setIsLoading(false);
     }
@@ -288,10 +314,10 @@ export default function AddFundsPage() {
               <div className="text-center mb-6">
                 <CreditCard className="h-12 w-12 text-[#F87D1F] mx-auto mb-4" />
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                  Fund Your Account
+                  Fund Your Account (Bank Transfer)
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Generate a virtual account number to deposit funds securely
+                  Generate a one-time bank account for this deposit via Korapay
                 </p>
               </div>
 
@@ -301,17 +327,38 @@ export default function AddFundsPage() {
                   <p className="mt-3 text-gray-600">Loading account...</p>
                 </div>
               ) : !accountNumber ? (
-                <div className="text-center">
-                  <button
-                    onClick={handleGenerateAccount}
-                    disabled={isLoading}
-                    className="w-full bg-[#F87D1F] hover:bg-[#e06b10] disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? "Generating..." : "Generate Account Number"}
-                  </button>
-                  <p className="text-xs text-gray-500 mt-3">
-                    This will create a unique account number for secure deposits
-                  </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount (NGN)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={bankAmount}
+                      onChange={(e) => setBankAmount(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                      placeholder="Enter amount you want to add"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <button
+                      onClick={handleGenerateAccount}
+                      disabled={
+                        isLoading ||
+                        !bankAmount ||
+                        Number.isNaN(Number(bankAmount)) ||
+                        Number(bankAmount) <= 0
+                      }
+                      className="w-full bg-[#F87D1F] hover:bg-[#e06b10] disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? "Generating..." : "Generate Bank Account"}
+                    </button>
+                    <p className="text-xs text-gray-500 mt-3">
+                      This will create a temporary bank account just for this payment.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -377,12 +424,28 @@ export default function AddFundsPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
                       />
                     </div>
+
+                    {bankReference && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Payment Reference
+                        </label>
+                        <input
+                          type="text"
+                          value={bankReference}
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
                     <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> Deposits are processed
-                      automatically. Check your transaction history for deposit
+                      <strong>Note:</strong> This bank account is dynamic and is
+                      generated for a single transaction. Pay the specified
+                      amount before it expires. Funds are processed
+                      automatically; check your transaction history for deposit
                       confirmations.
                     </p>
                   </div>
