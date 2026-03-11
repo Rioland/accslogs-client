@@ -45,6 +45,7 @@ export async function POST(req: Request) {
       reference,
       amount,
       currency: "NGN",
+      account_name: name || email,
       customer: {
         name: name || email,
         email,
@@ -71,10 +72,15 @@ export async function POST(req: Request) {
     const json = await response.json();
 
     if (!response.ok || !json?.status) {
+      // eslint-disable-next-line no-console
+      console.error("Korapay bank-transfer error response:", json);
       return NextResponse.json(
         {
           status: "error",
-          message: json?.message || "Failed to initiate bank transfer",
+          message:
+            json?.message ||
+            json?.errors?.[0]?.message ||
+            "Failed to initiate bank transfer",
         },
         { status: 500 },
       );

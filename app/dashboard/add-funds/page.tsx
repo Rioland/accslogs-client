@@ -211,7 +211,10 @@ export default function AddFundsPage() {
       }
 
       const user = session.user;
-      const reference = `BT-${user.id}-${Date.now()}`;
+      // Korapay requires reference length <= 50 chars
+      const shortUserId =
+        typeof user.id === "string" ? user.id.replace(/-/g, "").slice(0, 16) : "user";
+      const reference = `BT-${shortUserId}-${Date.now().toString(36)}`;
 
       const customerName =
         (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) ||
