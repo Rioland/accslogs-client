@@ -211,15 +211,20 @@ export default function AddFundsPage() {
       }
 
       const user = session.user;
-      // Korapay requires reference length <= 50 chars
-      const shortUserId =
-        typeof user.id === "string" ? user.id.replace(/-/g, "").slice(0, 16) : "user";
-      const reference = `BT-${shortUserId}-${Date.now().toString(36)}`;
+       const { data: profile, error } = await supabaseClient
+         .from("profiles")
+         .select("first_name, last_name")
+         .eq("id", session.user.id)
+         .single();
 
-      const customerName =
-        (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) ||
-        user.email ||
-        "Customer";
+       if (error) {
+         toast.error("Failed to load profile");
+         return;
+       } 
+      
+      const reference = user.id;
+     
+      const customerName = `${profile.first_name} ${profile.last_name}`;
 
       const res = await fetch("/api/bank-transfer", {
         method: "POST",
@@ -465,7 +470,7 @@ export default function AddFundsPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
+          {/* <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
             <div className="max-w-md mx-auto">
               <div className="text-center mb-6">
                 <CreditCard className="h-12 w-12 text-[#194572] mx-auto mb-4" />
@@ -512,7 +517,7 @@ export default function AddFundsPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
             <div className="max-w-md mx-auto">

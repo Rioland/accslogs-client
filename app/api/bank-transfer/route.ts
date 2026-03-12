@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
 const KORAPAY_SECRET_KEY =
-  process.env.KORAPAY_SECRET_KEY || process.env.KORAPAY_WEBHOOK_SECRET || "";
+  process.env.KORAPAY_SECRET_KEY ||
+  process.env.KORAPAY_WEBHOOK_SECRET ||
+  "sk_live_5orcssbSsdPCCPKUuWdSJJvQdtKSTb4jWBucobPg";
 
 const KORAPAY_BASE_URL =
   process.env.NEXT_PUBLIC_KORAPAY_BASE_URL ??
