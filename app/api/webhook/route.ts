@@ -11,6 +11,7 @@ function verifyKorapaySignature(
   payload: string,
   signature: string | null,
 ): boolean {
+  if (process.env.KORAPAY_SKIP_WEBHOOK_VERIFY === "true") return true; // Debug only with ngrok
   if (!KORAPAY_SECRET_KEY || !signature) return false;
   const parsed = JSON.parse(payload);
   const dataString = JSON.stringify(parsed.data);
@@ -18,11 +19,16 @@ function verifyKorapaySignature(
     .createHmac("sha256", KORAPAY_SECRET_KEY)
     .update(dataString)
     .digest("hex");
+  // Compare hex strings - use hex encoding for Buffer (both are hex-encoded hashes)
   if (hash.length !== signature.length) return false;
   try {
-    return crypto.timingSafeEqual(Buffer.from(hash, "utf8"), Buffer.from(signature, "utf8"));
+    const hashBuf = Buffer.from(hash, "hex");
+    const sigBuf = Buffer.from(signature, "hex");
+    if (hashBuf.length !== sigBuf.length) return false;
+    return crypto.timingSafeEqual(hashBuf, sigBuf);
   } catch {
-    return false;
+    // Fallback: simple string compare (if signature isn't valid hex)
+    return hash === signature;
   }
 }
 

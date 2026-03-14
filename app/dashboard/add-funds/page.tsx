@@ -92,10 +92,12 @@ export default function AddFundsPage() {
         user.email ||
         "Customer";
 
+      const amountToCharge = Math.floor(amountNumber);
+
       (window as any).Korapay.initialize({
         key: KORAPAY_PUBLIC_KEY,
         reference,
-        amount: Math.floor(amountNumber),
+        amount: amountToCharge,
         currency: "NGN",
         customer: {
           name: customerName,
@@ -106,7 +108,27 @@ export default function AddFundsPage() {
           userId: user.id,
           source: "checkout_standard",
         },
-        onSuccess: function () {
+        onSuccess: async function (data?: { amount?: string | number; reference?: string; status?: string }) {
+          // Fallback: webhook may not reach localhost - confirm deposit server-side
+          try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+              await fetch("/api/confirm-deposit", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                  reference,
+                  amount: data?.amount ?? amountToCharge,
+                  status: data?.status ?? "success",
+                }),
+              });
+            }
+          } catch (e) {
+            console.warn("Confirm deposit fallback:", e);
+          }
           toast.success(
             "Payment successful. Your balance and transactions will update shortly.",
           );
