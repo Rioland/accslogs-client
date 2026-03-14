@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { getSupabaseAdminClient } from "@/lib/supabaseServer";
+import {
+  getSupabaseAdminClient,
+  getSupabaseServerClient,
+} from "@/lib/supabaseServer";
 
 
 const KORAPAY_SECRET_KEY =
@@ -89,53 +92,112 @@ export async function POST(req: Request) {
 
     const depositStatus = status === "success" ? "successful" : "failed";
     const uniqueRef = ref || `kpy-${Date.now()}-${userId.slice(0, 8)}`;
+    const amountNum = Number(amount);
 
-    const supabase = getSupabaseAdminClient();
-    const { error: insertError } = await supabase
-      .from("deposits")
-      .insert({
-        user_id: userId,
-        amount: Number(amount),
-        status: depositStatus,
-        reference: uniqueRef,
-        korapay_data: data,
-      });
+    const processViaRpc = async () => {
+      const supabase = getSupabaseServerClient();
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        "webhook_process_deposit",
+        {
+          p_user_id: userId,
+          p_amount: amountNum,
+          p_reference: uniqueRef,
+          p_status: depositStatus,
+          p_korapay_data: data,
+        }
+      );
+      if (rpcError) throw rpcError;
+      const result = rpcData as {
+        success?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!result?.success && result?.message !== "Already processed")
+        throw new Error(
+          String(result?.error || (rpcError as Error | null)?.message || "RPC failed")
+        );
+    };
 
-    if (insertError) {
-      if (insertError.code === "23505") {
-        // Duplicate reference - already processed, return success (200) to stop retries
+    try {
+      const supabase = getSupabaseAdminClient();
+      const { error: insertError } = await supabase
+        .from("deposits")
+        .insert({
+          user_id: userId,
+          amount: amountNum,
+          status: depositStatus,
+          reference: uniqueRef,
+          korapay_data: data,
+        });
+
+      if (insertError) {
+        if (insertError.code === "23505") {
+          return NextResponse.json(
+            { status: "success", message: "Already processed" },
+            { status: 200 }
+          );
+        }
+        if (
+          insertError.message?.toLowerCase().includes("invalid api key") ||
+          insertError.message?.toLowerCase().includes("invalid key")
+        ) {
+          await processViaRpc();
+          return NextResponse.json(
+            { status: "success", message: "Deposit processed (via RPC)" },
+            { status: 200 }
+          );
+        }
+        console.error("Webhook: Insert error", insertError);
         return NextResponse.json(
-          { status: "success", message: "Already processed" },
-          { status: 200 }
+          {
+            status: "error",
+            message: "Failed to insert transaction",
+            debug: insertError.message,
+            code: insertError.code,
+          },
+          { status: 500 }
         );
       }
-      console.error("Webhook: Insert error", insertError);
-      return NextResponse.json(
-        {
-          status: "error",
-          message: "Failed to insert transaction",
-          debug: insertError.message,
-          code: insertError.code,
-        },
-        { status: 500 }
-      );
-    }
 
-    // Update user profile balance only on successful payment
-    if (status === "success") {
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, funds")
-        .eq("id", userId)
-        .single();
-
-      if (!profileError && profile) {
-        const newFunds = (Number(profile.funds) || 0) + Number(amount);
-        await supabase
+      if (status === "success") {
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .update({ funds: newFunds })
-          .eq("id", userId);
+          .select("id, funds")
+          .eq("id", userId)
+          .single();
+        if (!profileError && profile) {
+          const newFunds = (Number(profile.funds) || 0) + amountNum;
+          await supabase
+            .from("profiles")
+            .update({ funds: newFunds })
+            .eq("id", userId);
+        }
       }
+    } catch (adminErr: unknown) {
+      const msg = String((adminErr as Error)?.message || adminErr);
+      if (
+        msg?.toLowerCase().includes("invalid api key") ||
+        msg?.toLowerCase().includes("missing supabase_service_role_key")
+      ) {
+        try {
+          await processViaRpc();
+          return NextResponse.json(
+            { status: "success", message: "Deposit processed (via RPC fallback)" },
+            { status: 200 }
+          );
+        } catch (rpcErr) {
+          console.error("Webhook: RPC fallback error", rpcErr);
+          return NextResponse.json(
+            {
+              status: "error",
+              message: "Failed to process deposit",
+              debug: String((rpcErr as Error)?.message),
+            },
+            { status: 500 }
+          );
+        }
+      }
+      throw adminErr;
     }
 
     return NextResponse.json(
