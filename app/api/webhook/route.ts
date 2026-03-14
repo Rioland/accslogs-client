@@ -110,8 +110,13 @@ export async function POST(req: Request) {
       }
       console.error("Webhook: Insert error", insertError);
       return NextResponse.json(
-        { status: "error", message: "Failed to insert transaction" },
-        { status: 500 },
+        {
+          status: "error",
+          message: "Failed to insert transaction",
+          debug: insertError.message,
+          code: insertError.code,
+        },
+        { status: 500 }
       );
     }
 
