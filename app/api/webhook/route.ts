@@ -205,10 +205,17 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
     console.error("Webhook error:", err);
     return NextResponse.json(
-      { status: "error", message: "Internal error" },
-      { status: 500 },
+      {
+        status: "error",
+        message: "Internal error",
+        debug: message,
+        ...(process.env.NODE_ENV === "development" && { stack }),
+      },
+      { status: 500 }
     );
   }
 }
