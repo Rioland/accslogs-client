@@ -40,18 +40,20 @@ export async function POST(req: Request) {
 
     const { event, data } = JSON.parse(rawBody);
 
-    if (event !== "charge.success") {
+    // Handle charge events (success and failed)
+    if (event !== "charge.success" && event !== "charge.failed") {
       return NextResponse.json({
-        status: "error",
-        message: `Unhandled event: ${event}`,
+        status: "ok",
+        message: `Event ${event} acknowledged`,
       });
     }
 
     const { amount, status, reference, metadata, payment_reference } = data;
+    const ref = reference || payment_reference;
 
     // Determine the user this payment belongs to.
     // 1) Virtual account deposits: use virtual bank account_reference (we set this to the user id)
-    // 2) Checkout/redirect payments: use metadata.userId or, as a fallback, parse payment_reference
+    // 2) Checkout/redirect payments: use metadata.userId, or parse reference (user.id or user.id-timestamp)
     const accountReference =
       data?.virtual_bank_account_details?.virtual_bank_account?.account_reference;
 
@@ -61,11 +63,12 @@ export async function POST(req: Request) {
       userId = accountReference;
     } else if (metadata && typeof metadata.userId === "string") {
       userId = metadata.userId;
-    } else if (typeof payment_reference === "string") {
-      const possibleUserId = payment_reference.split("-")[0];
-      if (possibleUserId) {
-        userId = possibleUserId;
-      }
+    } else if (typeof ref === "string") {
+      // Reference can be: user.id (UUID) or user.id-timestamp
+      const uuidMatch = ref.match(
+        /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-\d+)?$/i
+      );
+      if (uuidMatch) userId = uuidMatch[1];
     }
 
     if (!userId) {
@@ -76,21 +79,27 @@ export async function POST(req: Request) {
       );
     }
 
+    const depositStatus = status === "success" ? "successful" : "failed";
+    const uniqueRef = ref || `kpy-${Date.now()}-${userId.slice(0, 8)}`;
+
     const supabase = getSupabaseAdminClient();
     const { error: insertError } = await supabase
       .from("deposits")
       .insert({
         user_id: userId,
         amount: Number(amount),
-        status: status === "success" ? "successful" : status,
-        reference,
+        status: depositStatus,
+        reference: uniqueRef,
         korapay_data: data,
       });
 
     if (insertError) {
       if (insertError.code === "23505") {
-        // Duplicate reference - already processed, return success
-        return NextResponse.json({ status: "success", message: "Already processed" });
+        // Duplicate reference - already processed, return success (200) to stop retries
+        return NextResponse.json(
+          { status: "success", message: "Already processed" },
+          { status: 200 }
+        );
       }
       console.error("Webhook: Insert error", insertError);
       return NextResponse.json(
@@ -99,6 +108,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Update user profile balance only on successful payment
     if (status === "success") {
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -115,7 +125,10 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ status: "success", message: "Deposit processed" });
+    return NextResponse.json(
+      { status: "success", message: "Deposit processed" },
+      { status: 200 }
+    );
   } catch (err) {
     console.error("Webhook error:", err);
     return NextResponse.json(

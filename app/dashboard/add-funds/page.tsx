@@ -4,16 +4,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../Sidebar";
-import { Menu, X, CreditCard, Copy, CheckCircle } from "lucide-react";
+import { Menu, X, CreditCard } from "lucide-react";
 import Navbar1 from "../../components/Navbar1";
 import dynamic from "next/dynamic";
 import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
-import {
-  generateKorapayDedicatedAccount,
-  getKorapayDedicatedAccount,
-} from "@/lib/KorapayServerActions";
 import toast from "react-hot-toast";
 
 const KORAPAY_PUBLIC_KEY =
@@ -27,45 +23,10 @@ const Navbar2 = dynamic(() => import("../../components/Navbar2"), {
 
 export default function AddFundsPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [accountNumber, setAccountNumber] = useState<string>("");
-  const [accountBank, setAccountBank] = useState<string>("");
-  const [accountName, setAccountName] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const [bankAmount, setBankAmount] = useState<string>("");
-  const [bankAccountNumber, setBankAccountNumber] = useState<string>("");
-  const [bankAccountName, setBankAccountName] = useState<string>("");
-  const [bankBankName, setBankBankName] = useState<string>("");
-  const [bankReference, setBankReference] = useState<string>("");
-  const [bankExpiry, setBankExpiry] = useState<string>("");
-  const [isBankLoading, setIsBankLoading] = useState(false);
   const [payAmount, setPayAmount] = useState<string>("");
   const [isPaying, setIsPaying] = useState(false);
   const [isKorapayReady, setIsKorapayReady] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    const fetchAccountDetails = async () => {
-      const {
-        data: { session },
-      } = await supabaseClient.auth.getSession();
-      if (!session) {
-        router.push("/login");
-        return;
-      }
-
-      const account = await getKorapayDedicatedAccount(session.user.id);
-      if (account) {
-        setAccountNumber(account.accountNumber);
-        setAccountBank(account.accountBank);
-        setAccountName(account.accountName);
-      }
-      setIsFetching(false);
-    };
-
-    fetchAccountDetails();
-  }, [router]);
 
   // Load Korapay Checkout Standard script for direct payments
   useEffect(() => {
@@ -92,32 +53,6 @@ export default function AddFundsPage() {
       script.onerror = null;
     };
   }, []);
-
-  const handleGenerateAccount = async () => {
-    setIsLoading(true);
-    try {
-      const {
-        data: { session },
-      } = await supabaseClient.auth.getSession();
-
-      if (!session) {
-        router.push("/login");
-        return;
-      }
-
-      const data = await generateKorapayDedicatedAccount(session.user.id);
-
-      setAccountNumber(data.accountNumber);
-      setAccountBank(data.accountBank);
-      setAccountName(data.accountName);
-      toast.success("Account ready!");
-    } catch (error) {
-      console.error("Error generating account:", error);
-      toast.error("An error occurred while generating account number");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleKorapayPay = async () => {
     try {
@@ -149,7 +84,8 @@ export default function AddFundsPage() {
       }
 
       const user = session.user;
-      const reference = `KPY-${user.id}-${Date.now()}`;
+      // Must be unique per payment (≤50 chars). Format: user.id-timestamp
+      const reference = `${user.id}-${Date.now()}`;
 
       const customerName =
         (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) ||
@@ -188,88 +124,6 @@ export default function AddFundsPage() {
       toast.error("An error occurred while initializing payment.");
     } finally {
       setIsPaying(false);
-    }
-  };
-
-  const handleBankTransferGenerate = async () => {
-    try {
-      const amountNumber = Number(bankAmount);
-      if (!bankAmount || Number.isNaN(amountNumber) || amountNumber <= 0) {
-        toast.error("Please enter a valid amount.");
-        return;
-      }
-
-      setIsBankLoading(true);
-
-      const {
-        data: { session },
-      } = await supabaseClient.auth.getSession();
-
-      if (!session) {
-        router.push("/login");
-        return;
-      }
-
-      const user = session.user;
-       const { data: profile, error } = await supabaseClient
-         .from("profiles")
-         .select("first_name, last_name")
-         .eq("id", session.user.id)
-         .single();
-
-       if (error) {
-         toast.error("Failed to load profile");
-         return;
-       } 
-      
-      const reference = user.id;
-     
-      const customerName = `${profile.first_name} ${profile.last_name}`;
-
-      const res = await fetch("/api/bank-transfer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: Math.floor(amountNumber),
-          reference,
-          userId: user.id,
-          email: user.email,
-          name: customerName,
-        }),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok || json.status !== "success") {
-        toast.error(json.message || "Failed to generate bank transfer account.");
-        return;
-      }
-
-      const bankAccount = json.bankAccount || {};
-
-      setBankAccountNumber(bankAccount.account_number || "");
-      setBankBankName(bankAccount.bank_name || "");
-      setBankAccountName(bankAccount.account_name || "");
-      setBankReference(json.reference || reference);
-      setBankExpiry(bankAccount.expiry_date_in_utc || "");
-
-      toast.success("Bank transfer account generated.");
-    } catch (error) {
-      console.error("Error generating bank transfer account:", error);
-      toast.error("An error occurred while generating bank transfer account.");
-    } finally {
-      setIsBankLoading(false);
-    }
-  };
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      toast.success("Copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy");
     }
   };
 
@@ -361,6 +215,7 @@ export default function AddFundsPage() {
             Add Funds
           </h1>
 
+          {/* Dedicated bank account generation - commented out, using only Korapay standard
           <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
             <div className="max-w-md mx-auto">
               <div className="text-center mb-6">
@@ -469,8 +324,9 @@ export default function AddFundsPage() {
               )}
             </div>
           </div>
+          */}
 
-          {/* <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
             <div className="max-w-md mx-auto">
               <div className="text-center mb-6">
                 <CreditCard className="h-12 w-12 text-[#194572] mx-auto mb-4" />
@@ -517,8 +373,9 @@ export default function AddFundsPage() {
                 </p>
               </div>
             </div>
-          </div> */}
+          </div>
 
+          {/* Bank transfer (one-time account) - commented out, using only Korapay standard
           <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
             <div className="max-w-md mx-auto">
               <div className="text-center mb-6">
@@ -632,6 +489,7 @@ export default function AddFundsPage() {
               </div>
             </div>
           </div>
+          */}
         </div>
       </div>
       <Footer />

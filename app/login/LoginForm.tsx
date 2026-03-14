@@ -71,8 +71,13 @@ export default function LoginForm() {
       }
 
       if (adminData && adminData.length > 0) {
-        const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001';
-        window.location.href = adminUrl;
+        const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL;
+        if (adminUrl) {
+          window.location.href = adminUrl;
+        } else {
+          toast.error('Admin URL is not set.')
+          return
+        }
       } else {
         router.push('/dashboard')
       }
