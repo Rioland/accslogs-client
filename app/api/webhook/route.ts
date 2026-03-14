@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+
+export const runtime = "nodejs";
 import {
   getSupabaseAdminClient,
   getSupabaseServerClient,

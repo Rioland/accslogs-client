@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabaseServer";
 
+export const runtime = "nodejs";
+
 /**
  * Test endpoint to verify SUPABASE_SERVICE_ROLE_KEY works.
  * GET /api/test-service-key
