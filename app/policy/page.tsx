@@ -130,7 +130,7 @@ export default function Policy() {
               <BulletList
                 items={[
                   "Accounts are non-functional or suspended before initial login.",
-                  "Claims are submitted within 24 hours of purchase via support ticket.",
+                  "Claims are submitted within 5 hours of purchase via support ticket.",
                 ]}
               />
             </SubSectionCard>

@@ -39,7 +39,7 @@ const faqs = [
         "Clear your browser history.",
         "Match the account's timezone.",
         "Use clean Socks5 or HTTP proxy (preferably mobile proxy). Avoid residential proxies to reduce the risk of account bans.",
-        "After logging in, avoid changing the password immediately. We recommend waiting 24 hours or more.",
+        "After logging in, avoid changing the password immediately. We recommend waiting 5 hours or more.",
       ],
       prefix: "Please ensure you follow these steps before logging in:",
     },

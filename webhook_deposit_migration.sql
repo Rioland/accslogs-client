@@ -49,3 +49,6 @@ $$;
 grant execute on function public.webhook_process_deposit(uuid, numeric, text, text, jsonb) to anon;
 grant execute on function public.webhook_process_deposit(uuid, numeric, text, text, jsonb) to authenticated;
 grant execute on function public.webhook_process_deposit(uuid, numeric, text, text, jsonb) to service_role;
+-- Add korapay_data column to deposits table
+ALTER TABLE public.deposits
+ADD COLUMN IF NOT EXISTS korapay_data jsonb;
