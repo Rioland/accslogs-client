@@ -7,7 +7,7 @@ import Navbar2 from "../components/Navbar2";
 import Wrapper from "../components/Wrapper";
 import Footer from "../components/Footer";
 import TermsHeader from "../components/TermsHeader";
-import TableOfContents from "../components/TableOfContents";
+// import TableOfContents from "../components/TableOfContents";
 import BulletCard from "../components/terms/BulletCard";
 import ServiceGrid from "../components/terms/ServiceGrid";
 import SectionHeader from "../components/terms/SectionHeader";
