@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import getSupabaseServerClient from "@/lib/supabaseServer";
+import { getSupabaseAdminClient } from "@/lib/supabaseServer";
 
 
 const KORAPAY_SECRET_KEY =
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     const depositStatus = status === "success" ? "successful" : "failed";
     const uniqueRef = ref || `kpy-${Date.now()}-${userId.slice(0, 8)}`;
 
-    const supabase = getSupabaseServerClient();
+    const supabase = getSupabaseAdminClient();
     const { error: insertError } = await supabase
       .from("deposits")
       .insert({
