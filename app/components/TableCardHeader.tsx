@@ -36,7 +36,7 @@ const TableCardHeader: React.FC<TableCardHeaderProps> = ({
           {products.map((product) => {
             const stock = product.seller_product_accounts?.[0]?.count ?? 0;
 
-            const createdYear = new Date(product.created_at).getFullYear();
+            // const createdYear = new Date(product.created_at).getFullYear();
 
             return (
               <div
@@ -51,7 +51,8 @@ const TableCardHeader: React.FC<TableCardHeaderProps> = ({
 
                   <div className="space-y-1">
                     <div className="font-semibold text-gray-900">
-                      {product.name} | Created {createdYear}
+                      {product.name}
+                      {/* | Created {createdYear} */}
                     </div>
 
                     {/* <div className="text-sm text-gray-500 line-clamp-2">
