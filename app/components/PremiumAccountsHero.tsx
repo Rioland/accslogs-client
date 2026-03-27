@@ -41,7 +41,10 @@ const PremiumAccountsHero: React.FC = () => {
                Browse Marketplace
             </button>
 
-            <button className="border border-teal-700 text-teal-700 hover:bg-teal-700 hover:text-white transition font-medium px-6 py-3 rounded-full">
+            <button
+              className="border border-teal-700 text-teal-700 hover:bg-teal-700 hover:text-white transition font-medium px-6 py-3 rounded-full"
+              onClick={() => router.push("/about")}
+            >
               How It Works
             </button>
           </div>

@@ -14,6 +14,7 @@ export default function ClientProductDetailPage() {
   const params = useParams();
   const [product, setProduct] = useState<SellerProduct | null>(null);
   const [availableStock, setAvailableStock] = useState(0);
+  const [previewLink, setPreviewLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +55,18 @@ export default function ClientProductDetailPage() {
       if (!stockError) {
         setAvailableStock(count ?? 0);
       }
+
+      // Get one preview link from available accounts for this product
+      const { data: previewData } = await supabase
+        .from("seller_product_accounts")
+        .select("preview_link")
+        .eq("product_id", id)
+        .is("buyer_id", null)
+        .not("preview_link", "is", null)
+        .limit(1)
+        .maybeSingle();
+
+      setPreviewLink(previewData?.preview_link ?? null);
     } catch {
       setError("Failed to load product details");
     } finally {
@@ -97,6 +110,7 @@ export default function ClientProductDetailPage() {
             price={product.price}
             stock={availableStock}
             description={product.description}
+            previewLink={previewLink}
           />
         </div>
       )}

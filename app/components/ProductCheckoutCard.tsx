@@ -12,6 +12,7 @@ interface ProductCheckoutCardProps {
   price: number;
   stock: number;
   description: string;
+  previewLink?: string | null;
 }
 
 export default function ProductCheckoutCard({
@@ -20,6 +21,7 @@ export default function ProductCheckoutCard({
   price,
   stock,
   description,
+  previewLink,
 }: ProductCheckoutCardProps) {
   const router = useRouter();
 
@@ -155,6 +157,21 @@ export default function ProductCheckoutCard({
           <span className="text-green-600">₦{grandTotal.toFixed(2)}</span>
         </div>
       </div>
+
+      {/* Preview Link */}
+      {previewLink && (
+        <div className="border rounded-lg p-4 bg-white">
+          <span className="font-medium text-gray-800">Preview Link: </span>
+          <a
+            href={previewLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#194572] underline break-all"
+          >
+            {previewLink}
+          </a>
+        </div>
+      )}
 
       {/* Options */}
       <div className="space-y-3">
