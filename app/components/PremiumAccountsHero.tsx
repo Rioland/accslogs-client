@@ -3,6 +3,7 @@
 import { Facebook, Instagram } from "iconsax-reactjs";
 import { ShieldCheck, Twitter } from "lucide-react";
 import React from "react";
+import { useRouter } from "next/navigation";
 import AnimatedSection from "./AnimatedSection";
 
 const PlatformCard: React.FC<{
@@ -16,6 +17,7 @@ const PlatformCard: React.FC<{
 );
 
 const PremiumAccountsHero: React.FC = () => {
+  const router = useRouter();
   return (
     <section className="w-full bg-[#f3f1ef] py-16 px-6 md:px-12 lg:px-20">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
@@ -35,8 +37,8 @@ const PremiumAccountsHero: React.FC = () => {
           </p>
 
           <div className="flex flex-wrap items-center gap-4 mt-8">
-            <button className="bg-[#F87D1F] hover:bg-[#e06b10] transition text-white font-medium px-6 py-3 rounded-full shadow-md">
-              🛒 Browse Marketplace
+            <button className="bg-[#F87D1F] hover:bg-[#e06b10] transition text-white font-medium px-6 py-3 rounded-full shadow-md" onClick={() => router.push("/market-place")}>
+               Browse Marketplace
             </button>
 
             <button className="border border-teal-700 text-teal-700 hover:bg-teal-700 hover:text-white transition font-medium px-6 py-3 rounded-full">
