@@ -16,39 +16,20 @@ import { SellerProduct } from "@/types/callabelTypes";
 const Navbar2 = dynamic(() => import("../components/Navbar2"), { ssr: false });
 
 export default function MarketPlace() {
+  const MAX_PRODUCTS_PER_BATCH = 10;
   const router = useRouter();
   const [products, setProducts] = useState<SellerProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
-  const [categories, setCategories] = useState<string[]>([]);
-  const [subcategories, setSubcategories] = useState<string[]>([]);
+  const [visibleCountByCategory, setVisibleCountByCategory] = useState<
+    Record<string, number>
+  >({});
 
   useEffect(() => {
     fetchSellerProducts();
   }, []);
-
-  useEffect(() => {
-    // Update subcategories when category changes
-    if (selectedCategory) {
-      const filteredSubs = Array.from(
-        new Set(
-          products
-            .filter((p) => p.category === selectedCategory)
-            .map((p) => p.subcategory)
-            .filter(Boolean),
-        ),
-      ) as string[];
-      setSubcategories(filteredSubs);
-      setSelectedSubcategory(""); // Reset subcategory when category changes
-    } else {
-      const uniqueSubcategories = Array.from(
-        new Set(products.map((p) => p.subcategory).filter(Boolean)),
-      ) as string[];
-      setSubcategories(uniqueSubcategories);
-    }
-  }, [selectedCategory, products]);
 
   const fetchSellerProducts = async () => {
     try {
@@ -68,18 +49,7 @@ export default function MarketPlace() {
       }
 
       setProducts(data || []);
-
-      // Extract unique categories and subcategories
-      const uniqueCategories = Array.from(
-        new Set(data?.map((p) => p.category).filter(Boolean)),
-      ) as string[];
-      setCategories(uniqueCategories);
-
-      const uniqueSubcategories = Array.from(
-        new Set(data?.map((p) => p.subcategory).filter(Boolean)),
-      ) as string[];
-      setSubcategories(uniqueSubcategories);
-    } catch (err) {
+    } catch {
       setError("Failed to load products");
     } finally {
       setLoading(false);
@@ -113,6 +83,13 @@ export default function MarketPlace() {
     return acc;
   }, {});
 
+  const handleSeeMore = (category: string) => {
+    setVisibleCountByCategory((prev) => ({
+      ...prev,
+      [category]: (prev[category] || MAX_PRODUCTS_PER_BATCH) + MAX_PRODUCTS_PER_BATCH,
+    }));
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <TopBar />
@@ -144,12 +121,38 @@ export default function MarketPlace() {
               index < 6 ? ([0, 100, 200, 300, 400, 500] as const)[index] : 0
             }
           >
-            <TableCardHeader
-              title={category}
-              products={items}
-              className="mt-8"
-              onBuyClick={handleBuyClick}
-            />
+            {/*
+              Show max 10 products per category initially.
+              "See more" loads 10 additional products each click.
+            */}
+            {(() => {
+              const visibleCount =
+                visibleCountByCategory[category] || MAX_PRODUCTS_PER_BATCH;
+              const visibleItems = items.slice(0, visibleCount);
+              const hasMore = items.length > visibleCount;
+
+              return (
+                <>
+                  <TableCardHeader
+                    title={category}
+                    products={visibleItems}
+                    className="mt-8"
+                    onBuyClick={handleBuyClick}
+                  />
+                  {hasMore && (
+                    <div className="mt-4 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => handleSeeMore(category)}
+                        className="rounded-full border border-[#194572] px-5 py-2 text-sm font-medium text-[#194572] transition hover:bg-[#194572] hover:text-white"
+                      >
+                        See more
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </AnimatedSection>
         ))}
       <div className="my-10" />
