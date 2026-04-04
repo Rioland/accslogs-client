@@ -26,6 +26,9 @@ export default function MarketPlace() {
   const [visibleCountByCategory, setVisibleCountByCategory] = useState<
     Record<string, number>
   >({});
+  const [categoryThumbnails, setCategoryThumbnails] = useState<
+    Record<string, string>
+  >({});
 
   useEffect(() => {
     fetchSellerProducts();
@@ -36,19 +39,34 @@ export default function MarketPlace() {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from("seller_products")
-        .select(`*, seller_product_accounts(count)`)
-        .eq("status", "approved")
-        .order("category_id", { ascending: true })
-        .order("created_at", { ascending: false });
+      const [productsRes, categoriesRes] = await Promise.all([
+        supabase
+          .from("seller_products")
+          .select(`*, seller_product_accounts(count)`)
+          .eq("status", "approved")
+          .order("category_id", { ascending: true })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("socialmedia_account_category")
+          .select("name, thumbnail_url"),
+      ]);
 
-      if (error) {
+      if (productsRes.error) {
         setError("Failed to load products");
         return;
       }
 
-      setProducts(data || []);
+      setProducts(productsRes.data || []);
+
+      if (!categoriesRes.error && categoriesRes.data) {
+        const map: Record<string, string> = {};
+        for (const row of categoriesRes.data) {
+          if (row.name && row.thumbnail_url) {
+            map[row.name] = row.thumbnail_url;
+          }
+        }
+        setCategoryThumbnails(map);
+      }
     } catch {
       setError("Failed to load products");
     } finally {
@@ -135,6 +153,7 @@ export default function MarketPlace() {
                 <>
                   <TableCardHeader
                     title={category}
+                    categoryThumbnailUrl={categoryThumbnails[category]}
                     products={visibleItems}
                     className="mt-8"
                     onBuyClick={handleBuyClick}

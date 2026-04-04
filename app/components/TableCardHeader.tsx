@@ -4,6 +4,8 @@ import { SellerProduct } from "@/types/callabelTypes";
 
 interface TableCardHeaderProps {
   title?: string;
+  /** Marketplace row image from admin category settings */
+  categoryThumbnailUrl?: string | null;
   products: SellerProduct[];
   className?: string;
   onBuyClick?: (productId: number) => void;
@@ -11,6 +13,7 @@ interface TableCardHeaderProps {
 
 const TableCardHeader: React.FC<TableCardHeaderProps> = ({
   title = "Products",
+  categoryThumbnailUrl,
   products,
   className = "",
   onBuyClick,
@@ -45,8 +48,19 @@ const TableCardHeader: React.FC<TableCardHeaderProps> = ({
               >
                 {/* Product Info */}
                 <div className="flex gap-4 items-start">
-                  <div className="w-10 h-10 px-4 bg-red-600 rounded-md flex items-center justify-center text-white font-bold">
-                    {title.charAt(0).toUpperCase()}
+                  <div className="w-14 h-14 shrink-0 rounded-md overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center">
+                    {categoryThumbnailUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={categoryThumbnailUrl}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="w-full h-full bg-red-600 flex items-center justify-center text-white font-bold text-lg">
+                        {title.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-1">
