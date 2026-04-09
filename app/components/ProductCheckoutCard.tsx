@@ -109,23 +109,23 @@ export default function ProductCheckoutCard({
   };
 
   return (
-    <div className="max-w-7xl mx-auto bg-gray-100 border rounded-lg p-6 space-y-6">
+    <div className="max-w-7xl mx-auto bg-gray-100 border rounded-lg p-4 sm:p-6 space-y-5 sm:space-y-6">
       {/* Title */}
-      <h2 className="text-xl font-semibold">{title}</h2>
+      <h2 className="text-lg sm:text-xl font-semibold wrap-break-word">{title}</h2>
 
       {/* Price Banner */}
-      <div className="bg-[#F87D1F] text-white font-semibold rounded-md px-6 py-4">
+      <div className="bg-[#F87D1F] text-white font-semibold rounded-md px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base">
         Price for 1 Piece: ₦{price.toFixed(2)}
       </div>
 
       {/* Stock & Quantity */}
-      <div className="border rounded-lg p-6 bg-white space-y-4">
-        <div className="flex justify-between">
+      <div className="border rounded-lg p-4 sm:p-6 bg-white space-y-4">
+        <div className="flex items-center justify-between gap-3">
           <span className="font-medium">Stock:</span>
           <span>{stock}</span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <span className="font-medium">Quantity:</span>
           <input
             type="number"
@@ -136,7 +136,7 @@ export default function ProductCheckoutCard({
               const val = Math.max(1, Math.min(stock, Number(e.target.value)));
               setQuantity(val);
             }}
-            className="w-40 border rounded-md px-3 py-2"
+            className="w-full sm:w-40 border rounded-md px-3 py-2"
           />
         </div>
 
@@ -146,13 +146,13 @@ export default function ProductCheckoutCard({
       </div>
 
       {/* Totals */}
-      <div className="border rounded-lg p-6 bg-white space-y-3">
-        <div className="flex justify-between">
+      <div className="border rounded-lg p-4 sm:p-6 bg-white space-y-3">
+        <div className="flex items-center justify-between gap-3">
           <span className="font-medium">Sub Total:</span>
           <span>₦{subtotal.toFixed(2)}</span>
         </div>
 
-        <div className="flex justify-between text-lg font-bold">
+        <div className="flex items-center justify-between gap-3 text-base sm:text-lg font-bold">
           <span>Grand Total:</span>
           <span className="text-green-600">₦{grandTotal.toFixed(2)}</span>
         </div>
@@ -175,19 +175,21 @@ export default function ProductCheckoutCard({
 
       {/* Options */}
       <div className="space-y-3">
-        <label className="flex items-center gap-2">
+        <label className="flex items-start gap-2">
           <input type="checkbox" className="w-4 h-4" />
-          <span>Subscribe to E-mail newsletter for products</span>
+          <span className="leading-5">
+            Subscribe to E-mail newsletter for products
+          </span>
         </label>
 
-        <label className="flex items-center gap-2">
+        <label className="flex items-start gap-2">
           <input
             type="checkbox"
             checked={agree}
             onChange={() => setAgree(!agree)}
             className="w-4 h-4"
           />
-          <span>
+          <span className="leading-5">
             I agree to the public offer and{" "}
             <a
               href="/policy"
@@ -255,12 +257,12 @@ export default function ProductCheckoutCard({
       </button>
 
       {/* Description */}
-      <div className="border rounded-lg bg-white">
-        <div className="border-b p-4 font-semibold text-lg">
+      <div className="border rounded-lg bg-white overflow-hidden">
+        <div className="border-b p-4 font-semibold text-base sm:text-lg">
           Product Description
         </div>
 
-        <div className="p-4 text-gray-700">
+        <div className="p-3 sm:p-4 text-gray-700 overflow-x-auto">
           <ReactQuill
             value={description || ""}
             readOnly={true}
