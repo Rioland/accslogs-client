@@ -35,6 +35,13 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon.png" type="image/x-icon" />
         {children}
         <Toaster />
+        {/* Google AdSense */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7727301966519182"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         {/* Tawk.to Live Chat */}
         <Script
           id="tawk-to"

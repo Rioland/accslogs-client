@@ -48,7 +48,7 @@ export default function MarketPlace() {
           .order("created_at", { ascending: false }),
         supabase
           .from("socialmedia_account_category")
-          .select("name, thumbnail_url"),
+          .select("id, name, thumbnail_url"),
       ]);
 
       if (productsRes.error) {
@@ -61,8 +61,11 @@ export default function MarketPlace() {
       if (!categoriesRes.error && categoriesRes.data) {
         const map: Record<string, string> = {};
         for (const row of categoriesRes.data) {
-          if (row.name && row.thumbnail_url) {
-            map[row.name] = row.thumbnail_url;
+          if (row.thumbnail_url) {
+            map[String(row.id)] = row.thumbnail_url;
+            if (row.name) {
+              map[row.name] = row.thumbnail_url;
+            }
           }
         }
         setCategoryThumbnails(map);
@@ -148,12 +151,18 @@ export default function MarketPlace() {
                 visibleCountByCategory[category] || MAX_PRODUCTS_PER_BATCH;
               const visibleItems = items.slice(0, visibleCount);
               const hasMore = items.length > visibleCount;
+              const categoryKey =
+                visibleItems[0]?.category_id != null
+                  ? String(visibleItems[0].category_id)
+                  : category;
 
               return (
                 <>
                   <TableCardHeader
                     title={category}
-                    categoryThumbnailUrl={categoryThumbnails[category]}
+                    categoryThumbnailUrl={
+                      categoryThumbnails[categoryKey] || categoryThumbnails[category]
+                    }
                     products={visibleItems}
                     className="mt-8"
                     onBuyClick={handleBuyClick}

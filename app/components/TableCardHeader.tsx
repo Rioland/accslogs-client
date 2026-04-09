@@ -57,9 +57,7 @@ const TableCardHeader: React.FC<TableCardHeaderProps> = ({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="w-full h-full bg-red-600 flex items-center justify-center text-white font-bold text-lg">
-                        {title.charAt(0).toUpperCase()}
-                      </span>
+                      <span className="text-gray-400 text-xs">No image</span>
                     )}
                   </div>
 
