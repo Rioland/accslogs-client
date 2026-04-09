@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Topnotchlogs - Buy Social media Accounts with Backup Email and 2FA",
   description: "Developed by Riotech'",
+  other: {
+    "google-adsense-account": "ca-pub-7727301966519182",
+  },
   icons: {
     icon: "/favicon.png",
   },
