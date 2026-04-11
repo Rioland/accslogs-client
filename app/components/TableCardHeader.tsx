@@ -87,10 +87,16 @@ const TableCardHeader: React.FC<TableCardHeaderProps> = ({
                   </div>
 
                   <button
-                    onClick={() => handleBuyClick(product.id)}
-                    className="px-5 py-2 bg-[#F87D1F] hover:bg-[#e06b10] text-white rounded-lg text-sm font-medium transition"
+                    type="button"
+                    disabled={stock <= 0}
+                    onClick={() => stock > 0 && handleBuyClick(product.id)}
+                    className={`rounded-lg px-5 py-2 text-sm font-medium transition ${
+                      stock <= 0
+                        ? "cursor-not-allowed bg-gray-300 text-gray-600"
+                        : "bg-[#F87D1F] text-white hover:bg-[#e06b10]"
+                    }`}
                   >
-                    Buy
+                    {stock <= 0 ? "Out of stock" : "Buy"}
                   </button>
                 </div>
               </div>

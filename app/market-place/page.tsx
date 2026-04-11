@@ -42,7 +42,7 @@ export default function MarketPlace() {
       const [productsRes, categoriesRes] = await Promise.all([
         supabase
           .from("seller_products")
-          .select(`*, seller_product_accounts(count)`)
+          .select("*")
           .eq("status", "approved")
           .order("category_id", { ascending: true })
           .order("created_at", { ascending: false }),
@@ -56,7 +56,110 @@ export default function MarketPlace() {
         return;
       }
 
-      setProducts(productsRes.data || []);
+      const rawProducts = productsRes.data || [];
+      const productIds = rawProducts.map((p) => p.id);
+
+      let merged: SellerProduct[] = [];
+
+      if (productIds.length > 0) {
+        const attachCounts = (
+          rows: typeof rawProducts,
+          getCount: (productId: number) => number,
+        ): SellerProduct[] =>
+          rows
+            .map((p) => {
+              const n = p as SellerProduct;
+              const available = getCount(n.id);
+              return {
+                ...n,
+                seller_product_accounts: [{ count: available }],
+              };
+            })
+            .filter((p) => (p.seller_product_accounts?.[0]?.count ?? 0) > 0);
+
+        let loaded = false;
+
+        const { data: stockRows, error: rpcError } = await supabase.rpc(
+          "marketplace_available_counts",
+          { p_ids: productIds },
+        );
+
+        if (!rpcError && stockRows) {
+          const countByProduct = new Map<number, number>();
+          for (const row of stockRows) {
+            const r = row as { product_id: number; available_count: number };
+            countByProduct.set(
+              Number(r.product_id),
+              Number(r.available_count ?? 0),
+            );
+          }
+          merged = attachCounts(rawProducts, (id) => countByProduct.get(id) ?? 0);
+          loaded = true;
+        } else {
+          console.warn("marketplace_available_counts:", rpcError?.message ?? rpcError);
+        }
+
+        if (!loaded) {
+          const { data: embedRows, error: embedError } = await supabase
+            .from("seller_products")
+            .select("*, seller_product_accounts(count)")
+            .eq("status", "approved")
+            .is("seller_product_accounts.buyer_id", null)
+            .order("category_id", { ascending: true })
+            .order("created_at", { ascending: false });
+
+          if (!embedError && embedRows != null) {
+            merged = embedRows
+              .map((p) => {
+                const row = p as SellerProduct & {
+                  seller_product_accounts?: { count?: number }[];
+                };
+                const c = row.seller_product_accounts?.[0]?.count ?? 0;
+                return {
+                  ...row,
+                  seller_product_accounts: [{ count: c }],
+                };
+              })
+              .filter((p) => (p.seller_product_accounts?.[0]?.count ?? 0) > 0);
+            loaded = true;
+          } else {
+            console.warn("filtered embed count:", embedError?.message ?? embedError);
+          }
+        }
+
+        if (!loaded) {
+          const { data: availRows, error: availError } = await supabase
+            .from("seller_product_accounts")
+            .select("product_id")
+            .in("product_id", productIds)
+            .is("buyer_id", null);
+
+          if (!availError && availRows) {
+            const countByProduct = new Map<number, number>();
+            for (const r of availRows) {
+              const pid = Number((r as { product_id: number }).product_id);
+              countByProduct.set(pid, (countByProduct.get(pid) ?? 0) + 1);
+            }
+            merged = attachCounts(
+              rawProducts,
+              (id) => countByProduct.get(id) ?? 0,
+            );
+            loaded = true;
+          } else {
+            console.warn("seller_product_accounts bulk:", availError?.message ?? availError);
+          }
+        }
+
+        if (!loaded) {
+          setError(
+            "Could not load product inventory. Check Supabase RLS for seller_product_accounts, or run client/marketplace_available_counts_migration.sql.",
+          );
+          setProducts([]);
+          return;
+        }
+      }
+
+      setProducts(merged);
 
       if (!categoriesRes.error && categoriesRes.data) {
         const map: Record<string, string> = {};

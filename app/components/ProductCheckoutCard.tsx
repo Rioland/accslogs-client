@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import ReactQuill from "react-quill-new";
@@ -34,9 +34,23 @@ export default function ProductCheckoutCard({
   const subtotal = price * quantity;
   const grandTotal = subtotal;
 
+  useEffect(() => {
+    if (stock <= 0) {
+      setQuantity(0);
+      return;
+    }
+    setQuantity((q) => Math.min(Math.max(1, q), stock));
+  }, [stock]);
+
   const handlePayment = async () => {
     setErrorMsg(null);
     setSuccessMsg(null);
+
+    if (stock <= 0) {
+      setErrorMsg("This product is out of stock.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -120,6 +134,12 @@ export default function ProductCheckoutCard({
 
       {/* Stock & Quantity */}
       <div className="border rounded-lg p-4 sm:p-6 bg-white space-y-4">
+        {stock <= 0 && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            This product is out of stock — inventory may update when new accounts
+            are added.
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <span className="font-medium">Stock:</span>
           <span>{stock}</span>
@@ -130,13 +150,14 @@ export default function ProductCheckoutCard({
           <input
             type="number"
             min={1}
-            max={stock}
-            value={quantity}
+            max={Math.max(1, stock)}
+            value={stock <= 0 ? 0 : quantity}
+            disabled={stock <= 0}
             onChange={(e) => {
               const val = Math.max(1, Math.min(stock, Number(e.target.value)));
               setQuantity(val);
             }}
-            className="w-full sm:w-40 border rounded-md px-3 py-2"
+            className="w-full rounded-md border px-3 py-2 sm:w-40 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
         </div>
 
@@ -219,10 +240,10 @@ export default function ProductCheckoutCard({
 
       {/* Payment Button */}
       <button
-        disabled={!agree || loading}
+        disabled={!agree || loading || stock <= 0}
         onClick={handlePayment}
         className={`w-full py-3 rounded-md text-white font-semibold flex items-center justify-center gap-2 transition-colors ${
-          agree && !loading
+          agree && !loading && stock > 0
             ? "bg-green-600 hover:bg-green-700"
             : "bg-gray-400 cursor-not-allowed"
         }`}

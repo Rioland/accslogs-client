@@ -71,12 +71,14 @@
     --color-orange-500: #fe6e00;
     --color-amber-50: #fffbeb;
     --color-amber-100: #fef3c6;
+    --color-amber-200: #fee685;
     --color-amber-300: #ffd236;
     --color-amber-400: #fcbb00;
     --color-amber-500: #f99c00;
     --color-amber-600: #dd7400;
     --color-amber-700: #b75000;
     --color-amber-800: #953d00;
+    --color-amber-900: #7b3306;
     --color-yellow-100: #fef9c2;
     --color-yellow-300: #ffe02a;
     --color-yellow-600: #cd8900;
@@ -182,12 +184,14 @@
       --color-orange-500: lab(64.272% 57.1788 90.3583);
       --color-amber-50: lab(98.6252% -.635922 8.42309);
       --color-amber-100: lab(95.916% -1.21653 23.111);
+      --color-amber-200: lab(91.7203% -.505269 49.9084);
       --color-amber-300: lab(86.4156% 6.13147 78.3961);
       --color-amber-400: lab(80.1641% 16.6016 99.2089);
       --color-amber-500: lab(72.7183% 31.8672 97.9407);
       --color-amber-600: lab(60.3514% 40.5624 87.1228);
       --color-amber-700: lab(47.2709% 42.9082 69.2966);
       --color-amber-800: lab(37.8822% 37.1699 52.2718);
+      --color-amber-900: lab(31.2288% 30.2627 40.0378);
       --color-yellow-100: lab(97.3564% -4.51407 27.344);
       --color-yellow-300: lab(89.7033% -.480294 84.4917);
       --color-yellow-600: lab(62.7799% 22.4197 86.1544);
@@ -1304,6 +1308,10 @@
     border-color: lab(66.267% 44.4686 67.2715 / .3);
   }
 
+  .border-amber-200 {
+    border-color: var(--color-amber-200);
+  }
+
   .border-amber-300 {
     border-color: var(--color-amber-300);
   }
@@ -1975,6 +1983,10 @@
     color: var(--color-amber-700);
   }
 
+  .text-amber-900 {
+    color: var(--color-amber-900);
+  }
+
   .text-blue-100 {
     color: var(--color-blue-100);
   }
@@ -2555,6 +2567,10 @@
 
   .disabled\:cursor-not-allowed:disabled {
     cursor: not-allowed;
+  }
+
+  .disabled\:bg-gray-100:disabled {
+    background-color: var(--color-gray-100);
   }
 
   .disabled\:bg-gray-400:disabled {
