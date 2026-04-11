@@ -23,7 +23,7 @@ export default function Home() {
 
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-screen flex-col text-gray-900">
       <TopBar />
       <Navbar1 />
       <Navbar2 onSelectCategory={handleSelectCategory} />

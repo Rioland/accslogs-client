@@ -103,7 +103,7 @@ export default function ClientProductDetailPage() {
       )}
 
       {!loading && !error && product && (
-        <div className="container mx-auto px-4 py-8 flex-1">
+        <div className="container mx-auto flex-1 px-4 py-6 sm:px-6 sm:py-8">
           <ProductCheckoutCard
             productId={product.id}
             title={product.name}

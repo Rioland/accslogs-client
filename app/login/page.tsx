@@ -20,7 +20,7 @@ export default function LoginPage() {
       <Navbar1 />
       <Navbar2 onSelectCategory={handleSelectCategory} />
 
-      <div className='flex-1'>
+      <div className="flex-1 px-4 pb-8 sm:px-6">
         <LoginForm />
       </div>
       <Footer />

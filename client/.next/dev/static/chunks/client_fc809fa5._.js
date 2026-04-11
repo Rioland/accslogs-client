@@ -10,7 +10,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$ne
 ;
 function Wrapper({ children }) {
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "max-w-7xl mx-auto px-4 ",
+        className: "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8",
         children: children
     }, void 0, false, {
         fileName: "[project]/client/app/components/Wrapper.tsx",
@@ -40,35 +40,42 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$
 ;
 function TopBar() {
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "bg-[#194572] text-white h-16 w-full pt-4",
+        className: "w-full bg-[#194572] py-3 text-white",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$2f$Wrapper$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "flex flex-row justify-start items-center ml-3 gap-2 md:gap-3",
+                className: "flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs sm:text-sm md:text-base",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                        className: "text-sm md:text-base",
-                        children: "Topnotchlogs - Accounts store"
+                        className: "font-medium text-white/95",
+                        children: "Topnotchlogs — Accounts store"
                     }, void 0, false, {
                         fileName: "[project]/client/app/components/TopBar.tsx",
                         lineNumber: 10,
                         columnNumber: 11
                     }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$iconsax$2d$reactjs$2f$dist$2f$esm$2f$Whatsapp$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Whatsapp$3e$__["Whatsapp"], {
-                        size: "32",
-                        color: "#F87D1F",
-                        variant: "Bold"
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                        className: "inline-flex shrink-0",
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$iconsax$2d$reactjs$2f$dist$2f$esm$2f$Whatsapp$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Whatsapp$3e$__["Whatsapp"], {
+                            size: "28",
+                            color: "#F87D1F",
+                            variant: "Bold"
+                        }, void 0, false, {
+                            fileName: "[project]/client/app/components/TopBar.tsx",
+                            lineNumber: 14,
+                            columnNumber: 13
+                        }, this)
                     }, void 0, false, {
                         fileName: "[project]/client/app/components/TopBar.tsx",
-                        lineNumber: 11,
+                        lineNumber: 13,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("a", {
                         href: "https://chat.whatsapp.com/ExDtiilSCUv6BL09xBaJQx",
-                        className: "text-sm md:text-base text-[#F87D1F] hover:underline",
+                        className: "font-medium text-[#F87D1F] underline-offset-2 hover:underline",
                         children: "@Topnotchlogs1"
                     }, void 0, false, {
                         fileName: "[project]/client/app/components/TopBar.tsx",
-                        lineNumber: 12,
+                        lineNumber: 16,
                         columnNumber: 11
                     }, this)
                 ]
@@ -178,11 +185,11 @@ function Navbar1() {
         }
     }["Navbar1.useEffect"], []);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "bg-white w-full py-2 shadow-sm",
+        className: "w-full bg-white py-2 shadow-sm",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$2f$Wrapper$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "flex flex-row justify-between items-center",
+                    className: "flex flex-row items-center justify-between gap-2",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                             href: "/contact",
@@ -198,7 +205,7 @@ function Navbar1() {
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                    className: "text-[#194572] hidden md:block text-base",
+                                    className: "hidden text-base font-medium text-[#194572] md:block",
                                     children: "Ask a question"
                                 }, void 0, false, {
                                     fileName: "[project]/client/app/components/Navbar1.tsx",
@@ -352,11 +359,11 @@ function Navbar1() {
                     columnNumber: 9
                 }, this),
                 isOpen && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "md:hidden flex flex-col gap-2 mt-4",
+                    className: "mt-4 flex flex-col gap-1 border-t border-gray-100 pt-4 md:hidden",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                             href: "/",
-                            className: `hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/" ? "text-[#F87D1F]" : "text-gray-800"}`,
+                            className: `rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/" ? "text-[#F87D1F]" : "text-gray-900"}`,
                             children: "Home"
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/Navbar1.tsx",
@@ -365,7 +372,7 @@ function Navbar1() {
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                             href: "/market-place",
-                            className: `hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/market-place" ? "text-[#F87D1F]" : "text-gray-800"}`,
+                            className: `rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/market-place" ? "text-[#F87D1F]" : "text-gray-900"}`,
                             children: "MarketPlace"
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/Navbar1.tsx",
@@ -374,7 +381,7 @@ function Navbar1() {
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                             href: "/about",
-                            className: `hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/about" ? "text-[#F87D1F]" : "text-gray-800"}`,
+                            className: `rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/about" ? "text-[#F87D1F]" : "text-gray-900"}`,
                             children: "About"
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/Navbar1.tsx",
@@ -383,7 +390,7 @@ function Navbar1() {
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                             href: "/contact",
-                            className: `hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/contact" ? "text-[#F87D1F]" : "text-gray-800"}`,
+                            className: `rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/contact" ? "text-[#F87D1F]" : "text-gray-900"}`,
                             children: "Contact"
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/Navbar1.tsx",
@@ -392,7 +399,7 @@ function Navbar1() {
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                             href: "/faq",
-                            className: `hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/faq" ? "text-[#F87D1F]" : "text-gray-800"}`,
+                            className: `rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/faq" ? "text-[#F87D1F]" : "text-gray-900"}`,
                             children: "FAQ"
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/Navbar1.tsx",
@@ -401,7 +408,7 @@ function Navbar1() {
                         }, this),
                         isAuthed ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                             href: "/dashboard",
-                            className: "text-gray-800 mx-2 font-bold text-lg flex flex-row gap-2.5 items-center justify-between border border-[#F87D1F] rounded-4xl p-2 hover:bg-orange-50 cursor-pointer transition-colors",
+                            className: "flex flex-row items-center justify-between gap-2.5 rounded-2xl border border-[#F87D1F] p-3 font-semibold text-gray-900 transition-colors hover:bg-orange-50",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "flex flex-row items-center gap-2.5",
@@ -444,11 +451,11 @@ function Navbar1() {
                             lineNumber: 156,
                             columnNumber: 15
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "flex flex-col gap-2",
+                            className: "mt-1 flex flex-col gap-2",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                                     href: "/login",
-                                    className: "text-[#194572] mx-2 font-bold text-lg border border-[#194572] rounded-4xl p-2 hover:bg-blue-50 cursor-pointer transition-colors",
+                                    className: "rounded-2xl border border-[#194572] p-3 text-center text-base font-semibold text-[#194572] transition-colors hover:bg-blue-50",
                                     children: "Login"
                                 }, void 0, false, {
                                     fileName: "[project]/client/app/components/Navbar1.tsx",
@@ -457,7 +464,7 @@ function Navbar1() {
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                                     href: "/signup",
-                                    className: "text-white bg-[#F87D1F] hover:bg-[#e06b10] mx-2 font-bold text-lg rounded-4xl p-2 cursor-pointer text-center transition-colors",
+                                    className: "rounded-2xl bg-[#F87D1F] p-3 text-center text-base font-semibold text-white transition-colors hover:bg-[#e06b10]",
                                     children: "Sign Up"
                                 }, void 0, false, {
                                     fileName: "[project]/client/app/components/Navbar1.tsx",
@@ -767,7 +774,7 @@ function Footer() {
                 className: "bg-[#194572]",
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$2f$Wrapper$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex flex-col md:flex-row justify-between items-center py-5 text-white text-sm",
+                        className: "flex flex-col items-center gap-3 py-5 text-center text-sm text-white/95 sm:flex-row sm:justify-between sm:text-left",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                 children: "© 2026 Topnotchlogs. All rights reserved."
@@ -777,6 +784,7 @@ function Footer() {
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "text-white/90",
                                 children: "Developed by riotech"
                             }, void 0, false, {
                                 fileName: "[project]/client/app/components/Footer.tsx",
@@ -1071,16 +1079,16 @@ const PremiumAccountsHero = ()=>{
     _s();
     const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"])();
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
-        className: "w-full bg-[#f3f1ef] py-16 px-6 md:px-12 lg:px-20",
+        className: "w-full bg-[#f3f1ef] px-4 py-12 sm:px-6 sm:py-16 md:px-12 lg:px-20",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-            className: "max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center",
+            className: "mx-auto grid max-w-7xl items-center gap-10 md:grid-cols-2 md:gap-12",
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$2f$AnimatedSection$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                     animation: "fade-left",
                     threshold: 0.1,
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                            className: "text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-teal-800",
+                            className: "text-3xl font-bold leading-tight text-teal-800 sm:text-4xl md:text-5xl lg:text-6xl",
                             children: [
                                 "Premium Social Accounts",
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1098,7 +1106,7 @@ const PremiumAccountsHero = ()=>{
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "mt-6 text-gray-600 max-w-xl leading-relaxed",
+                            className: "mt-6 max-w-xl text-base leading-relaxed text-gray-600 sm:text-lg",
                             children: "Topnotchlogs Marketplace offers authentic, verified social media accounts across all major platforms. Grow your online presence instantly with our premium selection."
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/PremiumAccountsHero.tsx",
@@ -1144,7 +1152,7 @@ const PremiumAccountsHero = ()=>{
                     threshold: 0.1,
                     className: "relative flex justify-center md:justify-end",
                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "relative bg-white rounded-2xl shadow-lg p-6 w-80",
+                        className: "relative mx-auto w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg sm:p-6 md:mx-0 md:max-w-[20rem]",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "absolute -top-5 right-4 bg-teal-700 text-white text-sm px-4 py-1 rounded-full shadow",
@@ -1355,7 +1363,7 @@ const FeatureCard = ({ icon, title, description })=>{
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
-                className: "text-lg font-semibold text-teal-800 mb-2",
+                className: "mb-2 text-lg font-semibold text-teal-800",
                 children: title
             }, void 0, false, {
                 fileName: "[project]/client/app/components/FeatureCard.tsx",
@@ -1363,7 +1371,7 @@ const FeatureCard = ({ icon, title, description })=>{
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                className: "text-gray-600 text-sm leading-relaxed",
+                className: "text-sm leading-relaxed text-gray-600",
                 children: description
             }, void 0, false, {
                 fileName: "[project]/client/app/components/FeatureCard.tsx",
@@ -1456,16 +1464,16 @@ const delays = [
 ];
 const WhyChooseSection = ()=>{
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
-        className: "w-full bg-[#f3f1ef] py-16 px-6 md:px-12 lg:px-20",
+        className: "w-full bg-[#f3f1ef] px-4 py-12 sm:px-6 sm:py-16 md:px-12 lg:px-20",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-            className: "max-w-7xl mx-auto",
+            className: "mx-auto max-w-7xl",
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$2f$AnimatedSection$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                     animation: "fade-down",
-                    className: "text-center mb-12",
+                    className: "mb-12 text-center",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
-                            className: "text-3xl md:text-4xl font-bold text-teal-800",
+                            className: "text-2xl font-bold text-teal-800 sm:text-3xl md:text-4xl",
                             children: "Why Choose Topnotchlogs?"
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/FeatureCard.tsx",
@@ -1473,7 +1481,7 @@ const WhyChooseSection = ()=>{
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-gray-600 mt-3 max-w-2xl mx-auto",
+                            className: "mx-auto mt-3 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg",
                             children: "We provide the most reliable and authentic social media accounts in the market."
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/FeatureCard.tsx",
@@ -1659,16 +1667,16 @@ const delays = [
 ];
 const StepsSection = ()=>{
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
-        className: "w-full bg-[#eef2f3] py-16 px-6 md:px-12 lg:px-20",
+        className: "w-full bg-[#eef2f3] px-4 py-12 sm:px-6 sm:py-16 md:px-12 lg:px-20",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-            className: "max-w-7xl mx-auto",
+            className: "mx-auto max-w-7xl",
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$2f$AnimatedSection$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                     animation: "fade-down",
-                    className: "text-center mb-14",
+                    className: "mb-14 text-center",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
-                            className: "text-3xl md:text-4xl font-bold text-teal-800",
+                            className: "text-2xl font-bold text-teal-800 sm:text-3xl md:text-4xl",
                             children: "Get Started in 4 Simple Steps"
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/StepsSection.tsx",
@@ -1676,7 +1684,7 @@ const StepsSection = ()=>{
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-gray-600 mt-3 max-w-2xl mx-auto",
+                            className: "mx-auto mt-3 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg",
                             children: "Our streamlined process makes acquiring premium accounts effortless."
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/StepsSection.tsx",
@@ -1872,16 +1880,16 @@ const delays = [
 ];
 const TestimonialsSection = ()=>{
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
-        className: "w-full bg-[#f3f1ef] py-16 px-6 md:px-12 lg:px-20",
+        className: "w-full bg-[#f3f1ef] px-4 py-12 sm:px-6 sm:py-16 md:px-12 lg:px-20",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-            className: "max-w-7xl mx-auto",
+            className: "mx-auto max-w-7xl",
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$2f$AnimatedSection$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                     animation: "fade-down",
-                    className: "text-center mb-12",
+                    className: "mb-12 text-center",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
-                            className: "text-3xl md:text-4xl font-bold text-teal-800",
+                            className: "text-2xl font-bold text-teal-800 sm:text-3xl md:text-4xl",
                             children: "What Our Customers Say"
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/TestimonialsSection.tsx",
@@ -1889,7 +1897,7 @@ const TestimonialsSection = ()=>{
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-gray-600 mt-3 max-w-2xl mx-auto",
+                            className: "mx-auto mt-3 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg",
                             children: "Trusted by thousands of digital marketers and influencers."
                         }, void 0, false, {
                             fileName: "[project]/client/app/components/TestimonialsSection.tsx",
@@ -1992,7 +2000,7 @@ function Home() {
         console.log("Selected:", category, subcategory);
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "flex flex-col min-h-screen",
+        className: "flex min-h-screen flex-col text-gray-900",
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$client$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$client$2f$app$2f$components$2f$TopBar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                 fileName: "[project]/client/app/page.tsx",

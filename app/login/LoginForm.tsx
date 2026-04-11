@@ -98,12 +98,16 @@ export default function LoginForm() {
           <span className="text-gray-900">logs</span>
         </h1>
 
-        <h2 className="mt-6 text-2xl font-bold text-gray-900">Login</h2>
-        <p className="mt-2 text-sm text-gray-600">Sign in to your account</p>
+        <h2 className="mt-5 text-xl font-bold text-gray-900 sm:mt-6 sm:text-2xl">
+          Login
+        </h2>
+        <p className="mt-2 text-sm text-gray-600 sm:text-base">
+          Sign in to your account
+        </p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 px-4 pb-8 sm:px-8 sm:pb-10">
         {/* Email */}
         <div>
           <label

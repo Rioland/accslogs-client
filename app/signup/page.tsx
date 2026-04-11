@@ -130,16 +130,16 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen  bg-gray-50 ">
+    <div className="flex min-h-screen flex-col bg-gray-50 text-gray-900">
       <TopBar />
       <Navbar1 />
       <Navbar2 onSelectCategory={handleSelectCategory} />
 
-      <div className="flex-1">
-        <div className="w-full md:w-6/12 md:mx-auto mx-4 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden my-16">
+      <div className="flex flex-1 flex-col px-4 pb-10 pt-8 sm:px-6 sm:pb-12">
+        <div className="mx-auto my-8 w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden sm:my-12">
           {/* Header */}
-          <div className="px-8 pt-10 pb-6 bg-linear-to-b from-white to-gray-50 text-center">
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight">
+          <div className="bg-linear-to-b from-white to-gray-50 px-4 pb-6 pt-8 text-center sm:px-8 sm:pt-10">
+            <h1 className="text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">
               <span className="text-gray-900">Top</span>
               <span className="text-amber-600">notch</span>
               <span className="text-gray-900">logs</span>
