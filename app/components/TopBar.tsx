@@ -4,14 +4,18 @@ import Wrapper from "./Wrapper";
 
 export default function TopBar() {
   return (
-    <div className="bg-[#194572] text-white h-16 w-full pt-4">
+    <div className="w-full bg-[#194572] py-3 text-white">
       <Wrapper>
-        <div className="flex flex-row justify-start items-center ml-3 gap-2 md:gap-3">
-          <p className="text-sm md:text-base">Topnotchlogs - Accounts store</p>
-          <Whatsapp size="32" color="#F87D1F" variant="Bold" />
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs sm:text-sm md:text-base">
+          <p className="font-medium text-white/95">
+            Topnotchlogs — Accounts store
+          </p>
+          <span className="inline-flex shrink-0">
+            <Whatsapp size="28" color="#F87D1F" variant="Bold" />
+          </span>
           <a
             href="https://chat.whatsapp.com/ExDtiilSCUv6BL09xBaJQx"
-            className="text-sm md:text-base text-[#F87D1F] hover:underline"
+            className="font-medium text-[#F87D1F] underline-offset-2 hover:underline"
           >
             @Topnotchlogs1
           </a>

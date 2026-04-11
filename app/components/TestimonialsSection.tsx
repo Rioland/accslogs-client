@@ -73,14 +73,14 @@ const delays = [0, 200, 400] as const;
 
 const TestimonialsSection: React.FC = () => {
   return (
-    <section className="w-full bg-[#f3f1ef] py-16 px-6 md:px-12 lg:px-20">
-      <div className="max-w-7xl mx-auto">
+    <section className="w-full bg-[#f3f1ef] px-4 py-12 sm:px-6 sm:py-16 md:px-12 lg:px-20">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <AnimatedSection animation="fade-down" className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-teal-800">
+        <AnimatedSection animation="fade-down" className="mb-12 text-center">
+          <h2 className="text-2xl font-bold text-teal-800 sm:text-3xl md:text-4xl">
             What Our Customers Say
           </h2>
-          <p className="text-gray-600 mt-3 max-w-2xl mx-auto">
+          <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg">
             Trusted by thousands of digital marketers and influencers.
           </p>
         </AnimatedSection>

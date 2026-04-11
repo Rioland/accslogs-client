@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-white font-sans text-base leading-relaxed text-gray-900 antialiased`}
       >
         <link rel="shortcut icon" href="/favicon.png" type="image/x-icon" />
         {children}

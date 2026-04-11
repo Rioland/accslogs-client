@@ -15,9 +15,9 @@ export default function Footer() {
       </Wrapper>
       <div className="bg-[#194572]">
         <Wrapper>
-          <div className="flex flex-col md:flex-row justify-between items-center py-5 text-white text-sm">
+          <div className="flex flex-col items-center gap-3 py-5 text-center text-sm text-white/95 sm:flex-row sm:justify-between sm:text-left">
             <p>© 2026 Topnotchlogs. All rights reserved.</p>
-            <p>Developed by riotech</p>
+            <p className="text-white/90">Developed by riotech</p>
             <p>Copying is prohibited!</p>
           </div>
         </Wrapper>

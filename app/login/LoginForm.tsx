@@ -89,10 +89,10 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="w-full md:w-6/12 mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 mt-12">
+    <div className="mx-auto mt-8 w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden sm:mt-12">
       {/* Header */}
-      <div className="px-8 pt-10 pb-6 bg-linear-to-b from-white to-gray-50 text-center">
-        <h1 className="text-4xl md:text-5xl font-black tracking-tight">
+      <div className="bg-linear-to-b from-white to-gray-50 px-4 pb-6 pt-8 text-center sm:px-8 sm:pt-10">
+        <h1 className="text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">
           <span className="text-gray-900">Top</span>
           <span className="text-amber-600">notch</span>
           <span className="text-gray-900">logs</span>

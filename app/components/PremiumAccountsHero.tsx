@@ -19,18 +19,18 @@ const PlatformCard: React.FC<{
 const PremiumAccountsHero: React.FC = () => {
   const router = useRouter();
   return (
-    <section className="w-full bg-[#f3f1ef] py-16 px-6 md:px-12 lg:px-20">
-      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+    <section className="w-full bg-[#f3f1ef] px-4 py-12 sm:px-6 sm:py-16 md:px-12 lg:px-20">
+      <div className="mx-auto grid max-w-7xl items-center gap-10 md:grid-cols-2 md:gap-12">
         {/* Left Content */}
         <AnimatedSection animation="fade-left" threshold={0.1}>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-teal-800">
+          <h1 className="text-3xl font-bold leading-tight text-teal-800 sm:text-4xl md:text-5xl lg:text-6xl">
             Premium Social Accounts
             <span className="block text-[#F87D1F]">
               Verified &amp; Ready to Use
             </span>
           </h1>
 
-          <p className="mt-6 text-gray-600 max-w-xl leading-relaxed">
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-gray-600 sm:text-lg">
             Topnotchlogs Marketplace offers authentic, verified social media
             accounts across all major platforms. Grow your online presence
             instantly with our premium selection.
@@ -57,7 +57,7 @@ const PremiumAccountsHero: React.FC = () => {
           threshold={0.1}
           className="relative flex justify-center md:justify-end"
         >
-          <div className="relative bg-white rounded-2xl shadow-lg p-6 w-80">
+          <div className="relative mx-auto w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg sm:p-6 md:mx-0 md:max-w-[20rem]">
             {/* Verified Badge */}
             <div className="absolute -top-5 right-4 bg-teal-700 text-white text-sm px-4 py-1 rounded-full shadow">
               ✓ 100% Verified

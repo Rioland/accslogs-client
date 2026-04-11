@@ -37,15 +37,15 @@ export default function Navbar1() {
   }, []);
 
   return (
-    <div className="bg-white w-full py-2 shadow-sm">
+    <div className="w-full bg-white py-2 shadow-sm">
       <Wrapper>
-        <div className="flex flex-row justify-between items-center">
+        <div className="flex flex-row items-center justify-between gap-2">
           <Link
             href="/contact"
             className="rounded-4xl border border-[#194572] p-2 flex flex-row items-center gap-2 hover:bg-gray-100 cursor-pointer"
           >
             <InfoCircle size="28" color="#F87D1F" variant="Bold" />
-            <p className="text-[#194572] hidden md:block text-base">
+            <p className="hidden text-base font-medium text-[#194572] md:block">
               Ask a question
             </p>
           </Link>
@@ -120,34 +120,34 @@ export default function Navbar1() {
           </div>
         </div>
         {isOpen && (
-          <div className="md:hidden flex flex-col gap-2 mt-4">
+          <div className="mt-4 flex flex-col gap-1 border-t border-gray-100 pt-4 md:hidden">
             <Link
               href="/"
-              className={`hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/" ? "text-[#F87D1F]" : "text-gray-800"}`}
+              className={`rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/" ? "text-[#F87D1F]" : "text-gray-900"}`}
             >
               Home
             </Link>
             <Link
               href="/market-place"
-              className={`hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/market-place" ? "text-[#F87D1F]" : "text-gray-800"}`}
+              className={`rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/market-place" ? "text-[#F87D1F]" : "text-gray-900"}`}
             >
               MarketPlace
             </Link>
             <Link
               href="/about"
-              className={`hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/about" ? "text-[#F87D1F]" : "text-gray-800"}`}
+              className={`rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/about" ? "text-[#F87D1F]" : "text-gray-900"}`}
             >
               About
             </Link>
             <Link
               href="/contact"
-              className={`hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/contact" ? "text-[#F87D1F]" : "text-gray-800"}`}
+              className={`rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/contact" ? "text-[#F87D1F]" : "text-gray-900"}`}
             >
               Contact
             </Link>
             <Link
               href="/faq"
-              className={`hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/faq" ? "text-[#F87D1F]" : "text-gray-800"}`}
+              className={`rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/faq" ? "text-[#F87D1F]" : "text-gray-900"}`}
             >
               FAQ
             </Link>
@@ -155,7 +155,7 @@ export default function Navbar1() {
             {isAuthed ? (
               <Link
                 href="/dashboard"
-                className="text-gray-800 mx-2 font-bold text-lg flex flex-row gap-2.5 items-center justify-between border border-[#F87D1F] rounded-4xl p-2 hover:bg-orange-50 cursor-pointer transition-colors"
+                className="flex flex-row items-center justify-between gap-2.5 rounded-2xl border border-[#F87D1F] p-3 font-semibold text-gray-900 transition-colors hover:bg-orange-50"
               >
                 <div className="flex flex-row items-center gap-2.5">
                   <ProfileCircle size="32" color="#F87D1F" variant="Bold" />
@@ -164,16 +164,16 @@ export default function Navbar1() {
                 <ArrowDown2 size="32" color="#F87D1F" variant="Bold" />
               </Link>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="mt-1 flex flex-col gap-2">
                 <Link
                   href="/login"
-                  className="text-[#194572] mx-2 font-bold text-lg border border-[#194572] rounded-4xl p-2 hover:bg-blue-50 cursor-pointer transition-colors"
+                  className="rounded-2xl border border-[#194572] p-3 text-center text-base font-semibold text-[#194572] transition-colors hover:bg-blue-50"
                 >
                   Login
                 </Link>
                 <Link
                   href="/signup"
-                  className="text-white bg-[#F87D1F] hover:bg-[#e06b10] mx-2 font-bold text-lg rounded-4xl p-2 cursor-pointer text-center transition-colors"
+                  className="rounded-2xl bg-[#F87D1F] p-3 text-center text-base font-semibold text-white transition-colors hover:bg-[#e06b10]"
                 >
                   Sign Up
                 </Link>
