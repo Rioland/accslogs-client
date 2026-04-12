@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "Topnotchlogs - Buy Social media Accounts with Backup Email and 2FA",
   description: "Developed by Riotech'",
   other: {
-    "google-adsense-account": "ca-pub-7727301966519182",
+    "google-adsense-account": "ca-pub-9186818062888330",
   },
   icons: {
     icon: "/favicon.png",
@@ -41,7 +41,7 @@ export default function RootLayout({
         {/* Google AdSense */}
         <Script
           async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7727301966519182"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9186818062888330"
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
