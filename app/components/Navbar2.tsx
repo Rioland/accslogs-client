@@ -68,12 +68,14 @@ export default function Navbar2({ onSelectCategory }: Props) {
           />
           <div className="relative w-full md:w-max-content ">
             <div
-              className="bg-[#F87D1F] text-white p-2 rounded-md hover:bg-[#e06b10] cursor-pointer flex flex-row gap-2 items-center justify-between"
+              className="flex cursor-pointer flex-row items-center justify-between gap-2 rounded-md bg-[#F87D1F] p-2 text-white hover:bg-[#e06b10]"
               onClick={() => setIsOpen(!isOpen)}
             >
               <div className="flex flex-row gap-2 items-center">
                 <HamburgerMenu size="32" color="#ffffff" variant="Outline" />
-                <p className="text-white">Select a Category</p>
+                <p className="text-sm font-semibold text-white sm:text-base">
+                  Select a Category
+                </p>
               </div>
               <ArrowDown2
                 size="32"
@@ -84,7 +86,7 @@ export default function Navbar2({ onSelectCategory }: Props) {
             </div>
             {isOpen && (
               <div
-                className="absolute top-full left-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 min-w-max"
+                className="absolute top-full left-0 z-10 min-w-max rounded-md border border-gray-300 bg-white shadow-lg"
                 onMouseLeave={() => setIsOpen(false)}
               >
                 <div className="flex">
@@ -92,7 +94,7 @@ export default function Navbar2({ onSelectCategory }: Props) {
                     {categories.map((cat) => (
                       <li
                         key={cat.id}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        className="cursor-pointer px-4 py-2 text-gray-900 hover:bg-gray-100"
                         onMouseEnter={() => setHoveredCategory(cat)}
                         onClick={() => {
                           onSelectCategory?.(cat);
@@ -108,7 +110,7 @@ export default function Navbar2({ onSelectCategory }: Props) {
                       {hoveredCategory.subcategories.map((sub) => (
                         <li
                           key={sub.id}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                          className="cursor-pointer px-4 py-2 text-gray-900 hover:bg-gray-100"
                           onClick={() => {
                             onSelectCategory?.(hoveredCategory, sub);
                             setIsOpen(false);
@@ -125,14 +127,14 @@ export default function Navbar2({ onSelectCategory }: Props) {
           </div>
           {/* Search bar */}
 
-          <div className="border border-gray-500 py-2 px-4 rounded-md flex items-center  md:ml-6 w-full md:w-max-content">
+          <div className="flex w-full items-center rounded-md border border-gray-300 bg-white px-4 py-2 md:ml-6 md:w-max-content">
             <input
               type="text"
               placeholder="Search for products..."
-              className="w-full outline-none px-4 text-gray-700"
+              className="w-full px-4 text-sm text-gray-900 placeholder:text-gray-500 outline-none sm:text-base"
             />
 
-            <SearchNormal size="32" color="#000000" variant="Outline" />
+            <SearchNormal size="28" color="#4b5563" variant="Outline" />
           </div>
         </div>
       </Wrapper>

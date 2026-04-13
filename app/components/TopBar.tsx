@@ -7,7 +7,7 @@ export default function TopBar() {
     <div className="w-full bg-[#194572] py-3 text-white">
       <Wrapper>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs sm:text-sm md:text-base">
-          <p className="font-medium text-white/95">
+          <p className="font-semibold text-white">
             Topnotchlogs — Accounts store
           </p>
           <span className="inline-flex shrink-0">
@@ -15,7 +15,7 @@ export default function TopBar() {
           </span>
           <a
             href="https://chat.whatsapp.com/ExDtiilSCUv6BL09xBaJQx"
-            className="font-medium text-[#F87D1F] underline-offset-2 hover:underline"
+            className="font-semibold text-amber-300 underline-offset-2 hover:text-amber-200 hover:underline"
           >
             @Topnotchlogs1
           </a>
