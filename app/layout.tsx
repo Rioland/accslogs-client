@@ -47,7 +47,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${poppins.variable} ${jetbrainsMono.variable} min-h-screen bg-white font-sans text-base leading-relaxed text-gray-900 antialiased`}
+        className={`${poppins.variable} ${jetbrainsMono.variable} min-h-screen overflow-x-hidden bg-white font-sans text-base leading-relaxed text-gray-900 antialiased`}
       >
         {children}
         <Toaster />
