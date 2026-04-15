@@ -32,19 +32,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-white font-sans text-base leading-relaxed text-gray-900 antialiased`}
-      >
+      <head>
         <link rel="shortcut icon" href="/favicon.png" type="image/x-icon" />
-        {children}
-        <Toaster />
-        {/* Google AdSense */}
+        {/* Google AdSense (loader belongs in <head> per AdSense setup) */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9186818062888330"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
         />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-white font-sans text-base leading-relaxed text-gray-900 antialiased`}
+      >
+        {children}
+        <Toaster />
         {/* Tawk.to Live Chat */}
         <Script
           id="tawk-to"
