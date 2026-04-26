@@ -395,7 +395,7 @@ export default function MyOrdersPage() {
       <Navbar2 onSelectCategory={handleSelectCategory} />
 
       {/* Mobile top bar */}
-      <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-[backdrop-filter]:bg-[#e4e9ee]/60">
+      <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-backdrop-filter:bg-[#e4e9ee]/60">
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between">
           <button
             type="button"
