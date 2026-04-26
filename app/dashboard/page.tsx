@@ -34,29 +34,30 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       const {
-        data: { session },
-      } = await supabaseClient.auth.getSession();
-      if (!session) return;
+        data: { user },
+        error: userError,
+      } = await supabaseClient.auth.getUser();
+      if (userError || !user) return;
 
       // Fetch user profile for display name
       const { data: profile } = await supabaseClient
         .from("profiles")
         .select("first_name, last_name")
-        .eq("id", session.user.id)
+        .eq("id", user.id)
         .single();
 
       if (profile) {
         const name = [profile.first_name, profile.last_name]
           .filter(Boolean)
           .join(" ");
-        setUserName(name || session.user.email || "");
+        setUserName(name || user.email || "");
       }
 
       // Fetch real order count for current user
       const { count: orders } = await supabaseClient
         .from("product_orders")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", session.user.id);
+        .eq("user_id", user.id);
 
       setOrderCount(orders ?? 0);
 
@@ -64,7 +65,7 @@ export default function DashboardPage() {
       const { count: openCount } = await supabaseClient
         .from("tickets")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", session.user.id)
+        .eq("user_id", user.id)
         .in("status", ["open", "in_progress"]);
 
       setOpenTicketCount(openCount ?? 0);
@@ -73,7 +74,7 @@ export default function DashboardPage() {
       const { count: closedCount } = await supabaseClient
         .from("tickets")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", session.user.id)
+        .eq("user_id", user.id)
         .eq("status", "closed");
 
       setClosedTicketCount(closedCount ?? 0);

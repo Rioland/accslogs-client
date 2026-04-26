@@ -263,70 +263,112 @@ export default function MyOrdersPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const fetchOrders = useCallback(async () => {
     setLoadingOrders(true);
     setFetchError(null);
 
     try {
+      // getUser() validates the JWT; getSession() can be stale and mismatch RLS auth.uid()
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-      if (!session) {
+      if (userError || !user) {
         router.push("/login");
         return;
       }
 
-      // Fetch orders with product info
+      // Load orders only (avoids PostgREST embed quirks with RLS on joined tables)
       const { data: ordersData, error: ordersError } = await supabase
         .from("product_orders")
-        .select(
-          `
-          id,
-          product_id,
-          quantity,
-          grand_total,
-          status,
-          created_at,
-          seller_products (
-            name,
-            price,
-            category
-          )
-        `,
-        )
-        .eq("user_id", session.user.id)
+        .select("id, product_id, quantity, grand_total, status, created_at")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (ordersError) {
-        setFetchError("Failed to load orders. Please try again.");
+        setFetchError(
+          `Failed to load orders: ${ordersError.message || "Please try again."}`,
+        );
         return;
       }
 
-      // For each order, fetch the purchased accounts (where buyer_id = current user)
+      const rawOrders = ordersData ?? [];
+      const productIds = [
+        ...new Set(
+          rawOrders.map((o) => o.product_id).filter(
+            (id): id is number => id != null && Number.isFinite(Number(id)),
+          ),
+        ),
+      ];
+
+      // Batch-load product rows (same RLS as marketplace; * keeps compatibility if columns differ)
+      const productById = new Map<
+        number,
+        { name: string; price: number; category: string }
+      >();
+
+      if (productIds.length > 0) {
+        const { data: productRows, error: productsError } = await supabase
+          .from("seller_products")
+          .select("*")
+          .in("id", productIds);
+
+        if (productsError) {
+          setFetchError(
+            `Failed to load product details: ${productsError.message || "Please try again."}`,
+          );
+          return;
+        }
+
+        for (const row of productRows ?? []) {
+          const r = row as {
+            id: number;
+            name: string;
+            price: number;
+            category?: string | null;
+          };
+          productById.set(r.id, {
+            name: r.name,
+            price: r.price,
+            category: (r.category ?? "") as string,
+          });
+        }
+      }
+
+      // For each order, load purchased accounts (buyer = current user)
       const ordersWithAccounts: Order[] = await Promise.all(
-        (ordersData ?? []).map(async (order: any) => {
-          const { data: accounts } = await supabase
+        rawOrders.map(async (order) => {
+          const { data: accounts, error: accErr } = await supabase
             .from("seller_product_accounts")
             .select(
               "id, username, password, email, email_password, additional_info, preview_link",
             )
             .eq("product_id", order.product_id)
-            .eq("buyer_id", session.user.id);
+            .eq("buyer_id", user.id);
 
+          if (accErr) {
+            console.error("seller_product_accounts", accErr.message);
+          }
+
+          const sp = productById.get(order.product_id);
           return {
             ...order,
-            seller_products: Array.isArray(order.seller_products)
-              ? (order.seller_products[0] ?? null)
-              : order.seller_products,
+            seller_products: sp
+              ? {
+                  name: sp.name,
+                  price: sp.price,
+                  category: sp.category,
+                }
+              : null,
             accounts: accounts ?? [],
           };
         }),
       );
 
       setOrders(ordersWithAccounts);
-    } catch {
+    } catch (e) {
+      console.error(e);
       setFetchError("An unexpected error occurred.");
     } finally {
       setLoadingOrders(false);
