@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "google-adsense-account": "ca-pub-9186818062888330",
   },
   icons: {
-    icon: "/favicon.png",
+    icon: "/icon.png",
   },
 };
 
@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="shortcut icon" href="/favicon.png" type="image/x-icon" />
+        <link rel="icon" href="/icon.png" type="image/png" />
         {/* Google AdSense (loader belongs in <head> per AdSense setup) */}
         <Script
           async
