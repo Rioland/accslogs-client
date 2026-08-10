@@ -57,6 +57,15 @@ const TopCard: React.FC<AboutSectionProps> = () => {
               Reddit, Apple ID, Telegram, and many more.
             </p>
 
+            <p className="text-gray-700 leading-relaxed mb-8">
+              And with our new{" "}
+              <span className="font-semibold text-[#F87D1F]">
+                bill payments
+              </span>{" "}
+              service, that same wallet also covers your airtime, data,
+              electricity and cable TV.
+            </p>
+
             <p className="text-gray-700 leading-relaxed">
               With a focus on{" "}
               <span className="font-semibold text-[#F87D1F]">speed</span>,{" "}

@@ -1,14 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import Navbar1 from '../components/Navbar1'
-import dynamic from 'next/dynamic'
 import TopBar from '../components/TopBar'
 import Footer from '../components/Footer'
-import { useRouter } from 'next/navigation'
-import supabaseClient from '@/lib/supabaseClient'
-
-const Navbar2 = dynamic(() => import('../components/Navbar2'), { ssr: false })
 import toast from 'react-hot-toast'
 
 function isValidEmail(email: string) {
@@ -16,12 +11,6 @@ function isValidEmail(email: string) {
 }
 
 export default function ForgotPasswordPage() {
-  const handleSelectCategory = (category: any, subcategory: any) => {
-    console.log("Selected:", category, subcategory)
-  }
-
-  const router = useRouter()
-  const supabase = useMemo(() => supabaseClient, [])
 
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -43,16 +32,22 @@ export default function ForgotPasswordPage() {
     setIsSubmitting(true)
 
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmedEmail }),
       })
+      const data = await res.json().catch(() => ({}))
 
-      if (resetError) {
-        toast.error(resetError.message)
+      if (!res.ok) {
+        toast.error(data?.error || 'Something went wrong. Please try again.')
         return
       }
 
-      toast.success('If an account with that email exists, we\'ve sent you a password reset link.')
+      toast.success(
+        data?.message ||
+          "If an account with that email exists, we've sent you a password reset link.",
+      )
     } catch (err: any) {
       toast.error(err?.message || 'Something went wrong. Please try again.')
     } finally {
@@ -64,16 +59,15 @@ export default function ForgotPasswordPage() {
     <div className="flex flex-col min-h-screen">
       <TopBar />
       <Navbar1 />
-      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       <div className='flex-1'>
         <div className=" w-full md:w-6/12 mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 mt-12">
           {/* Header */}
           <div className="px-8 pt-10 pb-6 bg-linear-to-b from-white to-gray-50 text-center">
             <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-              <span className="text-gray-900">A</span>
-              <span className="text-amber-600">CCCS</span>
-              <span className="text-gray-900">Logis</span>
+              <span className="text-gray-900">Top</span>
+              <span className="text-amber-600">notch</span>
+              <span className="text-gray-900">logs</span>
             </h1>
 
             <h2 className="mt-6 text-2xl font-bold text-gray-900">Forgot Password</h2>

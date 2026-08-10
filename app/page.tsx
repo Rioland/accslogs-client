@@ -1,33 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import TopBar from "./components/TopBar";
 import Navbar1 from "./components/Navbar1";
-import dynamic from "next/dynamic";
 
 import Footer from "./components/Footer";
 
 import WarningModal from "./components/WarningModal";
 import PremiumAccountsHero from "./components/PremiumAccountsHero";
+import BillPaymentsSection from "./components/BillPaymentsSection";
 import FeatureCard from "./components/FeatureCard";
 import StepsSection from "./components/StepsSection";
 import TestimonialsSection from "./components/TestimonialsSection";
 
-const Navbar2 = dynamic(() => import("./components/Navbar2"), { ssr: false });
-
 export default function Home() {
-
-  const handleSelectCategory = (category: any, subcategory: any) => {
-    console.log("Selected:", category, subcategory);
-  };
-
 
   return (
     <div className="flex min-h-screen flex-col text-gray-900">
       <TopBar />
       <Navbar1 />
-      <Navbar2 onSelectCategory={handleSelectCategory} />
       <PremiumAccountsHero/>
+      <BillPaymentsSection/>
       <FeatureCard/>
       <StepsSection/>
       <TestimonialsSection/>

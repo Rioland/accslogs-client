@@ -6,15 +6,10 @@ import { useRouter } from "next/navigation";
 import Sidebar from "../Sidebar";
 import { Menu, X, User, Lock } from "lucide-react";
 import Navbar1 from "../../components/Navbar1";
-import dynamic from "next/dynamic";
 import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
 import toast from "react-hot-toast";
-
-const Navbar2 = dynamic(() => import("../../components/Navbar2"), {
-  ssr: false,
-});
 
 function passwordIssues(pw: string): string | null {
   if (pw.length < 8) return "Password must be at least 8 characters long";
@@ -169,16 +164,11 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSelectCategory = (category: any, subcategory: any) => {
-    console.log("Selected:", category, subcategory);
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#e4e9ee] text-foreground">
         <TopBar />
         <Navbar1 />
-        <Navbar2 onSelectCategory={handleSelectCategory} />
         <div className="flex flex-1 items-center justify-center py-24">
           <div className="text-center">
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-[#F87D1F]"></div>
@@ -194,7 +184,6 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[#e4e9ee] text-foreground">
       <TopBar />
       <Navbar1 />
-      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-[backdrop-filter]:bg-[#e4e9ee]/60">
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between">

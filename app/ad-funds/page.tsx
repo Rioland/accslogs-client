@@ -1,12 +1,33 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  generateKorapayDedicatedAccount,
-  getKorapayDedicatedAccount,
-} from "@/lib/KorapayServerActions";
 import supabaseClient from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+
+type DedicatedAccount = {
+  accountNumber: string;
+  accountBank: string;
+  accountName: string;
+};
+
+/**
+ * The Korapay secret key stays on the server, so account details come from
+ * /api/korapay/virtual-account rather than a direct call to Korapay.
+ */
+async function requestAccount(
+  method: "GET" | "POST",
+  token: string,
+): Promise<DedicatedAccount | null> {
+  const res = await fetch("/api/korapay/virtual-account", {
+    method,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json();
+  if (!res.ok || json.status !== "success") {
+    throw new Error(json?.message || "Failed to load account details");
+  }
+  return json.account ?? null;
+}
 
 const AdFundsPage = () => {
   const [accountNumber, setAccountNumber] = useState<string | null>(null);
@@ -27,11 +48,16 @@ const AdFundsPage = () => {
         router.push("/login");
         return;
       }
-      const account = await getKorapayDedicatedAccount(session.user.id);
-      if (account) {
-        setAccountNumber(account.accountNumber);
-        setAccountBank(account.accountBank);
-        setAccountName(account.accountName);
+      try {
+        const account = await requestAccount("GET", session.access_token);
+        if (account) {
+          setAccountNumber(account.accountNumber);
+          setAccountBank(account.accountBank);
+          setAccountName(account.accountName);
+        }
+      } catch {
+        // Nothing stored yet is the normal first-visit case; the generate
+        // button surfaces any real failure.
       }
       setIsFetching(false);
     };
@@ -49,10 +75,12 @@ const AdFundsPage = () => {
         router.push("/login");
         return;
       }
-      const data = await generateKorapayDedicatedAccount(session.user.id);
-      setAccountNumber(data.accountNumber);
-      setAccountBank(data.accountBank);
-      setAccountName(data.accountName);
+      const data = await requestAccount("POST", session.access_token);
+      if (data) {
+        setAccountNumber(data.accountNumber);
+        setAccountBank(data.accountBank);
+        setAccountName(data.accountName);
+      }
     } catch (error) {
       setError(
         error instanceof Error

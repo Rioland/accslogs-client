@@ -1,23 +1,22 @@
 'use client'
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
 export default function WarningModal() {
-  const [isOpen, setIsOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const lastShown = localStorage.getItem('warningModalLastShown');
-      if (!lastShown) {
-        return true;
-      } else {
-        const lastTime = parseInt(lastShown);
-        const now = Date.now();
-        const twentyFourHours = 24 * 60 * 60 * 1000;
-        return now - lastTime > twentyFourHours;
-      }
+  // Start closed on both server and client to avoid hydration mismatch;
+  // decide visibility after mount from localStorage.
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const lastShown = localStorage.getItem('warningModalLastShown');
+    if (!lastShown) {
+      setIsOpen(true);
+      return;
     }
-    return false;
-  });
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    setIsOpen(Date.now() - parseInt(lastShown, 10) > twentyFourHours);
+  }, []);
 
   const closeModal = () => {
     setIsOpen(false);

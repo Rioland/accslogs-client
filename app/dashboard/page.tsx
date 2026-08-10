@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,12 +5,10 @@ import { useRouter } from "next/navigation";
 import Sidebar from "./Sidebar";
 import { Menu, X } from "lucide-react";
 import Navbar1 from "../components/Navbar1";
-import dynamic from "next/dynamic";
 import TopBar from "../components/TopBar";
 import Footer from "../components/Footer";
+import BillPaymentsPromo from "../components/BillPaymentsPromo";
 import supabaseClient from "@/lib/supabaseClient";
-
-const Navbar2 = dynamic(() => import("../components/Navbar2"), { ssr: false });
 
 const tabs = [
   { key: "home", label: "home" },
@@ -92,15 +89,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSelectCategory = (category: any, subcategory: any) => {
-    console.log("Selected:", category, subcategory);
-  };
-
   return (
     <div className="min-h-screen bg-[#e4e9ee] text-foreground">
       <TopBar />
       <Navbar1 />
-      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       {/* Top bar for mobile with menu toggle */}
 
@@ -169,6 +161,8 @@ export default function DashboardPage() {
           <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
             Hello, {userName || "…"}
           </h1>
+
+          <BillPaymentsPromo />
 
           <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

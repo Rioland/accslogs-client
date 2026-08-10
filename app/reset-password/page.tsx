@@ -2,13 +2,11 @@
 "use client"
 import React, { useMemo, useState, useEffect } from 'react'
 import Navbar1 from '../components/Navbar1'
-import dynamic from 'next/dynamic'
 import TopBar from '../components/TopBar'
 import Footer from '../components/Footer'
 import { useRouter } from 'next/navigation'
 import supabaseClient from '@/lib/supabaseClient'
 
-const Navbar2 = dynamic(() => import('../components/Navbar2'), { ssr: false })
 import toast from 'react-hot-toast'
 
 function passwordIssues(pw: string): string | null {
@@ -20,9 +18,6 @@ function passwordIssues(pw: string): string | null {
 }
 
 export default function ResetPasswordPage() {
-  const handleSelectCategory = (category: any, subcategory: any) => {
-    console.log("Selected:", category, subcategory)
-  }
 
   const router = useRouter()
   const supabase = useMemo(() => supabaseClient, [])
@@ -33,21 +28,63 @@ export default function ResetPasswordPage() {
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null)
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (error || !user) {
-        setIsValidSession(false)
-      } else {
-        setIsValidSession(true)
+    let cancelled = false
+
+    const establishSession = async () => {
+      // Recovery links often land with tokens in the URL hash or query string.
+      const hash = typeof window !== 'undefined' ? window.location.hash.replace(/^#/, '') : ''
+      const search = typeof window !== 'undefined' ? window.location.search.replace(/^\?/, '') : ''
+      const params = new URLSearchParams(hash || search)
+
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      const type = params.get('type')
+      const tokenHash = params.get('token_hash')
+      const code = params.get('code')
+
+      try {
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          if (error) throw error
+        } else if (tokenHash && (type === 'recovery' || type === 'magiclink')) {
+          const { error } = await supabase.auth.verifyOtp({
+            type: 'recovery',
+            token_hash: tokenHash,
+          })
+          if (error) throw error
+        } else if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          if (error) throw error
+        }
+
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (cancelled) return
+        setIsValidSession(!userError && !!user)
+      } catch {
+        if (!cancelled) setIsValidSession(false)
       }
     }
-    checkSession()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+        setIsValidSession(true)
+      }
+    })
+
+    establishSession()
+
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [supabase.auth])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Input validation
     const pwIssue = passwordIssues(password)
     if (pwIssue) {
       toast.error(pwIssue)
@@ -70,7 +107,8 @@ export default function ResetPasswordPage() {
         return
       }
 
-      // Success - redirect to login
+      toast.success('Password updated. Please sign in.')
+      await supabase.auth.signOut()
       router.push('/login')
     } catch (err: any) {
       toast.error(err?.message || 'Something went wrong. Please try again.')
@@ -84,7 +122,6 @@ export default function ResetPasswordPage() {
       <div className="flex flex-col min-h-screen">
         <TopBar />
         <Navbar1 />
-        <Navbar2 onSelectCategory={handleSelectCategory} />
         <div className='flex-1 flex items-center justify-center'>
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
@@ -101,7 +138,6 @@ export default function ResetPasswordPage() {
       <div className="flex flex-col min-h-screen">
         <TopBar />
         <Navbar1 />
-        <Navbar2 onSelectCategory={handleSelectCategory} />
         <div className='flex-1 flex items-center justify-center'>
           <div className="w-full md:w-6/12 mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 p-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Invalid Reset Link</h2>
@@ -120,16 +156,14 @@ export default function ResetPasswordPage() {
     <div className="flex flex-col min-h-screen">
       <TopBar />
       <Navbar1 />
-      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       <div className='flex-1'>
         <div className=" w-full md:w-6/12 mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 mt-12">
-          {/* Header */}
           <div className="px-8 pt-10 pb-6 bg-linear-to-b from-white to-gray-50 text-center">
             <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-              <span className="text-gray-900">A</span>
-              <span className="text-amber-600">CCCS</span>
-              <span className="text-gray-900">Logis</span>
+              <span className="text-gray-900">Top</span>
+              <span className="text-amber-600">notch</span>
+              <span className="text-gray-900">logs</span>
             </h1>
 
             <h2 className="mt-6 text-2xl font-bold text-gray-900">Reset Password</h2>
@@ -138,10 +172,7 @@ export default function ResetPasswordPage() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-6">
-
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 New Password
@@ -162,7 +193,6 @@ export default function ResetPasswordPage() {
               <p className="mt-1 text-xs text-gray-500">Min 8 chars, include upper, lower, and number.</p>
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                 Confirm New Password
@@ -182,7 +212,6 @@ export default function ResetPasswordPage() {
               />
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting || !password || !confirmPassword}

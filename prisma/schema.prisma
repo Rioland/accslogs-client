@@ -1,0 +1,242 @@
+// Reference model of the Supabase Postgres schema. Migrations are owned by the
+// Supabase CLI (supabase/migrations); refresh this file with `npm run db:pull`.
+// Runtime queries go through @supabase/supabase-js (RLS-aware).
+//
+// Tables owned by Supabase Auth (auth.users) are not modelled; columns that
+// reference them are plain uuid fields.
+
+// No generator block: the Prisma Client is not used at runtime.
+// Connection URL lives in prisma.config.ts (required since Prisma 7).
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Profile {
+  id                String    @id @db.Uuid
+  email             String    @unique
+  firstName         String    @map("first_name")
+  lastName          String?   @map("last_name")
+  referralCode      String?   @map("referral_code")
+  korapayCustomerId String?   @map("korapay_customer_id")
+  accountReference  String?   @map("account_reference")
+  funds             Decimal?  @default(0) @db.Decimal(10, 2)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  billPayments BillPayment[]
+
+  @@index([referralCode], map: "profiles_referral_code_idx")
+  @@map("profiles")
+}
+
+model Admin {
+  userId    String   @id @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("admins")
+}
+
+model SocialmediaAccountCategory {
+  id           BigInt   @id @default(autoincrement())
+  name         String   @unique
+  thumbnailUrl String?  @map("thumbnail_url")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  subcategories SocialmediaAccountSubcategory[]
+  products      Product[]
+
+  @@map("socialmedia_account_category")
+}
+
+model SocialmediaAccountSubcategory {
+  id         BigInt   @id @default(autoincrement())
+  categoryId BigInt   @map("category_id")
+  name       String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  category SocialmediaAccountCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@map("socialmedia_account_subcategory")
+}
+
+model Product {
+  id            BigInt   @id @default(autoincrement())
+  name          String
+  price         Decimal  @db.Decimal(10, 2)
+  quantity      Int      @default(0)
+  description   String?
+  categoryId    BigInt?  @map("category_id")
+  subcategoryId BigInt?  @map("subcategory_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  category       SocialmediaAccountCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory    SocialmediaAccountSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  configurations ProductConfiguration[]
+
+  @@map("products")
+}
+
+model ProductConfiguration {
+  id          BigInt   @id @default(autoincrement())
+  productId   BigInt   @map("product_id")
+  configIndex Int      @map("config_index")
+  configData  Json     @map("config_data")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, configIndex], map: "unique_product_config")
+  @@map("product_configurations")
+}
+
+model SellerProduct {
+  id            BigInt   @id @default(autoincrement())
+  userId        String   @map("user_id") @db.Uuid
+  category      String
+  subcategory   String?
+  name          String
+  description   String?
+  price         Decimal  @db.Decimal(10, 2)
+  releaseOption String   @map("release_option")
+  status        String   @default("pending")
+  thumbnailUrl  String?  @map("thumbnail_url")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  accounts SellerProductAccount[]
+  orders   ProductOrder[]
+
+  @@map("seller_products")
+}
+
+model SellerProductAccount {
+  id             BigInt   @id @default(autoincrement())
+  productId      BigInt   @map("product_id")
+  username       String
+  password       String
+  email          String?
+  emailPassword  String?  @map("email_password")
+  additionalInfo String?  @map("additional_info")
+  previewLink    String?  @map("preview_link")
+  buyerId        String?  @map("buyer_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  product SellerProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId], map: "seller_product_accounts_buyer_id_idx")
+  @@map("seller_product_accounts")
+}
+
+model ProductOrder {
+  id         BigInt   @id @default(autoincrement())
+  userId     String   @map("user_id") @db.Uuid
+  productId  BigInt   @map("product_id")
+  quantity   Int      @default(1)
+  promoCode  String?  @map("promo_code")
+  discount   Decimal? @default(0) @db.Decimal(10, 2)
+  grandTotal Decimal  @map("grand_total") @db.Decimal(10, 2)
+  status     String   @default("pending")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  product SellerProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@map("product_orders")
+}
+
+model Deposit {
+  id          BigInt   @id @default(autoincrement())
+  userId      String   @map("user_id") @db.Uuid
+  amount      Decimal  @db.Decimal(10, 2)
+  reference   String   @unique
+  status      String   @default("pending")
+  korapayData Json?    @map("korapay_data")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userId], map: "deposits_user_id_idx")
+  @@index([reference], map: "deposits_reference_idx")
+  @@map("deposits")
+}
+
+model UserVirtualAccount {
+  id               BigInt   @id @default(autoincrement())
+  userId           String   @unique @map("user_id") @db.Uuid
+  accountName      String   @map("account_name")
+  accountNumber    String   @map("account_number")
+  bankCode         String   @map("bank_code")
+  bankName         String   @map("bank_name")
+  accountReference String   @unique @map("account_reference")
+  korapayUniqueId  String   @map("korapay_unique_id")
+  accountStatus    String   @default("active") @map("account_status")
+  currency         String   @default("NGN")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userId], map: "user_virtual_accounts_user_id_idx")
+  @@index([accountReference], map: "user_virtual_accounts_account_reference_idx")
+  @@map("user_virtual_accounts")
+}
+
+model Ticket {
+  id          BigInt   @id @default(autoincrement())
+  userId      String   @map("user_id") @db.Uuid
+  subject     String
+  description String
+  status      String   @default("open")
+  priority    String   @default("medium")
+  orderId     BigInt?  @map("order_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  order    ProductOrder?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  messages TicketMessage[]
+
+  @@index([userId], map: "tickets_user_id_idx")
+  @@index([status], map: "tickets_status_idx")
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id           BigInt   @id @default(autoincrement())
+  ticketId     BigInt   @map("ticket_id")
+  senderId     String   @map("sender_id") @db.Uuid
+  message      String
+  isAdminReply Boolean  @default(false) @map("is_admin_reply")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId], map: "ticket_messages_ticket_idx")
+  @@map("ticket_messages")
+}
+
+model BillPayment {
+  id               BigInt   @id @default(autoincrement())
+  userId           String   @map("user_id") @db.Uuid
+  requestId        String   @unique @map("request_id")
+  productType      String   @map("product_type")
+  serviceId        String   @map("service_id")
+  customerId       String?  @map("customer_id")
+  variationId      String?  @map("variation_id")
+  amount           Decimal  @db.Decimal(12, 2)
+  amountCharged    Decimal? @map("amount_charged") @db.Decimal(12, 2)
+  discount         Decimal? @db.Decimal(12, 2)
+  status           String   @default("pending")
+  providerOrderId  String?  @map("provider_order_id")
+  providerToken    String?  @map("provider_token")
+  providerUnits    String?  @map("provider_units")
+  providerResponse Json?    @map("provider_response")
+  errorMessage     String?  @map("error_message")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)], map: "bill_payments_user_id_idx")
+  @@index([status], map: "bill_payments_status_idx")
+  @@map("bill_payments")
+}

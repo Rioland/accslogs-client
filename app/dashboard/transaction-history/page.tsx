@@ -6,14 +6,9 @@ import { useRouter } from "next/navigation";
 import Sidebar from "../Sidebar";
 import { Menu, X, Clock, CheckCircle, XCircle } from "lucide-react";
 import Navbar1 from "../../components/Navbar1";
-import dynamic from "next/dynamic";
 import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
-
-const Navbar2 = dynamic(() => import("../../components/Navbar2"), {
-  ssr: false,
-});
 
 interface Deposit {
   id: string;
@@ -23,7 +18,6 @@ interface Deposit {
   created_at: string;
   korapay_data?: any;
 }
-
 
 export default function TransactionHistoryPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -128,15 +122,10 @@ export default function TransactionHistoryPage() {
     }
   };
 
-  const handleSelectCategory = (category: any, subcategory: any) => {
-    console.log("Selected:", category, subcategory);
-  };
-
   return (
     <div className="min-h-screen bg-[#e4e9ee] text-foreground">
       <TopBar />
       <Navbar1 />
-      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       {/* Top bar for mobile with menu toggle */}
       <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-backdrop-filter:bg-[#e4e9ee]/60">

@@ -6,6 +6,7 @@ import {
   Home,
   PlusCircle,
   Wallet,
+  Receipt,
   ShoppingCart,
   Ticket,
   Users,
@@ -24,6 +25,7 @@ interface SidebarItem {
   label: string;
   icon: LucideIcon;
   path?: string;
+  badge?: string;
 }
 
 interface SidebarProps {
@@ -64,6 +66,13 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
         label: "Add Funds",
         icon: Wallet,
         path: "/dashboard/add-funds",
+      },
+      {
+        key: "pay-bills",
+        label: "Pay Bills",
+        icon: Receipt,
+        path: "/dashboard/pay-bills",
+        badge: "NEW",
       },
       {
         key: "my-orders",
@@ -129,7 +138,7 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
       <div className="mt-2 rounded-xl bg-white border border-gray-200 shadow-[0_6px_24px_rgba(0,0,0,0.08)] overflow-hidden">
         <nav className="py-1">
           {sidebarItems.map((item) => {
-            const { key, label, icon: Icon, path } = item;
+            const { key, label, icon: Icon, path, badge } = item;
             const isActive = key === activeKey;
             if (path) {
               return (
@@ -146,6 +155,18 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
                 >
                   <Icon className={"h-5 w-5"} />
                   <span>{label}</span>
+                  {badge && (
+                    <span
+                      className={[
+                        "ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide",
+                        isActive
+                          ? "bg-white text-[#F87D1F]"
+                          : "bg-[#F87D1F] text-white",
+                      ].join(" ")}
+                    >
+                      {badge}
+                    </span>
+                  )}
                 </Link>
               );
             } else {

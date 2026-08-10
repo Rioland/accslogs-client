@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 import React, { useState, useEffect } from "react";
 import Wrapper from "./Wrapper";
@@ -23,6 +22,12 @@ interface Props {
   onSelectCategory?: (category: Category, subcategory?: Subcategory) => void;
 }
 
+/**
+ * Category selector and product search. Rendered only on the marketplace
+ * routes — elsewhere the category filter has nothing to act on, and mounting it
+ * refetched every category and subcategory on each page load. Site branding
+ * lives in Navbar1 so it stays on every page.
+ */
 export default function Navbar2({ onSelectCategory }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -61,11 +66,6 @@ export default function Navbar2({ onSelectCategory }: Props) {
     <div className="w-full bg-white shadow-sm ">
       <Wrapper>
         <div className="flex flex-col md:flex-row justify-between items-center py-3 gap-4 md:gap-4">
-          <img
-            src="/images/logo.png"
-            alt="logo"
-            className="object-contain w-48 h-48 md:w-38 md:h-38 "
-          />
           <div className="relative w-full md:w-max-content ">
             <div
               className="flex cursor-pointer flex-row items-center justify-between gap-2 rounded-md bg-[#F87D1F] p-2 text-white hover:bg-[#e06b10]"
@@ -127,7 +127,7 @@ export default function Navbar2({ onSelectCategory }: Props) {
           </div>
           {/* Search bar */}
 
-          <div className="flex w-full items-center rounded-md border border-gray-300 bg-white px-4 py-2 md:ml-6 md:w-max-content">
+          <div className="flex w-full items-center rounded-md border border-gray-300 bg-white px-4 py-2 md:ml-6">
             <input
               type="text"
               placeholder="Search for products..."

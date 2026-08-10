@@ -1,8 +1,9 @@
 "use client";
 
 import { Facebook, Instagram } from "iconsax-reactjs";
-import { ShieldCheck, Twitter } from "lucide-react";
+import { ArrowRight, ShieldCheck, Twitter } from "lucide-react";
 import React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AnimatedSection from "./AnimatedSection";
 
@@ -23,6 +24,17 @@ const PremiumAccountsHero: React.FC = () => {
       <div className="mx-auto grid max-w-7xl items-center gap-10 md:grid-cols-2 md:gap-12">
         {/* Left Content */}
         <AnimatedSection animation="fade-left" threshold={0.1}>
+          <Link
+            href="/bill-payments"
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#F87D1F]/40 bg-white px-3 py-1.5 text-sm text-teal-800 shadow-sm transition hover:border-[#F87D1F]"
+          >
+            <span className="rounded-full bg-[#F87D1F] px-2 py-0.5 text-xs font-bold text-white">
+              NEW
+            </span>
+            Pay bills, buy airtime &amp; data
+            <ArrowRight className="h-4 w-4 text-[#F87D1F]" />
+          </Link>
+
           <h1 className="text-3xl font-bold leading-tight text-teal-800 sm:text-4xl md:text-5xl lg:text-6xl">
             Premium Social Accounts
             <span className="block text-[#F87D1F]">

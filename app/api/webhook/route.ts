@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
-import {
-  getSupabaseAdminClient,
-  getSupabaseServerClient,
-} from "@/lib/supabaseServer";
+import { getSupabaseAdminClient } from "@/lib/supabaseServer";
 
 
 const KORAPAY_SECRET_KEY =
@@ -17,7 +14,14 @@ function verifyKorapaySignature(
   payload: string,
   signature: string | null,
 ): boolean {
-  if (process.env.KORAPAY_SKIP_WEBHOOK_VERIFY === "true") return true; // Debug only with ngrok
+  // Debug escape hatch for ngrok. Ignored in production so the flag leaking
+  // into a deployed environment cannot make every deposit forgeable.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.KORAPAY_SKIP_WEBHOOK_VERIFY === "true"
+  ) {
+    return true;
+  }
   if (!KORAPAY_SECRET_KEY || !signature) return false;
   const parsed = JSON.parse(payload);
   const dataString = JSON.stringify(parsed.data);
@@ -96,7 +100,9 @@ export async function POST(req: Request) {
     const amountNum = Number(amount);
 
     const processViaRpc = async () => {
-      const supabase = getSupabaseServerClient();
+      // Service role only: webhook_process_deposit credits a wallet from its
+      // arguments alone, so it must never be reachable with the public key.
+      const supabase = getSupabaseAdminClient();
       const { data: rpcData, error: rpcError } = await supabase.rpc(
         "webhook_process_deposit",
         {

@@ -7,13 +7,65 @@ import {
   InfoCircle,
   ProfileCircle,
 } from "iconsax-reactjs";
+import {
+  Bitcoin,
+  ChevronDown,
+  Gift,
+  Receipt,
+  Store,
+  type LucideIcon,
+} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import supabase from "@/lib/supabaseClient";
 
+interface ProductItem {
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  /** Omitted while the product is still being built. */
+  href?: string;
+  badge?: string;
+}
+
+const productItems: ProductItem[] = [
+  {
+    label: "Marketplace",
+    description: "Verified social & digital accounts",
+    icon: Store,
+    href: "/market-place",
+  },
+  {
+    label: "Bill Payment",
+    description: "Airtime, data, electricity & cable TV",
+    icon: Receipt,
+    href: "/bill-payments",
+    badge: "NEW",
+  },
+  {
+    label: "Crypto Exchange",
+    description: "Buy and sell digital currency",
+    icon: Bitcoin,
+    badge: "SOON",
+  },
+  {
+    label: "Gift Cards",
+    description: "Buy and sell gift cards",
+    icon: Gift,
+    badge: "SOON",
+  },
+];
+
 export default function Navbar1() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProductsOpen, setIsProductsOpen] = useState(false);
+  const [isMobileProductsOpen, setIsMobileProductsOpen] = useState(false);
   const pathname = usePathname();
+
+  const isProductsActive = productItems.some(
+    (item) => item.href && pathname.startsWith(item.href),
+  );
 
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
 
@@ -40,29 +92,124 @@ export default function Navbar1() {
     <div className="w-full bg-white py-2 shadow-sm">
       <Wrapper>
         <div className="flex flex-row items-center justify-between gap-2">
-          <Link
-            href="/contact"
-            className="rounded-4xl border border-[#194572] p-2 flex flex-row items-center gap-2 hover:bg-gray-100 cursor-pointer"
-          >
-            <InfoCircle size="28" color="#F87D1F" variant="Bold" />
-            <p className="hidden text-base font-medium text-[#194572] md:block">
-              Ask a question
-            </p>
-          </Link>
+          <div className="flex flex-row items-center gap-3">
+            {/* Site branding. Lives here rather than in Navbar2, which is now
+                only rendered on the marketplace. */}
+            <Link href="/" className="shrink-0" aria-label="Topnotchlogs home">
+              <Image
+                src="/images/logo.png"
+                alt="Topnotchlogs"
+                width={64}
+                height={64}
+                priority
+                className="h-12 w-12 object-contain md:h-16 md:w-16"
+              />
+            </Link>
 
-          <div className="hidden md:flex flex-row gap-3.5">
+            <Link
+              href="/contact"
+              className="rounded-4xl border border-[#194572] p-2 flex flex-row items-center gap-2 hover:bg-gray-100 cursor-pointer"
+            >
+              <InfoCircle size="28" color="#F87D1F" variant="Bold" />
+              <p className="hidden text-base font-medium text-[#194572] md:block">
+                Ask a question
+              </p>
+            </Link>
+          </div>
+
+          <div className="hidden md:flex flex-row items-center gap-3.5">
             <Link
               href="/"
               className={`hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/" ? "text-[#F87D1F]" : "text-gray-800"}`}
             >
               Home
             </Link>
-            <Link
-              href="/market-place"
-              className={`hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/market-place" ? "text-[#F87D1F]" : "text-gray-800"}`}
+
+            <div
+              className="relative"
+              onMouseEnter={() => setIsProductsOpen(true)}
+              onMouseLeave={() => setIsProductsOpen(false)}
             >
-              MarketPlace
-            </Link>
+              <button
+                type="button"
+                onClick={() => setIsProductsOpen(!isProductsOpen)}
+                aria-expanded={isProductsOpen}
+                aria-haspopup="true"
+                className={`mx-2 flex cursor-pointer flex-row items-center gap-1 text-lg font-bold transition-colors hover:text-[#F87D1F] ${isProductsActive || isProductsOpen ? "text-[#F87D1F]" : "text-gray-800"}`}
+              >
+                Products
+                <ChevronDown
+                  className={`h-5 w-5 transition-transform ${isProductsOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {isProductsOpen && (
+                // Padding rather than margin keeps the hover target unbroken.
+                <div className="absolute left-0 top-full z-20 pt-3">
+                  <div className="w-80 rounded-xl border border-gray-100 bg-white p-2 shadow-lg">
+                    {productItems.map(
+                      ({ label, description, icon: Icon, href, badge }) => {
+                        const content = (
+                          <>
+                            <span
+                              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${href ? "bg-orange-50 text-[#F87D1F]" : "bg-gray-100 text-gray-400"}`}
+                            >
+                              <Icon className="h-5 w-5" />
+                            </span>
+
+                            <span className="min-w-0">
+                              <span className="flex items-center gap-2">
+                                <span
+                                  className={`text-base font-semibold ${href ? "text-gray-900" : "text-gray-400"}`}
+                                >
+                                  {label}
+                                </span>
+                                {badge && (
+                                  <span
+                                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide ${badge === "NEW" ? "bg-[#F87D1F] text-white" : "bg-gray-200 text-gray-500"}`}
+                                  >
+                                    {badge}
+                                  </span>
+                                )}
+                              </span>
+                              <span
+                                className={`mt-0.5 block text-sm ${href ? "text-gray-500" : "text-gray-400"}`}
+                              >
+                                {description}
+                              </span>
+                            </span>
+                          </>
+                        );
+
+                        if (!href) {
+                          return (
+                            <div
+                              key={label}
+                              className="flex cursor-not-allowed items-start gap-3 rounded-lg p-3"
+                              title="Coming soon"
+                            >
+                              {content}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <Link
+                            key={label}
+                            href={href}
+                            onClick={() => setIsProductsOpen(false)}
+                            className="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-orange-50"
+                          >
+                            {content}
+                          </Link>
+                        );
+                      },
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Link
               href="/about"
               className={`hover:text-[#F87D1F] mx-2 font-bold text-lg transition-colors ${pathname === "/about" ? "text-[#F87D1F]" : "text-gray-800"}`}
@@ -127,12 +274,76 @@ export default function Navbar1() {
             >
               Home
             </Link>
-            <Link
-              href="/market-place"
-              className={`rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/market-place" ? "text-[#F87D1F]" : "text-gray-900"}`}
+            <button
+              type="button"
+              onClick={() => setIsMobileProductsOpen(!isMobileProductsOpen)}
+              aria-expanded={isMobileProductsOpen}
+              className={`flex items-center justify-between rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${isProductsActive ? "text-[#F87D1F]" : "text-gray-900"}`}
             >
-              MarketPlace
-            </Link>
+              Products
+              <ChevronDown
+                className={`h-5 w-5 transition-transform ${isMobileProductsOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {isMobileProductsOpen && (
+              <div className="ml-3 flex flex-col gap-1 border-l border-gray-100 pl-3">
+                {productItems.map(
+                  ({ label, description, icon: Icon, href, badge }) => {
+                    const inner = (
+                      <>
+                        <Icon
+                          className={`mt-0.5 h-5 w-5 shrink-0 ${href ? "text-[#F87D1F]" : "text-gray-400"}`}
+                        />
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-2">
+                            <span
+                              className={`text-base font-semibold ${href ? "text-gray-900" : "text-gray-400"}`}
+                            >
+                              {label}
+                            </span>
+                            {badge && (
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide ${badge === "NEW" ? "bg-[#F87D1F] text-white" : "bg-gray-200 text-gray-500"}`}
+                              >
+                                {badge}
+                              </span>
+                            )}
+                          </span>
+                          <span
+                            className={`mt-0.5 block text-sm ${href ? "text-gray-500" : "text-gray-400"}`}
+                          >
+                            {description}
+                          </span>
+                        </span>
+                      </>
+                    );
+
+                    if (!href) {
+                      return (
+                        <div
+                          key={label}
+                          className="flex cursor-not-allowed items-start gap-2.5 rounded-lg px-2 py-2"
+                        >
+                          {inner}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <Link
+                        key={label}
+                        href={href}
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-start gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-gray-50"
+                      >
+                        {inner}
+                      </Link>
+                    );
+                  },
+                )}
+              </div>
+            )}
             <Link
               href="/about"
               className={`rounded-lg px-2 py-2.5 text-base font-semibold transition-colors hover:bg-gray-50 hover:text-[#F87D1F] ${pathname === "/about" ? "text-[#F87D1F]" : "text-gray-900"}`}

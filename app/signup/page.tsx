@@ -6,12 +6,10 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Footer from '../components/Footer';
 import Navbar1 from '../components/Navbar1';
-import dynamic from 'next/dynamic';
 import TopBar from '../components/TopBar';
 import { useRouter } from 'next/navigation';
 import supabaseClient from '@/lib/supabaseClient';
 
-const Navbar2 = dynamic(() => import('../components/Navbar2'), { ssr: false });
 import toast from 'react-hot-toast';
 
 function isValidEmail(email: string) {
@@ -115,8 +113,18 @@ export default function SignUpPage() {
         }
       }
 
-      // Success handling depends on your auth email confirmation settings
-      toast.success('Registration successful. Please check your email to confirm your account.');
+      toast.success('Registration successful. Check your email for a welcome message.');
+
+      // Fire-and-forget welcome email (SMTP from our API)
+      void fetch('/api/auth/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          firstName: formData.firstName.trim(),
+        }),
+      }).catch(() => {});
+
       setTimeout(() => router.push('/login'), 1200);
     } catch (err: any) {
       toast.error(err?.message || 'Something went wrong. Please try again.');
@@ -125,15 +133,10 @@ export default function SignUpPage() {
     }
   };
 
-  const handleSelectCategory = (category: any, subcategory: any) => {
-    console.log('Selected:', category, subcategory);
-  };
-
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 text-gray-900">
       <TopBar />
       <Navbar1 />
-      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       <div className="flex flex-1 flex-col px-4 pb-10 pt-8 sm:px-6 sm:pb-12">
         <div className="mx-auto my-8 w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden sm:my-12">

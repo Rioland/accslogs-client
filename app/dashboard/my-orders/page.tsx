@@ -9,11 +9,6 @@ import TopBar from "@/app/components/TopBar";
 import Navbar1 from "@/app/components/Navbar1";
 import Footer from "@/app/components/Footer";
 import { supabase } from "@/lib/supabaseClient";
-import dynamic from "next/dynamic";
-
-const Navbar2 = dynamic(() => import("@/app/components/Navbar2"), {
-  ssr: false,
-});
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -386,13 +381,10 @@ export default function MyOrdersPage() {
     }
   };
 
-  const handleSelectCategory = () => {};
-
   return (
     <div className="min-h-screen bg-[#e4e9ee] text-foreground">
       <TopBar />
       <Navbar1 />
-      <Navbar2 onSelectCategory={handleSelectCategory} />
 
       {/* Mobile top bar */}
       <div className="md:hidden sticky top-0 z-30 bg-[#e4e9ee]/80 backdrop-blur supports-backdrop-filter:bg-[#e4e9ee]/60">
