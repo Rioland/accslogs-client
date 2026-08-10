@@ -3,8 +3,8 @@ import React, { useEffect, useState } from "react";
 import Wrapper from "./Wrapper";
 import {
   ArrowDown2,
+  Call,
   HamburgerMenu,
-  InfoCircle,
   ProfileCircle,
 } from "iconsax-reactjs";
 import {
@@ -110,9 +110,9 @@ export default function Navbar1() {
               href="/contact"
               className="rounded-4xl border border-[#194572] p-2 flex flex-row items-center gap-2 hover:bg-gray-100 cursor-pointer"
             >
-              <InfoCircle size="28" color="#F87D1F" variant="Bold" />
+              <Call size="28" color="#F87D1F" variant="Bold" />
               <p className="hidden text-base font-medium text-[#194572] md:block">
-                Ask a question
+                Contact us
               </p>
             </Link>
           </div>
