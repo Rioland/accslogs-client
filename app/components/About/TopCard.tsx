@@ -62,8 +62,10 @@ const TopCard: React.FC<AboutSectionProps> = () => {
               <span className="font-semibold text-[#F87D1F]">
                 bill payments
               </span>{" "}
-              service, that same wallet also covers your airtime, data,
-              electricity and cable TV.
+              and{" "}
+              <span className="font-semibold text-[#F87D1F]">SMS Verify</span>{" "}
+              services, that same wallet also covers your airtime, data,
+              electricity, cable TV, and real US numbers for verification codes.
             </p>
 
             <p className="text-gray-700 leading-relaxed">

@@ -64,8 +64,12 @@ export async function getEbillsAccessToken(force = false): Promise<string> {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data?.token) {
+    const hint =
+      res.status === 403
+        ? " (Often means your Vercel/Netlify outbound IP is not whitelisted in eBills → Dashboard → Account → Developer.)"
+        : "";
     throw new EbillsError(
-      data?.message || "Failed to authenticate with eBills",
+      `${data?.message || "Failed to authenticate with eBills"}${hint}`,
       res.status || 502,
       data?.code,
       data,

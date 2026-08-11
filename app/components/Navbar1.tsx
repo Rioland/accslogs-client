@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Gift,
   Receipt,
+  Smartphone,
   Store,
   type LucideIcon,
 } from "lucide-react";
@@ -41,6 +42,12 @@ const productItems: ProductItem[] = [
     description: "Airtime, data, electricity & cable TV",
     icon: Receipt,
     href: "/bill-payments",
+  },
+  {
+    label: "SMS Verify",
+    description: "Real US numbers for verification codes",
+    icon: Smartphone,
+    href: "/sms-verify",
     badge: "NEW",
   },
   {

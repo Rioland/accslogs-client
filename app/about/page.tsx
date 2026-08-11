@@ -7,6 +7,7 @@ import Footer from '../components/Footer'
 import TopCard from '../components/About/TopCard'
 import WhyChooseAccsZone from '../components/About/WhyChooseAccsLogs'
 import AboutBillPayments from '../components/About/BillPayments'
+import AboutTextVerify from '../components/About/TextVerify'
 
 export default function AboutPage() {
   return (
@@ -16,6 +17,7 @@ export default function AboutPage() {
 
       <TopCard />
       <AboutBillPayments />
+      <AboutTextVerify />
       <WhyChooseAccsZone />
 
       <Footer />

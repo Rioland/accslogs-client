@@ -126,14 +126,16 @@ export async function POST(req: Request) {
 
     if (debitError) {
       console.error("[bills/pay] debit rpc", debitError);
+      const isBadKey = /invalid api key/i.test(debitError.message || "");
       return NextResponse.json(
         {
-          message:
-            debitError.message?.includes("function")
+          message: isBadKey
+            ? "Server misconfigured: set SUPABASE_SERVICE_ROLE_KEY in your Vercel/Netlify project env (use the service_role secret, not the anon key), then redeploy."
+            : debitError.message?.includes("function")
               ? "Bill payments are not set up yet. Run `supabase db push` to apply the bill_payments migration."
               : debitError.message || "Failed to debit wallet",
         },
-        { status: 500 },
+        { status: isBadKey ? 503 : 500 },
       );
     }
 

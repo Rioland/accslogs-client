@@ -11,9 +11,7 @@ import {
   Ticket,
   Users,
   RotateCcw,
-  // FileText,
-  // DollarSign,
-  // SlidersHorizontal,
+  Smartphone,
   User,
   LogOut,
   LucideIcon,
@@ -72,6 +70,12 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
         label: "Pay Bills",
         icon: Receipt,
         path: "/dashboard/pay-bills",
+      },
+      {
+        key: "text-verify",
+        label: "SMS Verify",
+        icon: Smartphone,
+        path: "/dashboard/text-verify",
         badge: "NEW",
       },
       {

@@ -38,19 +38,20 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/icon.png" type="image/png" />
-        {/* Google AdSense (loader belongs in <head> per AdSense setup) */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9186818062888330"
-          crossOrigin="anonymous"
-          strategy="beforeInteractive"
-        />
       </head>
       <body
         className={`${poppins.variable} ${jetbrainsMono.variable} min-h-screen overflow-x-hidden bg-white font-sans text-base leading-relaxed text-gray-900 antialiased`}
       >
         {children}
         <Toaster />
+        {/* afterInteractive avoids SSR/client mismatch from beforeInteractive AdSense in <head> */}
+        <Script
+          id="adsense"
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9186818062888330"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         {/* Tawk.to Live Chat */}
         <Script
           id="tawk-to"

@@ -8,6 +8,7 @@ import Footer from "./components/Footer";
 import WarningModal from "./components/WarningModal";
 import PremiumAccountsHero from "./components/PremiumAccountsHero";
 import BillPaymentsSection from "./components/BillPaymentsSection";
+import TextVerifySection from "./components/TextVerifySection";
 import FeatureCard from "./components/FeatureCard";
 import StepsSection from "./components/StepsSection";
 import TestimonialsSection from "./components/TestimonialsSection";
@@ -20,6 +21,7 @@ export default function Home() {
       <Navbar1 />
       <PremiumAccountsHero/>
       <BillPaymentsSection/>
+      <TextVerifySection/>
       <FeatureCard/>
       <StepsSection/>
       <TestimonialsSection/>
