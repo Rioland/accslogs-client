@@ -157,8 +157,8 @@ export default function DashboardPage() {
         )}
 
         {/* Content column */}
-        <div className="flex-1 flex flex-col gap-4">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+        <div className="flex-1 min-w-0 flex flex-col gap-4">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 break-words">
             Hello, {userName || "…"}
           </h1>
 
@@ -166,10 +166,10 @@ export default function DashboardPage() {
 
           <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] p-4 md:p-5 lg:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="text-[#F87D1F] font-semibold">
+              <div className="text-[#F87D1F] font-semibold break-words">
                 Hello, {userName || "…"}!
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-sm text-gray-700">
                   Promotional Emails
                 </span>
@@ -181,7 +181,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Stat cards */}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               {[
                 {
                   title: "Orders",
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                 <a
                   key={c.title}
                   href={c.href}
-                  className="rounded-xl border border-[#F87D1F]/30 bg-white p-5 md:p-6 shadow-[0_6px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.10)] transition-shadow"
+                  className="rounded-xl border border-[#F87D1F]/30 bg-white p-4 md:p-6 shadow-[0_6px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.10)] transition-shadow"
                 >
                   <div className="flex flex-col items-center justify-center gap-2 text-[#F87D1F]">
                     <div className="text-2xl md:text-3xl" aria-hidden>

@@ -448,9 +448,9 @@ export default function MyOrdersPage() {
         )}
 
         {/* Content */}
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="flex-1 min-w-0 flex flex-col gap-4">
           {/* Page header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-xl md:text-2xl font-semibold text-gray-900 flex items-center gap-2">
               <ShoppingCart className="h-6 w-6 text-amber-500" />
               My Orders
@@ -531,20 +531,20 @@ export default function MyOrdersPage() {
           {!loadingOrders && !fetchError && orders.length > 0 && (
             <div className="space-y-4">
               {/* Summary bar */}
-              <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] px-5 py-4 flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center gap-2">
+              <div className="rounded-xl border border-gray-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] px-4 md:px-5 py-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                <div className="flex items-center justify-between sm:justify-start gap-2">
                   <span className="text-gray-500">Total Orders:</span>
                   <span className="font-semibold text-gray-800">
                     {orders.length}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between sm:justify-start gap-2">
                   <span className="text-gray-500">Completed:</span>
                   <span className="font-semibold text-green-600">
                     {orders.filter((o) => o.status === "completed").length}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between sm:justify-start gap-2">
                   <span className="text-gray-500">Total Spent:</span>
                   <span className="font-semibold text-gray-800">
                     ₦

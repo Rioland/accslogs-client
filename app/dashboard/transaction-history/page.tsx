@@ -189,7 +189,7 @@ export default function TransactionHistoryPage() {
         )}
 
         {/* Content column */}
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="flex-1 min-w-0 flex flex-col gap-4">
           <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
             Transaction History
           </h1>
@@ -213,7 +213,7 @@ export default function TransactionHistoryPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">
                     Deposit History
                   </h2>
@@ -227,19 +227,19 @@ export default function TransactionHistoryPage() {
                   {deposits.map((deposit) => (
                     <div
                       key={deposit.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
                         {getStatusIcon(deposit.status)}
-                        <div>
+                        <div className="min-w-0">
                           <div className="font-medium text-gray-900">
                             ₦{deposit.amount.toLocaleString()}
                           </div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-xs sm:text-sm text-gray-600">
                             {formatDate(deposit.created_at)}
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-2">
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-500 break-all">
                               Ref: {deposit.reference}
                             </span>
                             <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-100">
@@ -249,7 +249,7 @@ export default function TransactionHistoryPage() {
                         </div>
                       </div>
                       <div
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(deposit.status)}`}
+                        className={`self-start sm:self-auto px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(deposit.status)}`}
                       >
                         {deposit.status.charAt(0).toUpperCase() +
                           deposit.status.slice(1)}

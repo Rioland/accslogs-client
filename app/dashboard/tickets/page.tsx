@@ -275,7 +275,7 @@ function TicketCard({
 
             {/* Reply box — only if ticket is not closed */}
             {ticket.status !== "closed" && (
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col gap-2 sm:flex-row pt-2">
                 <textarea
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
@@ -286,7 +286,7 @@ function TicketCard({
                 <button
                   onClick={sendReply}
                   disabled={sending || !replyText.trim()}
-                  className="self-end inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white px-4 py-2 text-sm font-medium transition-colors"
+                  className="self-end sm:self-end inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white px-4 py-2 text-sm font-medium transition-colors"
                 >
                   <Send className="h-4 w-4" />
                   {sending ? "Sending…" : "Send"}
@@ -364,7 +364,7 @@ function CreateTicketModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Modal header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -447,7 +447,7 @@ function CreateTicketModal({
             </select>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-2">
             <button
               type="button"
               onClick={onClose}
@@ -621,16 +621,16 @@ export default function TicketsPage() {
         )}
 
         {/* Content */}
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="flex-1 min-w-0 flex flex-col gap-4">
           {/* Page header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-xl md:text-2xl font-semibold text-gray-900 flex items-center gap-2">
               <Ticket className="h-6 w-6 text-amber-500" />
               My Tickets
             </h1>
             <button
               onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 text-sm font-semibold transition-colors shadow-sm"
+              className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 text-sm font-semibold transition-colors shadow-sm"
             >
               <Plus className="h-4 w-4" />
               New Ticket

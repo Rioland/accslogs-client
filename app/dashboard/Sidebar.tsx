@@ -9,7 +9,6 @@ import {
   Receipt,
   ShoppingCart,
   Ticket,
-  Users,
   RotateCcw,
   Smartphone,
   User,
@@ -17,6 +16,7 @@ import {
   LucideIcon,
 } from "lucide-react";
 import supabaseClient from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 interface SidebarItem {
   key: string;
@@ -34,6 +34,7 @@ interface SidebarProps {
 
 export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
   const [funds, setFunds] = useState<number>(0);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchFunds = async () => {
@@ -91,12 +92,6 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
         path: "/dashboard/tickets",
       },
       {
-        key: "referral",
-        label: "Referral Program",
-        icon: Users,
-        path: "/dashboard/referral",
-      },
-      {
         key: "transaction-history",
         label: "Transactions History",
         icon: RotateCcw,
@@ -119,7 +114,7 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
   const sidebarItems = items || defaultItems;
 
   return (
-    <aside className="w-full md:w-[320px] md:shrink-0 p-4 md:sticky md:top-0 md:h-screen">
+    <aside className="w-full md:w-[320px] md:shrink-0 p-2 md:p-4 md:sticky md:top-24 md:max-h-[calc(100vh-6rem)] md:overflow-y-auto">
       {/* Funds header */}
       <div className="rounded-xl bg-[#194572] text-white shadow-md">
         <div className="flex items-center justify-between px-4 py-3">
@@ -131,7 +126,7 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
             type="button"
             className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#F87D1F] hover:bg-[#e06b10] transition-colors"
             aria-label="Add funds"
-            onClick={(e) => e.preventDefault()}
+            onClick={() => router.push("/dashboard/add-funds")}
           >
             <PlusCircle className="h-4 w-4 text-white" />
           </button>
@@ -150,7 +145,7 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
                   key={key}
                   href={path}
                   className={[
-                    "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors",
+                    "flex items-center gap-3 px-4 py-3 text-sm md:text-base font-medium transition-colors",
                     isActive
                       ? "bg-[#F87D1F] text-white"
                       : "text-gray-700 hover:bg-orange-50 hover:text-[#F87D1F]",
@@ -183,7 +178,7 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
                     onChange?.(key);
                   }}
                   className={[
-                    "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors",
+                    "flex items-center gap-3 px-4 py-3 text-sm md:text-base font-medium transition-colors",
                     isActive
                       ? "bg-[#F87D1F] text-white"
                       : "text-gray-700 hover:bg-orange-50 hover:text-[#F87D1F]",

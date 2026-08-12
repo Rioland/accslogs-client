@@ -124,7 +124,6 @@ export default function TextVerifyPage() {
         "text-verify": "/dashboard/text-verify",
         "my-orders": "/dashboard/my-orders",
         tickets: "/dashboard/tickets",
-        referral: "/dashboard/referral",
         "transaction-history": "/dashboard/transaction-history",
         profile: "/dashboard/profile",
       };
