@@ -11,8 +11,8 @@ import {
   CheckCircle,
   XCircle,
   Copy,
-  ChevronDown,
-  ChevronUp,
+  ChevronRight,
+  Eye,
   Receipt,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -108,7 +108,7 @@ export default function TransactionHistoryPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [bills, setBills] = useState<BillPayment[]>([]);
-  const [expanded, setExpanded] = useState<number | null>(null);
+  const [details, setDetails] = useState<BillPayment | null>(null);
   const [tab, setTab] = useState<"bills" | "deposits">("bills");
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -151,6 +151,22 @@ export default function TransactionHistoryPage() {
 
     fetchAll();
   }, [router]);
+
+  // Escape closes the details dialog, and the page behind it must not scroll
+  // while it is open.
+  useEffect(() => {
+    if (!details) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDetails(null);
+    };
+    document.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [details]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -343,7 +359,6 @@ export default function TransactionHistoryPage() {
                       {bills.map((b) => {
                         const hasDeliverable =
                           !!b.token || b.epins.length > 0 || !!b.units;
-                        const isOpen = expanded === b.id;
                         return (
                           <div
                             key={b.id}
@@ -351,7 +366,7 @@ export default function TransactionHistoryPage() {
                           >
                             <button
                               type="button"
-                              onClick={() => setExpanded(isOpen ? null : b.id)}
+                              onClick={() => setDetails(b)}
                               className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-gray-50"
                             >
                               <div className="flex min-w-0 items-start gap-3">
@@ -403,111 +418,13 @@ export default function TransactionHistoryPage() {
                                 >
                                   {b.status}
                                 </span>
-                                {isOpen ? (
-                                  <ChevronUp className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                                )}
+                                <span className="hidden shrink-0 items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 sm:inline-flex">
+                                  <Eye className="h-3.5 w-3.5" />
+                                  View details
+                                </span>
+                                <ChevronRight className="h-4 w-4 text-gray-400 sm:hidden" />
                               </div>
                             </button>
-
-                            {isOpen && (
-                              <div className="space-y-3 border-t border-gray-100 bg-gray-50/50 p-4">
-                                {/* Electricity prepaid token */}
-                                {b.token && (
-                                  <CopyableValue
-                                    label="Electricity token"
-                                    value={b.token}
-                                    big
-                                  />
-                                )}
-                                {b.units && (
-                                  <div className="text-sm text-gray-700">
-                                    <span className="text-gray-500">
-                                      Units:{" "}
-                                    </span>
-                                    <span className="font-medium">
-                                      {b.units}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {/* Recharge PINs */}
-                                {b.epins.length > 0 && (
-                                  <div className="space-y-2">
-                                    {b.epins.map((p, i) => (
-                                      <div
-                                        key={`${b.id}-pin-${i}`}
-                                        className="space-y-2 rounded-lg border border-gray-200 bg-white p-3"
-                                      >
-                                        <p className="text-xs font-medium text-gray-500">
-                                          PIN {i + 1}
-                                          {p.amount ? ` · ₦${p.amount}` : ""}
-                                        </p>
-                                        {p.pin && (
-                                          <CopyableValue
-                                            label="PIN"
-                                            value={p.pin}
-                                            big
-                                          />
-                                        )}
-                                        {p.serial && (
-                                          <p className="text-xs text-gray-500">
-                                            Serial:{" "}
-                                            <span className="font-mono">
-                                              {p.serial}
-                                            </span>
-                                          </p>
-                                        )}
-                                        {p.instruction && (
-                                          <p className="text-xs text-gray-600">
-                                            {p.instruction}
-                                          </p>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-
-                                {/* Always-present reference details */}
-                                <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
-                                  <div className="flex justify-between gap-2 sm:block">
-                                    <dt className="text-gray-500">Reference</dt>
-                                    <dd className="break-all font-mono text-xs text-gray-800">
-                                      {b.request_id}
-                                    </dd>
-                                  </div>
-                                  {b.order_id && (
-                                    <div className="flex justify-between gap-2 sm:block">
-                                      <dt className="text-gray-500">Order ID</dt>
-                                      <dd className="font-mono text-xs text-gray-800">
-                                        {b.order_id}
-                                      </dd>
-                                    </div>
-                                  )}
-                                  {b.variation_id && (
-                                    <div className="flex justify-between gap-2 sm:block">
-                                      <dt className="text-gray-500">Plan</dt>
-                                      <dd className="text-xs text-gray-800">
-                                        {b.variation_id}
-                                      </dd>
-                                    </div>
-                                  )}
-                                </dl>
-
-                                {b.error_message && (
-                                  <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                                    {b.error_message}
-                                  </p>
-                                )}
-
-                                {!hasDeliverable && !b.error_message && (
-                                  <p className="text-xs text-gray-500">
-                                    No token or PIN for this purchase type.
-                                  </p>
-                                )}
-                              </div>
-                            )}
                           </div>
                         );
                       })}
@@ -579,6 +496,170 @@ export default function TransactionHistoryPage() {
           </div>
         </div>
       </div>
+
+      {/* Transaction details dialog */}
+      {details && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          onClick={() => setDetails(null)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Transaction details"
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[90vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl"
+          >
+            {/* Header stays put while the body scrolls */}
+            <div className="flex items-start justify-between gap-3 border-b border-gray-200 p-4 sm:p-5">
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {PRODUCT_LABELS[details.product_type] || details.product_type}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  ₦{details.amount.toLocaleString()} · {details.service_id}
+                  {details.customer_id ? ` → ${details.customer_id}` : ""}
+                </p>
+                <p className="mt-0.5 text-xs text-gray-400">
+                  {formatDate(details.created_at)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetails(null)}
+                aria-label="Close"
+                className="shrink-0 rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5">
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(
+                  details.status === "completed"
+                    ? "successful"
+                    : details.status === "refunded" ||
+                        details.status === "failed"
+                      ? "failed"
+                      : "pending",
+                )}`}
+              >
+                {details.status}
+              </span>
+
+              {details.token && (
+                <CopyableValue
+                  label="Electricity token"
+                  value={details.token}
+                  big
+                />
+              )}
+              {details.units && (
+                <div className="text-sm text-gray-700">
+                  <span className="text-gray-500">Units: </span>
+                  <span className="font-medium">{details.units}</span>
+                </div>
+              )}
+
+              {details.epins.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-900">
+                      {details.epins.length} recharge PIN
+                      {details.epins.length !== 1 ? "s" : ""}
+                    </p>
+                    {details.epins.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const all = details.epins
+                            .map(
+                              (p, i) =>
+                                `${i + 1}. ${p.pin ?? ""}${p.serial ? ` (serial ${p.serial})` : ""}`,
+                            )
+                            .join("\n");
+                          void navigator.clipboard.writeText(all);
+                          toast.success("All PINs copied");
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Copy all
+                      </button>
+                    )}
+                  </div>
+                  {details.epins.map((p, i) => (
+                    <div
+                      key={`modal-pin-${i}`}
+                      className="space-y-2 rounded-lg border border-gray-200 p-3"
+                    >
+                      <p className="text-xs font-medium text-gray-500">
+                        PIN {i + 1}
+                        {p.amount ? ` · ₦${p.amount}` : ""}
+                      </p>
+                      {p.pin && <CopyableValue label="PIN" value={p.pin} big />}
+                      {p.serial && (
+                        <p className="text-xs text-gray-500">
+                          Serial:{" "}
+                          <span className="font-mono">{p.serial}</span>
+                        </p>
+                      )}
+                      {p.instruction && (
+                        <p className="text-xs text-gray-600">
+                          {p.instruction}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <dl className="space-y-2 border-t border-gray-100 pt-3 text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="shrink-0 text-gray-500">Reference</dt>
+                  <dd className="break-all text-right font-mono text-xs text-gray-800">
+                    {details.request_id}
+                  </dd>
+                </div>
+                {details.order_id && (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="shrink-0 text-gray-500">Order ID</dt>
+                    <dd className="font-mono text-xs text-gray-800">
+                      {details.order_id}
+                    </dd>
+                  </div>
+                )}
+                {details.variation_id && (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="shrink-0 text-gray-500">Plan</dt>
+                    <dd className="break-all text-right text-xs text-gray-800">
+                      {details.variation_id}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+
+              {details.error_message && (
+                <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                  {details.error_message}
+                </p>
+              )}
+
+              {!details.token &&
+                details.epins.length === 0 &&
+                !details.units &&
+                !details.error_message && (
+                  <p className="text-xs text-gray-500">
+                    This purchase type has no token or PIN to copy.
+                  </p>
+                )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );
