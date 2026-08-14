@@ -2,13 +2,23 @@ import { NextResponse } from "next/server";
 import { getAuthedUser } from "@/lib/billsAuth";
 import { getSupabaseAdminClient } from "@/lib/supabaseServer";
 import {
+  BETTING_MAX_AMOUNT,
+  BETTING_MIN_AMOUNT,
+  EPINS_MAX_QUANTITY,
+  EPINS_MIN_QUANTITY,
+  EPINS_NETWORKS,
+  EPINS_VALUES,
   EbillsError,
   EbillsProductType,
+  extractEpins,
   extractProviderFields,
   isProviderSuccess,
+  normalizeBettingServiceId,
   purchaseAirtime,
+  purchaseBetting,
   purchaseData,
   purchaseElectricity,
+  purchaseEpins,
   purchaseTv,
 } from "@/lib/ebills";
 
@@ -21,9 +31,21 @@ type PayBody = {
   phone?: string;
   variation_id?: string;
   amount?: number | string;
+  /** ePINs only: denomination and how many pins to buy. */
+  value?: number | string;
+  quantity?: number | string;
 };
 
-function makeRequestId(userId: string, productType: string) {
+const SUPPORTED_PRODUCTS: EbillsProductType[] = [
+  "airtime",
+  "data",
+  "electricity",
+  "tv",
+  "betting",
+  "epins",
+];
+
+function makeRequestId(userId: string) {
   const short = userId.replace(/-/g, "").slice(0, 12);
   return `bp_${short}_${Date.now()}`.slice(0, 50);
 }
@@ -38,22 +60,87 @@ export async function POST(req: Request) {
 
     const body = (await req.json()) as PayBody;
     const product_type = body.product_type;
-    const service_id = String(body.service_id || "").trim().toLowerCase();
+    const rawServiceId = String(body.service_id || "").trim();
     const phone = String(body.phone || body.customer_id || "").trim();
     const customer_id = String(body.customer_id || body.phone || "").trim();
     const variation_id = body.variation_id
       ? String(body.variation_id).trim()
       : undefined;
-    const amountNum = Number(body.amount);
+    let amountNum = Number(body.amount);
 
-    if (!product_type || !["airtime", "data", "electricity", "tv"].includes(product_type)) {
+    if (!product_type || !SUPPORTED_PRODUCTS.includes(product_type)) {
       return NextResponse.json(
-        { message: "product_type must be airtime, data, electricity, or tv" },
+        { message: `product_type must be one of: ${SUPPORTED_PRODUCTS.join(", ")}` },
         { status: 400 },
       );
     }
-    if (!service_id) {
+    if (!rawServiceId) {
       return NextResponse.json({ message: "service_id is required" }, { status: 400 });
+    }
+
+    // Betting service ids are case-sensitive upstream ("Bet9ja"); everything
+    // else expects lowercase. Lowercasing betting here silently 400s.
+    let service_id = rawServiceId.toLowerCase();
+    if (product_type === "betting") {
+      const canonical = normalizeBettingServiceId(rawServiceId);
+      if (!canonical) {
+        return NextResponse.json(
+          { message: `Unsupported betting provider: ${rawServiceId}` },
+          { status: 400 },
+        );
+      }
+      service_id = canonical;
+    }
+
+    // ePINs are priced as denomination x quantity, so the wallet amount is
+    // derived rather than trusted from the client.
+    let epinsValue = 0;
+    let epinsQuantity = 0;
+
+    if (product_type === "betting") {
+      if (!customer_id) {
+        return NextResponse.json(
+          { message: "customer_id (betting account ID) is required" },
+          { status: 400 },
+        );
+      }
+      if (!Number.isFinite(amountNum) || amountNum < BETTING_MIN_AMOUNT || amountNum > BETTING_MAX_AMOUNT) {
+        return NextResponse.json(
+          {
+            message: `Amount must be between ₦${BETTING_MIN_AMOUNT.toLocaleString()} and ₦${BETTING_MAX_AMOUNT.toLocaleString()}`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (product_type === "epins") {
+      epinsValue = Number(body.value);
+      epinsQuantity = Number(body.quantity);
+
+      if (!(EPINS_NETWORKS as readonly string[]).includes(service_id)) {
+        return NextResponse.json(
+          { message: `service_id must be one of: ${EPINS_NETWORKS.join(", ")}` },
+          { status: 400 },
+        );
+      }
+      if (!(EPINS_VALUES as readonly number[]).includes(epinsValue)) {
+        return NextResponse.json(
+          { message: `value must be one of: ${EPINS_VALUES.join(", ")}` },
+          { status: 400 },
+        );
+      }
+      if (
+        !Number.isInteger(epinsQuantity) ||
+        epinsQuantity < EPINS_MIN_QUANTITY ||
+        epinsQuantity > EPINS_MAX_QUANTITY
+      ) {
+        return NextResponse.json(
+          { message: `quantity must be a whole number between ${EPINS_MIN_QUANTITY} and ${EPINS_MAX_QUANTITY}` },
+          { status: 400 },
+        );
+      }
+      amountNum = epinsValue * epinsQuantity;
     }
 
     if (product_type === "airtime") {
@@ -108,7 +195,7 @@ export async function POST(req: Request) {
     }
 
     const walletAmount = amountNum;
-    requestId = makeRequestId(user.id, product_type);
+    requestId = makeRequestId(user.id);
     const admin = getSupabaseAdminClient();
 
     const { data: debitResult, error: debitError } = await admin.rpc(
@@ -118,8 +205,14 @@ export async function POST(req: Request) {
         p_request_id: requestId,
         p_product_type: product_type,
         p_service_id: service_id,
-        p_customer_id: product_type === "airtime" || product_type === "data" ? phone : customer_id,
-        p_variation_id: variation_id || null,
+        p_customer_id:
+          product_type === "epins"
+            ? null // ePINs are not bought against a customer account
+            : product_type === "airtime" || product_type === "data"
+              ? phone
+              : customer_id,
+        p_variation_id:
+          product_type === "epins" ? String(epinsValue) : variation_id || null,
         p_amount: walletAmount,
       },
     );
@@ -171,6 +264,20 @@ export async function POST(req: Request) {
           service_id,
           variation_id: variation_id!,
           amount: Math.floor(walletAmount),
+        });
+      } else if (product_type === "betting") {
+        providerPayload = await purchaseBetting({
+          request_id: requestId,
+          customer_id,
+          service_id,
+          amount: Math.floor(walletAmount),
+        });
+      } else if (product_type === "epins") {
+        providerPayload = await purchaseEpins({
+          request_id: requestId,
+          service_id,
+          value: epinsValue,
+          quantity: epinsQuantity,
         });
       } else {
         providerPayload = await purchaseTv({
@@ -231,6 +338,8 @@ export async function POST(req: Request) {
       p_provider_response: providerPayload,
     });
 
+    const epins = product_type === "epins" ? extractEpins(providerPayload) : [];
+
     return NextResponse.json({
       success: true,
       request_id: requestId,
@@ -239,6 +348,9 @@ export async function POST(req: Request) {
       provider: providerPayload,
       token: fields.provider_token,
       units: fields.provider_units,
+      // Empty while the order is still processing-api; requery to collect them.
+      epins,
+      epins_pending: product_type === "epins" && epins.length === 0,
     });
   } catch (err) {
     console.error("[bills/pay]", err);

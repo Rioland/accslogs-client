@@ -16,6 +16,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       serviceName?: string;
       capability?: string;
+      areaCode?: boolean;
     };
     const serviceName = String(body.serviceName || "").trim();
     if (!serviceName) {
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
     const { usd, raw } = await getVerificationPricing({
       serviceName,
       capability: body.capability || "sms",
+      areaCode: Boolean(body.areaCode),
     });
 
     if (!usd || usd <= 0) {

@@ -76,10 +76,15 @@ export async function getEbillsAccessToken(force = false): Promise<string> {
     );
   }
 
-  // Docs: token expires after 7 days — refresh a bit early
+  // The docs claim 7 days, but eBills invalidates tokens well before that
+  // ("Token has been invalidated. Please generate a new JWT.") — it appears to
+  // keep only one active token per account, so any other instance minting a
+  // token kills this one. Cache briefly and lean on the 401/403 retry in
+  // ebillsFetch as the real safety net; a multi-day cache guarantees that every
+  // request after the first invalidation pays a wasted round trip.
   tokenCache = {
     token: data.token,
-    expiresAt: Date.now() + 6 * 24 * 60 * 60 * 1000,
+    expiresAt: Date.now() + 60 * 60 * 1000,
   };
   return data.token;
 }
@@ -193,6 +198,83 @@ export async function purchaseTv(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+/**
+ * Betting service_id values are CASE-SENSITIVE at eBills ("Bet9ja", not
+ * "bet9ja"), unlike airtime/data/tv which are lowercase. Keep this list as the
+ * canonical casing and never lowercase a betting service_id.
+ */
+// LiveScoreBet is documented but the biller is not provisioned upstream
+// ("No biller found with id: LIVESCOREBET"), so it is deliberately excluded.
+export const BETTING_SERVICES = [
+  "1xBet",
+  "BangBet",
+  "Bet9ja",
+  "BetKing",
+  "BetLand",
+  "BetLion",
+  "BetWay",
+  "CloudBet",
+  "MerryBet",
+  "NaijaBet",
+  "NairaBet",
+  "SportyBet",
+  "SupaBet",
+] as const;
+
+export const BETTING_MIN_AMOUNT = 100;
+export const BETTING_MAX_AMOUNT = 100_000;
+
+/** Resolve user input to the provider's exact casing, or null if unsupported. */
+export function normalizeBettingServiceId(input: string): string | null {
+  const target = input.trim().toLowerCase();
+  return BETTING_SERVICES.find((s) => s.toLowerCase() === target) ?? null;
+}
+
+export const EPINS_NETWORKS = ["mtn", "airtel", "glo", "9mobile"] as const;
+export const EPINS_VALUES = [100, 200, 500] as const;
+export const EPINS_MIN_QUANTITY = 1;
+export const EPINS_MAX_QUANTITY = 40;
+
+export async function purchaseBetting(input: {
+  request_id: string;
+  customer_id: string;
+  service_id: string;
+  amount: number;
+}) {
+  return ebillsFetch("/api/v2/betting", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function purchaseEpins(input: {
+  request_id: string;
+  service_id: string;
+  value: number;
+  quantity: number;
+}) {
+  return ebillsFetch("/api/v2/epins", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export type Epin = {
+  amount?: string;
+  pin?: string;
+  serial?: string;
+  instruction?: string;
+};
+
+/**
+ * Pins are only present once the order reaches completed-api; on
+ * processing-api the field is null and must be fetched later via requery.
+ */
+export function extractEpins(payload: unknown): Epin[] {
+  const pins = (payload as { data?: { epins?: unknown } })?.data?.epins;
+  return Array.isArray(pins) ? (pins as Epin[]) : [];
 }
 
 export async function requeryOrder(request_id: string) {

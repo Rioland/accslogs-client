@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Menu,
@@ -19,6 +19,16 @@ import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
 
 type Mode = "verify" | "nonrenewable" | "renewable";
+
+type Capability = "sms" | "voice" | "smsAndVoiceCombo";
+
+type AreaState = { state: string; codes: string[] };
+
+const CAPABILITIES: { value: Capability; label: string; hint: string }[] = [
+  { value: "sms", label: "SMS", hint: "Receive a text code" },
+  { value: "voice", label: "Voice call", hint: "Receive the code by call" },
+  { value: "smsAndVoiceCombo", label: "SMS + Voice", hint: "Either method" },
+];
 
 type Service = { serviceName: string; capability: string };
 
@@ -102,6 +112,9 @@ export default function TextVerifyPage() {
 
   const [services, setServices] = useState<Service[]>([]);
   const [serviceQuery, setServiceQuery] = useState("");
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [highlight, setHighlight] = useState(-1);
+  const comboRef = useRef<HTMLDivElement | null>(null);
   const [selected, setSelected] = useState<string>("");
   const [duration, setDuration] = useState<string>("sevenDay");
   const [priceNgn, setPriceNgn] = useState<number | null>(null);
@@ -112,6 +125,11 @@ export default function TextVerifyPage() {
   const [active, setActive] = useState<ActiveVerification | null>(null);
   const [activeRental, setActiveRental] = useState<ActiveRental | null>(null);
   const [polling, setPolling] = useState(false);
+  const [capability, setCapability] = useState<Capability>("sms");
+  const [areaStates, setAreaStates] = useState<AreaState[]>([]);
+  const [areaState, setAreaState] = useState("");
+  const [areaCode, setAreaCode] = useState("");
+  const [recovering, setRecovering] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [rentalHistory, setRentalHistory] = useState<HistoryRow[]>([]);
 
@@ -135,11 +153,58 @@ export default function TextVerifyPage() {
   const durationOptions =
     mode === "renewable" ? RENEWABLE_DURATIONS : NONRENEWABLE_DURATIONS;
 
+  /**
+   * The catalogue is ~4,500 entries, so results are ranked and capped rather
+   * than rendered wholesale: exact match, then prefix, then substring. Without
+   * the ranking, typing "whats" buries "whatsapp" under every name that merely
+   * contains it.
+   */
+  const SUGGESTION_LIMIT = 50;
   const filteredServices = useMemo(() => {
     const q = serviceQuery.trim().toLowerCase();
-    if (!q) return services;
-    return services.filter((s) => s.serviceName.toLowerCase().includes(q));
+    if (!q) return services.slice(0, SUGGESTION_LIMIT);
+
+    const exact: Service[] = [];
+    const prefix: Service[] = [];
+    const contains: Service[] = [];
+
+    for (const s of services) {
+      const name = s.serviceName.toLowerCase();
+      if (name === q) exact.push(s);
+      else if (name.startsWith(q)) prefix.push(s);
+      else if (name.includes(q)) contains.push(s);
+      if (exact.length + prefix.length >= SUGGESTION_LIMIT && contains.length > SUGGESTION_LIMIT) {
+        break;
+      }
+    }
+    return [...exact, ...prefix, ...contains].slice(0, SUGGESTION_LIMIT);
   }, [services, serviceQuery]);
+
+  const totalMatches = useMemo(() => {
+    const q = serviceQuery.trim().toLowerCase();
+    if (!q) return services.length;
+    return services.reduce(
+      (n, s) => (s.serviceName.toLowerCase().includes(q) ? n + 1 : n),
+      0,
+    );
+  }, [services, serviceQuery]);
+
+  const pickService = useCallback((name: string) => {
+    setSelected(name);
+    setServiceQuery(name);
+    setSuggestOpen(false);
+    setHighlight(-1);
+  }, []);
+
+  // Close the suggestion list when focus moves elsewhere on the page.
+  useEffect(() => {
+    if (!suggestOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!comboRef.current?.contains(e.target as Node)) setSuggestOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [suggestOpen]);
 
   const loadServices = useCallback(async () => {
     setLoadingServices(true);
@@ -163,7 +228,13 @@ export default function TextVerifyPage() {
             ? list
             : [{ serviceName: "allservices", capability: "sms" }, ...list],
         );
-        setSelected((prev) => prev || "allservices");
+        // Keep the search box in sync with the auto-selection, otherwise the
+        // input looks empty while a service is actually chosen.
+        setSelected((prev) => {
+          if (prev) return prev;
+          setServiceQuery("allservices");
+          return "allservices";
+        });
       } else {
         setServices(list);
       }
@@ -198,6 +269,8 @@ export default function TextVerifyPage() {
 
   useEffect(() => {
     setSelected("");
+    setServiceQuery("");
+    setSuggestOpen(false);
     setPriceNgn(null);
     setPriceUsd(null);
     if (mode === "verify") setDuration("sevenDay");
@@ -224,7 +297,11 @@ export default function TextVerifyPage() {
           const res = await fetch("/api/textverify/pricing", {
             method: "POST",
             headers,
-            body: JSON.stringify({ serviceName: selected, capability: "sms" }),
+            body: JSON.stringify({
+              serviceName: selected,
+              capability,
+              areaCode: Boolean(areaCode),
+            }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || "Pricing failed");
@@ -288,7 +365,25 @@ export default function TextVerifyPage() {
     return () => {
       cancelled = true;
     };
-  }, [mode, selected, duration]);
+  }, [mode, selected, duration, capability, areaCode]);
+
+  // Area codes are static and cached server-side; load once.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const headers = await authHeaders();
+        const res = await fetch("/api/textverify/area-codes", { headers });
+        const data = await res.json();
+        if (res.ok && !cancelled) setAreaStates(data.states || []);
+      } catch {
+        // optional feature — a failure here must not block buying
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Poll verification SMS
   useEffect(() => {
@@ -324,14 +419,37 @@ export default function TextVerifyPage() {
       }
     };
 
+    // The webhook is the primary delivery path; this poll is a safety net for
+    // when webhooks are not configured or a delivery is dropped. It backs off
+    // and pauses on hidden tabs so an idle number costs almost nothing.
+    let timer: number | undefined;
+    const startedAt = Date.now();
+
+    const nextDelay = () => {
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < 60_000) return 5_000;
+      if (elapsed < 5 * 60_000) return 15_000;
+      return 30_000;
+    };
+
+    const loop = async () => {
+      if (stopped) return;
+      if (document.visibilityState === "visible") await tick();
+      if (!stopped) timer = window.setTimeout(loop, nextDelay());
+    };
+
     void tick();
-    const id = window.setInterval(() => {
-      if (!stopped) void tick();
-    }, 4000);
+    timer = window.setTimeout(loop, nextDelay());
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && !stopped) void tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       stopped = true;
-      window.clearInterval(id);
+      if (timer) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
       setPolling(false);
     };
   }, [active?.request_id, active?.status, loadHistory]);
@@ -399,6 +517,44 @@ export default function TextVerifyPage() {
     };
   }, [activeRental?.request_id, activeRental?.status, loadRentalHistory]);
 
+  const runRecovery = async (action: "reuse" | "reactivate" | "report") => {
+    if (!active) return;
+    setRecovering(action);
+    try {
+      const headers = await authHeaders();
+      const res = await fetch("/api/textverify/recover", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ request_id: active.request_id, action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || `${action} failed`);
+
+      if (action === "report") {
+        toast.success(data.message || "Reported");
+      } else {
+        setActive({
+          id: data.id,
+          request_id: data.request_id,
+          provider_id: data.provider_id,
+          service_name: data.service_name,
+          phone_number: data.phone_number,
+          amount_ngn: data.amount_ngn,
+          status: "active",
+          ends_at: data.ends_at,
+        });
+        toast.success(
+          action === "reuse" ? "Number reused — watching for a new code" : "Number reactivated",
+        );
+      }
+      void loadHistory();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : `${action} failed`);
+    } finally {
+      setRecovering(null);
+    }
+  };
+
   const buyNumber = async () => {
     if (!selected) {
       toast.error("Choose a service first");
@@ -412,7 +568,11 @@ export default function TextVerifyPage() {
         const res = await fetch("/api/textverify/create", {
           method: "POST",
           headers,
-          body: JSON.stringify({ serviceName: selected, capability: "sms" }),
+          body: JSON.stringify({
+            serviceName: selected,
+            capability,
+            areaCodes: areaCode ? [areaCode] : [],
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Purchase failed");
@@ -630,38 +790,179 @@ export default function TextVerifyPage() {
               <label className="text-xs font-medium text-gray-500">
                 Search service
               </label>
-              <div className="relative mt-1">
+              <div ref={comboRef} className="relative mt-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   value={serviceQuery}
-                  onChange={(e) => setServiceQuery(e.target.value)}
+                  disabled={loadingServices}
+                  onChange={(e) => {
+                    setServiceQuery(e.target.value);
+                    setSuggestOpen(true);
+                    setHighlight(-1);
+                    if (selected && e.target.value !== selected) setSelected("");
+                  }}
+                  onFocus={() => setSuggestOpen(true)}
+                  onKeyDown={(e) => {
+                    if (!suggestOpen && (e.key === "ArrowDown" || e.key === "Enter")) {
+                      setSuggestOpen(true);
+                      return;
+                    }
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setHighlight((h) => Math.min(h + 1, filteredServices.length - 1));
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setHighlight((h) => Math.max(h - 1, 0));
+                    } else if (e.key === "Enter") {
+                      const pick =
+                        filteredServices[highlight] ?? filteredServices[0];
+                      if (pick) {
+                        e.preventDefault();
+                        pickService(pick.serviceName);
+                      }
+                    } else if (e.key === "Escape") {
+                      setSuggestOpen(false);
+                    }
+                  }}
                   placeholder={
-                    mode === "verify"
-                      ? "e.g. google, whatsapp, discord"
-                      : "e.g. allservices, google"
+                    loadingServices
+                      ? "Loading services..."
+                      : mode === "verify"
+                        ? "Type to search: google, whatsapp, discord..."
+                        : "Type to search: allservices, google..."
                   }
-                  className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm"
+                  className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm disabled:bg-gray-50"
+                  role="combobox"
+                  aria-expanded={suggestOpen}
+                  aria-controls="service-suggestions"
+                  aria-autocomplete="list"
                 />
+
+                {suggestOpen && !loadingServices && (
+                  <div
+                    id="service-suggestions"
+                    role="listbox"
+                    className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg"
+                  >
+                    {filteredServices.length === 0 ? (
+                      <p className="px-3 py-3 text-sm text-gray-500">
+                        No service matches “{serviceQuery}”
+                      </p>
+                    ) : (
+                      <>
+                        {filteredServices.map((s, i) => (
+                          <button
+                            key={s.serviceName}
+                            type="button"
+                            onMouseEnter={() => setHighlight(i)}
+                            onClick={() => pickService(s.serviceName)}
+                            className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                              i === highlight
+                                ? "bg-[#fff4ea] text-[#F87D1F]"
+                                : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                          >
+                            <span className="truncate">{s.serviceName}</span>
+                            {selected === s.serviceName && (
+                              <span className="ml-2 shrink-0 text-xs">selected</span>
+                            )}
+                          </button>
+                        ))}
+                        {totalMatches > filteredServices.length && (
+                          <p className="border-t border-gray-100 px-3 py-2 text-xs text-gray-400">
+                            Showing {filteredServices.length} of{" "}
+                            {totalMatches.toLocaleString()} matches — keep typing
+                            to narrow.
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <label className="mt-4 block text-xs font-medium text-gray-500">
-                Service
-              </label>
-              <select
-                value={selected}
-                onChange={(e) => setSelected(e.target.value)}
-                disabled={loadingServices}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
-              >
-                <option value="">
-                  {loadingServices ? "Loading services..." : "Select a service"}
-                </option>
-                {filteredServices.map((s) => (
-                  <option key={s.serviceName} value={s.serviceName}>
-                    {s.serviceName}
-                  </option>
-                ))}
-              </select>
+              {selected && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Selected:{" "}
+                  <span className="font-medium text-gray-900">{selected}</span>
+                </p>
+              )}
+
+              {mode === "verify" && (
+                <>
+                  <label className="mt-4 block text-xs font-medium text-gray-500">
+                    Delivery method
+                  </label>
+                  <div className="mt-1 grid grid-cols-3 gap-2">
+                    {CAPABILITIES.map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => setCapability(c.value)}
+                        title={c.hint}
+                        className={`rounded-lg border px-2 py-2 text-xs font-medium transition ${
+                          capability === c.value
+                            ? "border-[#F87D1F] bg-[#fff4ea] text-[#F87D1F]"
+                            : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-gray-400">
+                    Voice costs more than SMS. Not every service supports every
+                    method.
+                  </p>
+
+                  {areaStates.length > 0 && (
+                    <>
+                      <label className="mt-4 block text-xs font-medium text-gray-500">
+                        Preferred area code{" "}
+                        <span className="font-normal text-gray-400">(optional)</span>
+                      </label>
+                      <div className="mt-1 grid grid-cols-2 gap-2">
+                        <select
+                          value={areaState}
+                          onChange={(e) => {
+                            setAreaState(e.target.value);
+                            setAreaCode("");
+                          }}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+                        >
+                          <option value="">Any state</option>
+                          {areaStates.map((s) => (
+                            <option key={s.state} value={s.state}>
+                              {s.state}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={areaCode}
+                          onChange={(e) => setAreaCode(e.target.value)}
+                          disabled={!areaState}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm disabled:bg-gray-50 disabled:text-gray-400"
+                        >
+                          <option value="">Any code</option>
+                          {areaStates
+                            .find((s) => s.state === areaState)
+                            ?.codes.map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                      {areaCode && (
+                        <p className="mt-1.5 text-[11px] text-gray-400">
+                          Choosing an area code may change the price and reduce
+                          availability.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
 
               {mode !== "verify" && (
                 <>
@@ -808,13 +1109,55 @@ export default function TextVerifyPage() {
                       </div>
                     )}
                     {active.status === "active" && (
-                      <button
-                        type="button"
-                        onClick={() => void cancelActive()}
-                        className="w-full rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50"
-                      >
-                        Cancel &amp; refund
-                      </button>
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => void cancelActive()}
+                          className="w-full rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                        >
+                          Cancel &amp; refund
+                        </button>
+                        <button
+                          type="button"
+                          disabled={recovering !== null}
+                          onClick={() => void runRecovery("report")}
+                          className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          {recovering === "report" ? "Reporting..." : "Report a problem"}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Once a code has landed the number can often be reused for
+                        the same service, or reactivated if reuse has lapsed. */}
+                    {active.status === "completed" && (
+                      <div className="space-y-2 border-t border-gray-100 pt-3">
+                        <p className="text-xs text-gray-500">
+                          Need another code for {active.service_name}?
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={recovering !== null}
+                            onClick={() => void runRecovery("reuse")}
+                            className="flex-1 rounded-full bg-[#F87D1F] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#e06d15] disabled:opacity-50"
+                          >
+                            {recovering === "reuse" ? "Reusing..." : "Reuse number"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={recovering !== null}
+                            onClick={() => void runRecovery("reactivate")}
+                            className="flex-1 rounded-full border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          >
+                            {recovering === "reactivate" ? "..." : "Reactivate"}
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-gray-400">
+                          Reuse works only shortly after a code arrives. Both
+                          charge your wallet again.
+                        </p>
+                      </div>
                     )}
                   </div>
                 )

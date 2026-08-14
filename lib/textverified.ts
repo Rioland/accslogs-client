@@ -4,6 +4,8 @@
  * Base: https://www.textverified.com
  */
 
+import crypto from "crypto";
+
 const BASE_URL =
   process.env.TEXTVERIFIED_BASE_URL?.replace(/\/$/, "") ||
   "https://www.textverified.com";
@@ -46,13 +48,25 @@ function requireCreds() {
   return { apiKey, username };
 }
 
-/** Convert TextVerified USD price → wallet NGN with markup. */
+/**
+ * Convert a TextVerified USD price into the naira amount charged to the wallet.
+ *
+ *   (usd x rate) x (1 + markup%) + flat fee
+ *
+ * The flat fee is what guarantees a floor of profit on cheap services, where a
+ * percentage alone earns almost nothing. This is the single source of truth for
+ * both the price quoted in the UI and the amount actually debited — they must
+ * never be calculated separately or a user can be shown one price and charged
+ * another.
+ */
 export function usdToNgn(usd: number): number {
   const rate = Number(process.env.TEXTVERIFIED_USD_NGN_RATE || "1600");
   const markup = Number(process.env.TEXTVERIFIED_MARKUP_PERCENT || "40");
+  const flatFee = Number(process.env.TEXTVERIFIED_FLAT_FEE_NGN || "500");
   const safeRate = Number.isFinite(rate) && rate > 0 ? rate : 1600;
   const safeMarkup = Number.isFinite(markup) && markup >= 0 ? markup : 40;
-  const ngn = usd * safeRate * (1 + safeMarkup / 100);
+  const safeFlat = Number.isFinite(flatFee) && flatFee >= 0 ? flatFee : 500;
+  const ngn = usd * safeRate * (1 + safeMarkup / 100) + safeFlat;
   return Math.ceil(ngn);
 }
 
@@ -253,12 +267,14 @@ export async function listVerificationServices(): Promise<TvService[]> {
 export async function getVerificationPricing(input: {
   serviceName: string;
   capability?: string;
+  /** Selecting a specific area code is priced differently. */
+  areaCode?: boolean;
 }) {
   // areaCode/carrier are booleans meaning "let me choose a specific one",
   // and all five fields are required by the schema.
   const body = {
     serviceName: input.serviceName,
-    areaCode: false,
+    areaCode: input.areaCode ?? false,
     carrier: false,
     numberType: "mobile",
     capability: input.capability || "sms",
@@ -286,12 +302,15 @@ export async function createVerification(input: {
   serviceName: string;
   capability?: string;
   maxPrice?: number;
+  /** Optional preferred US area codes, e.g. ["205"]. */
+  areaCodes?: string[];
 }): Promise<CreatedVerification> {
   const body: Record<string, unknown> = {
     serviceName: input.serviceName,
     capability: input.capability || "sms",
   };
   if (input.maxPrice != null) body.maxPrice = input.maxPrice;
+  if (input.areaCodes?.length) body.areaCodeSelectOption = input.areaCodes;
 
   // 201 returns only a follow-up link: { method, href }. The verification
   // itself (number, id, state) lives behind that href.
@@ -317,6 +336,134 @@ export async function createVerification(input: {
     method: (data?.method || "GET").toUpperCase(),
   });
   return details;
+}
+
+export type TvCapability = "sms" | "voice" | "smsAndVoiceCombo";
+
+/** Stock for a service before we take the customer's money. */
+export async function getVerificationInventory(input: {
+  serviceName: string;
+  capability?: TvCapability;
+}): Promise<number> {
+  const { data } = await tvFetch<{ availableQuantity?: number }>(
+    "/api/pub/v2/inventory/verifications",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        serviceName: input.serviceName,
+        capability: input.capability || "sms",
+        numberType: "mobile",
+      }),
+    },
+  );
+  return Number(data?.availableQuantity ?? 0);
+}
+
+export async function getAccountDetails() {
+  const { data } = await tvFetch<{ username?: string; currentBalance?: number }>(
+    "/api/pub/v2/account/me",
+    { method: "GET" },
+  );
+  return {
+    username: data?.username ?? null,
+    balance: Number(data?.currentBalance ?? 0),
+  };
+}
+
+export type TvAreaCode = { areaCode: string; state: string };
+
+const AREA_CODES_TTL_MS = 24 * 60 * 60 * 1000;
+let areaCodeCache: { value: TvAreaCode[]; expiresAt: number } | null = null;
+
+/** 355 US area codes with their state — effectively static, cached for a day. */
+export async function listAreaCodes(): Promise<TvAreaCode[]> {
+  if (areaCodeCache && areaCodeCache.expiresAt > Date.now()) {
+    return areaCodeCache.value;
+  }
+  const { data } = await tvFetch<TvAreaCode[] | { data?: TvAreaCode[] }>(
+    "/api/pub/v2/area-codes",
+    { method: "GET" },
+  );
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray((data as { data?: TvAreaCode[] })?.data)
+      ? (data as { data: TvAreaCode[] }).data
+      : [];
+  areaCodeCache = { value: list, expiresAt: Date.now() + AREA_CODES_TTL_MS };
+  return list;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Recovery: reuse / reactivate / report                              */
+/* ------------------------------------------------------------------ */
+
+/** Both reuse and reactivate return 201 { method, href } like create does. */
+async function followVerificationAction(
+  path: string,
+): Promise<CreatedVerification> {
+  const { data, headers } = await tvFetch<{ href?: string; method?: string }>(
+    path,
+    { method: "POST" },
+  );
+  const followUrl = data?.href || headers.get("location") || undefined;
+  if (!followUrl) {
+    throw new TextVerifiedError(
+      "TextVerified accepted the request but returned no verification link",
+      502,
+      "no_verification_href",
+      data,
+    );
+  }
+  const { data: details } = await tvFetch<CreatedVerification>(followUrl, {
+    method: (data?.method || "GET").toUpperCase(),
+  });
+  return details;
+}
+
+/** Reuse the same number for the same service — only shortly after completion. */
+export async function reuseVerification(id: string) {
+  return followVerificationAction(
+    `/api/pub/v2/verifications/${encodeURIComponent(id)}/reuse`,
+  );
+}
+
+/** Reactivate a completed verification that can no longer be reused. */
+export async function reactivateVerification(id: string) {
+  return followVerificationAction(
+    `/api/pub/v2/verifications/${encodeURIComponent(id)}/reactivate`,
+  );
+}
+
+/** Report a bad number ("code not received", "number already in use"). */
+export async function reportVerification(id: string) {
+  await tvFetch(`/api/pub/v2/verifications/${encodeURIComponent(id)}/report`, {
+    method: "POST",
+    parseJson: false,
+  });
+  return true;
+}
+
+/**
+ * Eligibility for the recovery actions, read off verification details. The
+ * shapes mirror `cancel`: { canX, link }.
+ */
+export function extractActionAvailability(v: CreatedVerification) {
+  const flag = (key: "cancel" | "reuse" | "reactivate" | "report") => {
+    const node = v[key] as
+      | { canCancel?: boolean; canReuse?: boolean; canReactivate?: boolean; canReport?: boolean }
+      | undefined;
+    if (!node || typeof node !== "object") return false;
+    const value =
+      node.canCancel ?? node.canReuse ?? node.canReactivate ?? node.canReport;
+    // Absent flag with a present link means the action is offered.
+    return value ?? true;
+  };
+  return {
+    canCancel: flag("cancel"),
+    canReuse: flag("reuse"),
+    canReactivate: flag("reactivate"),
+    canReport: flag("report"),
+  };
 }
 
 export async function getVerification(id: string) {
@@ -612,6 +759,60 @@ export async function refundRental(id: string, isRenewable: boolean) {
     : `/api/pub/v2/reservations/rental/nonrenewable/${encodeURIComponent(id)}/refund`;
   await tvFetch(path, { method: "POST" });
   return true;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Webhooks                                                            */
+/* ------------------------------------------------------------------ */
+
+export type TvWebhookEnvelope<T = unknown> = {
+  id: string;
+  event: string;
+  attempt: number;
+  occurredAt: string;
+  idempotencyKey: string;
+  data: T;
+};
+
+export type TvSmsWebhookData = {
+  from: string | null;
+  to: string;
+  createdAt: string;
+  smsContent: string | null;
+  parsedCode: string | null;
+  encrypted: boolean;
+  reservationId: string | null;
+};
+
+const WEBHOOK_SIGNATURE_PREFIX = "HMAC-SHA512=";
+
+/**
+ * Verify the X-Webhook-Signature header against the RAW request body.
+ *
+ * Must be given the exact bytes TextVerified sent — re-serialising the parsed
+ * JSON will not produce a matching hash. Uses a timing-safe comparison so the
+ * endpoint can't be used as a signature oracle.
+ */
+export function verifyWebhookSignature(
+  rawBody: string,
+  signatureHeader: string | null,
+): boolean {
+  const secret = process.env.TEXTVERIFIED_WEBHOOK_SECRET?.trim();
+  if (!secret || !signatureHeader) return false;
+
+  const provided = signatureHeader.startsWith(WEBHOOK_SIGNATURE_PREFIX)
+    ? signatureHeader.slice(WEBHOOK_SIGNATURE_PREFIX.length)
+    : signatureHeader;
+
+  const expected = crypto
+    .createHmac("sha512", secret)
+    .update(rawBody, "utf8")
+    .digest("base64");
+
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 export async function createWakeRequest(reservationId: string) {

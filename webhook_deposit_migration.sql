@@ -45,9 +45,18 @@ exception
 end;
 $$;
 
--- Allow anon and authenticated to execute (webhook has no auth)
-grant execute on function public.webhook_process_deposit(uuid, numeric, text, text, jsonb) to anon;
-grant execute on function public.webhook_process_deposit(uuid, numeric, text, text, jsonb) to authenticated;
+-- SERVICE ROLE ONLY.
+--
+-- This function is SECURITY DEFINER and credits a wallet from its arguments,
+-- with no authentication of its own. Granting it to `anon` lets anyone holding
+-- the public anon key (it ships in the client JS bundle) credit any account any
+-- amount. Granting it to `authenticated` lets any logged-in user do the same.
+--
+-- The Korapay webhook at app/api/webhook/route.ts calls this with the service
+-- role key, so neither grant is needed.
+revoke execute on function public.webhook_process_deposit(uuid, numeric, text, text, jsonb) from public;
+revoke execute on function public.webhook_process_deposit(uuid, numeric, text, text, jsonb) from anon;
+revoke execute on function public.webhook_process_deposit(uuid, numeric, text, text, jsonb) from authenticated;
 grant execute on function public.webhook_process_deposit(uuid, numeric, text, text, jsonb) to service_role;
 -- Add korapay_data column to deposits table
 ALTER TABLE public.deposits

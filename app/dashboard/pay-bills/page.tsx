@@ -12,6 +12,9 @@ import {
   Tv,
   Loader2,
   CheckCircle2,
+  Trophy,
+  Ticket,
+  Copy,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Sidebar from "../Sidebar";
@@ -20,7 +23,14 @@ import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
 
-type TabKey = "airtime" | "data" | "electricity" | "tv";
+type TabKey = "airtime" | "data" | "electricity" | "tv" | "betting" | "epins";
+
+type Epin = {
+  amount?: string;
+  pin?: string;
+  serial?: string;
+  instruction?: string;
+};
 
 type Variation = {
   variation_id: number | string;
@@ -74,11 +84,41 @@ const TV_PROVIDERS = [
   { id: "showmax", label: "Showmax" },
 ];
 
+// Casing matters: eBills rejects a lowercased betting service_id.
+// LiveScoreBet is omitted — the biller is not provisioned upstream.
+const BETTING_PROVIDERS = [
+  "1xBet",
+  "BangBet",
+  "Bet9ja",
+  "BetKing",
+  "BetLand",
+  "BetLion",
+  "BetWay",
+  "CloudBet",
+  "MerryBet",
+  "NaijaBet",
+  "NairaBet",
+  "SportyBet",
+  "SupaBet",
+];
+
+/** SportyBet identifies customers by phone number, not an account ID. */
+const BETTING_USES_PHONE = new Set(["SportyBet"]);
+
+const BETTING_MIN = 100;
+const BETTING_MAX = 100000;
+
+const EPIN_NETWORKS = NETWORKS;
+const EPIN_VALUES = [100, 200, 500];
+const EPIN_MAX_QTY = 40;
+
 const TABS: { key: TabKey; label: string; icon: typeof Smartphone }[] = [
   { key: "airtime", label: "Airtime", icon: Smartphone },
   { key: "data", label: "Data", icon: Wifi },
   { key: "electricity", label: "Electricity", icon: Zap },
   { key: "tv", label: "Cable TV", icon: Tv },
+  { key: "betting", label: "Betting", icon: Trophy },
+  { key: "epins", label: "ePINs", icon: Ticket },
 ];
 
 const inputClass =
@@ -120,6 +160,24 @@ export default function PayBillsPage() {
   const [tvPlanId, setTvPlanId] = useState("");
   const [tvCustomerName, setTvCustomerName] = useState<string | null>(null);
   const [tvPlansLoading, setTvPlansLoading] = useState(false);
+
+  // Betting
+  const [betProvider, setBetProvider] = useState("Bet9ja");
+  const [betAccountId, setBetAccountId] = useState("");
+  const [betAmount, setBetAmount] = useState("");
+  const [betCustomerName, setBetCustomerName] = useState<string | null>(null);
+
+  // ePINs
+  const [epinNetwork, setEpinNetwork] = useState("mtn");
+  const [epinValue, setEpinValue] = useState(100);
+  const [epinQuantity, setEpinQuantity] = useState(1);
+  const [lastEpins, setLastEpins] = useState<Epin[]>([]);
+  const [epinsPending, setEpinsPending] = useState(false);
+
+  const epinTotal = useMemo(
+    () => epinValue * epinQuantity,
+    [epinValue, epinQuantity],
+  );
 
   const selectedDataPlan = useMemo(
     () => dataPlans.find((p) => String(p.variation_id) === dataPlanId),
@@ -256,6 +314,8 @@ export default function PayBillsPage() {
 
     setSubmitting(true);
     setLastToken(null);
+    setLastEpins([]);
+    setEpinsPending(false);
     try {
       const res = await fetch("/api/bills/pay", {
         method: "POST",
@@ -272,6 +332,15 @@ export default function PayBillsPage() {
 
       toast.success("Payment successful");
       if (json.token) setLastToken(String(json.token));
+      if (Array.isArray(json.epins) && json.epins.length) {
+        setLastEpins(json.epins as Epin[]);
+      }
+      if (json.epins_pending) {
+        setEpinsPending(true);
+        toast("Order is processing — your PINs will appear shortly.", {
+          icon: "⏳",
+        });
+      }
       await loadHistory();
     } catch (err: any) {
       toast.error(err.message || "Payment failed");
@@ -407,6 +476,78 @@ export default function PayBillsPage() {
       variation_id: String(selectedTvPlan.variation_id),
       amount: Number(selectedTvPlan.price),
     });
+  };
+
+  const verifyBetting = async () => {
+    const token = await getAccessToken();
+    if (!token) return;
+    if (!betAccountId.trim()) {
+      toast.error("Enter your betting account ID");
+      return;
+    }
+    setVerifying(true);
+    setBetCustomerName(null);
+    try {
+      const res = await fetch("/api/bills/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          customer_id: betAccountId.trim(),
+          service_id: betProvider,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || "Verification failed");
+      setBetCustomerName(json?.data?.customer_name || "Verified");
+      toast.success("Account verified");
+    } catch (err: any) {
+      toast.error(err.message || "Verification failed");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleBetting = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!betCustomerName) {
+      toast.error("Verify the betting account first");
+      return;
+    }
+    const amount = Number(betAmount);
+    if (!Number.isFinite(amount) || amount < BETTING_MIN || amount > BETTING_MAX) {
+      toast.error(
+        `Amount must be between ₦${BETTING_MIN.toLocaleString()} and ₦${BETTING_MAX.toLocaleString()}`,
+      );
+      return;
+    }
+    await pay({
+      product_type: "betting",
+      service_id: betProvider,
+      customer_id: betAccountId.trim(),
+      amount,
+    });
+  };
+
+  const handleEpins = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await pay({
+      product_type: "epins",
+      service_id: epinNetwork,
+      value: epinValue,
+      quantity: epinQuantity,
+    });
+  };
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied`);
+    } catch {
+      toast.error("Could not copy");
+    }
   };
 
   return (
@@ -817,6 +958,215 @@ export default function PayBillsPage() {
                         ? `Subscribe — ₦${Number(selectedTvPlan.price).toLocaleString()}`
                         : "Subscribe"}
                   </button>
+                </form>
+              )}
+
+              {tab === "betting" && (
+                <form onSubmit={handleBetting} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bookmaker
+                    </label>
+                    <select
+                      className={inputClass}
+                      value={betProvider}
+                      onChange={(e) => {
+                        setBetProvider(e.target.value);
+                        setBetCustomerName(null);
+                      }}
+                    >
+                      {BETTING_PROVIDERS.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {BETTING_USES_PHONE.has(betProvider)
+                        ? "Registered phone number"
+                        : "Betting account ID"}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        className={inputClass}
+                        value={betAccountId}
+                        onChange={(e) => {
+                          setBetAccountId(e.target.value);
+                          setBetCustomerName(null);
+                        }}
+                        placeholder={
+                          BETTING_USES_PHONE.has(betProvider)
+                            ? "08012345678"
+                            : "Your account / user ID"
+                        }
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={verifyBetting}
+                        disabled={verifying}
+                        className="shrink-0 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        {verifying ? "..." : "Verify"}
+                      </button>
+                    </div>
+                    {betCustomerName && (
+                      <p className="text-sm text-green-700 mt-2">
+                        Account: {betCustomerName}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount (₦)
+                    </label>
+                    <input
+                      type="number"
+                      min={BETTING_MIN}
+                      max={BETTING_MAX}
+                      className={inputClass}
+                      value={betAmount}
+                      onChange={(e) => setBetAmount(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Min ₦{BETTING_MIN.toLocaleString()} — max ₦
+                      {BETTING_MAX.toLocaleString()}
+                    </p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting || !betCustomerName}
+                    className="w-full bg-[#F87D1F] hover:bg-[#e06b10] disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
+                  >
+                    {submitting ? "Processing..." : "Fund Betting Account"}
+                  </button>
+                </form>
+              )}
+
+              {tab === "epins" && (
+                <form onSubmit={handleEpins} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Network
+                    </label>
+                    <select
+                      className={inputClass}
+                      value={epinNetwork}
+                      onChange={(e) => setEpinNetwork(e.target.value)}
+                    >
+                      {EPIN_NETWORKS.map((n) => (
+                        <option key={n.id} value={n.id}>
+                          {n.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Denomination
+                    </label>
+                    <select
+                      className={inputClass}
+                      value={epinValue}
+                      onChange={(e) => setEpinValue(Number(e.target.value))}
+                    >
+                      {EPIN_VALUES.map((v) => (
+                        <option key={v} value={v}>
+                          ₦{v.toLocaleString()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={EPIN_MAX_QTY}
+                      step={1}
+                      className={inputClass}
+                      value={epinQuantity}
+                      onChange={(e) =>
+                        setEpinQuantity(
+                          Math.max(
+                            1,
+                            Math.min(EPIN_MAX_QTY, Number(e.target.value) || 1),
+                          ),
+                        )
+                      }
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      1 — {EPIN_MAX_QTY} pins per order
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Total</span>
+                      <span className="font-semibold text-gray-900">
+                        ₦{epinTotal.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-[#F87D1F] hover:bg-[#e06b10] disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
+                  >
+                    {submitting
+                      ? "Processing..."
+                      : `Buy ePINs — ₦${epinTotal.toLocaleString()}`}
+                  </button>
+
+                  {epinsPending && (
+                    <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                      Your order is still processing. The PINs will appear in
+                      your bill history once the provider releases them.
+                    </p>
+                  )}
+
+                  {lastEpins.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Your PINs
+                      </h3>
+                      {lastEpins.map((p, i) => (
+                        <div
+                          key={`${p.serial || p.pin || i}`}
+                          className="rounded-lg border border-gray-200 bg-white p-3"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-sm text-gray-900 break-all">
+                              {p.pin}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => copyText(String(p.pin), "PIN")}
+                              className="shrink-0 inline-flex items-center gap-1 rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              Copy
+                            </button>
+                          </div>
+                          {p.serial && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Serial: {p.serial}
+                            </p>
+                          )}
+                          {p.instruction && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              {p.instruction}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </form>
               )}
             </div>

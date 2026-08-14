@@ -5,9 +5,13 @@ import {
   TextVerifiedError,
   createVerification,
   extractPhone,
+  getAccountDetails,
+  getVerificationInventory,
   getVerificationPricing,
   usdToNgn,
 } from "@/lib/textverified";
+
+const ALLOWED_CAPABILITIES = ["sms", "voice", "smsAndVoiceCombo"] as const;
 
 export const runtime = "nodejs";
 
@@ -27,19 +31,61 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       serviceName?: string;
       capability?: string;
+      areaCodes?: string[];
     };
     const serviceName = String(body.serviceName || "").trim();
     const capability = String(body.capability || "sms").trim() || "sms";
+    const areaCodes = Array.isArray(body.areaCodes)
+      ? body.areaCodes.map((c) => String(c).trim()).filter(Boolean).slice(0, 5)
+      : [];
 
     if (!serviceName) {
       return NextResponse.json({ message: "serviceName is required" }, { status: 400 });
     }
+    if (!(ALLOWED_CAPABILITIES as readonly string[]).includes(capability)) {
+      return NextResponse.json(
+        { message: `capability must be one of: ${ALLOWED_CAPABILITIES.join(", ")}` },
+        { status: 400 },
+      );
+    }
 
-    const { usd } = await getVerificationPricing({ serviceName, capability });
+    const { usd } = await getVerificationPricing({
+      serviceName,
+      capability,
+      areaCode: areaCodes.length > 0,
+    });
     if (!usd || usd <= 0) {
       return NextResponse.json(
         { message: "This service is unavailable or has no price right now" },
         { status: 404 },
+      );
+    }
+
+    // Preflight BEFORE debiting: an out-of-stock service or an exhausted
+    // provider balance would otherwise debit the customer, fail upstream and
+    // refund — visible to them as a failed payment.
+    const [inventory, account] = await Promise.all([
+      getVerificationInventory({
+        serviceName,
+        capability: capability as "sms" | "voice" | "smsAndVoiceCombo",
+      }).catch(() => null),
+      getAccountDetails().catch(() => null),
+    ]);
+
+    if (inventory !== null && inventory <= 0) {
+      return NextResponse.json(
+        { message: "No numbers are available for this service right now. Try another service.", code: "out_of_stock" },
+        { status: 409 },
+      );
+    }
+
+    if (account !== null && account.balance < usd) {
+      console.error(
+        `[textverify/create] provider balance $${account.balance} < $${usd} required — top up TextVerified`,
+      );
+      return NextResponse.json(
+        { message: "This service is temporarily unavailable. Please try again later.", code: "provider_balance_low" },
+        { status: 503 },
       );
     }
 
@@ -89,6 +135,7 @@ export async function POST(req: Request) {
         serviceName,
         capability,
         maxPrice: usd * 1.05,
+        areaCodes,
       });
     } catch (providerErr) {
       const message =
