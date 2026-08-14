@@ -221,6 +221,49 @@ function unwrapServices(data: unknown): TvService[] {
   return Array.isArray(nested) ? nested : [];
 }
 
+export type NormalizedService = {
+  serviceName: string;
+  /** Properly-cased label from the provider, e.g. "WhatsApp". */
+  label: string;
+  /** Lowercased capabilities this service actually supports. */
+  capabilities: string[];
+};
+
+/**
+ * The provider returns ONE ROW PER CAPABILITY, so every service appears twice
+ * ("whatsapp"/Sms and "whatsapp"/Voice) — 4,551 rows for 2,293 real services.
+ * Collapsing them halves the payload, stops the picker showing each service
+ * twice, and tells the UI which delivery methods are genuinely available.
+ */
+export function normalizeServices(raw: TvService[]): NormalizedService[] {
+  const byName = new Map<string, NormalizedService>();
+
+  for (const s of raw) {
+    const serviceName = String(s.serviceName || s.service_name || "").trim();
+    if (!serviceName) continue;
+
+    const capability = String(s.capability || "sms").toLowerCase();
+    const label = String((s as { description?: string }).description || "").trim();
+
+    const existing = byName.get(serviceName);
+    if (existing) {
+      if (!existing.capabilities.includes(capability)) {
+        existing.capabilities.push(capability);
+      }
+      continue;
+    }
+    byName.set(serviceName, {
+      serviceName,
+      label: label || serviceName,
+      capabilities: [capability],
+    });
+  }
+
+  return [...byName.values()].sort((a, b) =>
+    a.serviceName.localeCompare(b.serviceName),
+  );
+}
+
 /**
  * The service catalogue is large (thousands of entries) and effectively static,
  * so cache it per reservation type instead of hitting TextVerified on every

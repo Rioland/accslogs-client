@@ -41,13 +41,13 @@ export async function POST(req: Request) {
       );
     }
 
+    // Naira-only: USD cost and the raw provider payload are our buy price.
+    void raw;
     return NextResponse.json({
       serviceName,
       is_renewable: isRenewable,
       duration,
-      amount_usd: usd,
       amount_ngn: usdToNgn(usd),
-      raw,
     });
   } catch (err) {
     if (err instanceof TextVerifiedError) {

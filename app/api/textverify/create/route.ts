@@ -201,7 +201,6 @@ export async function POST(req: Request) {
       provider_id: providerId,
       service_name: serviceName,
       phone_number: phone,
-      amount_usd: usd,
       amount_ngn: amountNgn,
       new_balance: debitResult.new_balance,
       ends_at: endsAt,

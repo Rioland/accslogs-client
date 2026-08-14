@@ -36,11 +36,12 @@ export async function POST(req: Request) {
       );
     }
 
+    // Deliberately naira-only: the USD cost and the raw provider payload are
+    // our buy price, and must not reach the browser.
+    void raw;
     return NextResponse.json({
       serviceName,
-      amount_usd: usd,
       amount_ngn: usdToNgn(usd),
-      raw,
     });
   } catch (err) {
     if (err instanceof TextVerifiedError) {

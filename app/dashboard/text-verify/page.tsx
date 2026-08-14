@@ -30,7 +30,30 @@ const CAPABILITIES: { value: Capability; label: string; hint: string }[] = [
   { value: "smsAndVoiceCombo", label: "SMS + Voice", hint: "Either method" },
 ];
 
-type Service = { serviceName: string; capability: string };
+type Service = {
+  serviceName: string;
+  /** Properly-cased provider label, e.g. "WhatsApp". */
+  label?: string;
+  /** Which delivery methods this service actually supports. */
+  capabilities?: string[];
+};
+
+/**
+ * The provider gives no popularity signal, so searching "insta" ranks InstaGC
+ * and InstaRem above Instagram on name length alone. This list pulls the
+ * services people actually verify to the top of their match tier. Every entry
+ * was checked against the live catalogue.
+ */
+const POPULAR_SERVICES = new Set([
+  "whatsapp", "google", "telegram", "instagram", "facebook", "tiktok",
+  "discord", "snapchat", "twitter", "x", "uber", "airbnb", "amazon",
+  "netflix", "paypal", "tinder", "microsoft", "apple", "linkedin", "openai",
+  "claude", "steam", "spotify", "binance", "coinbase", "cashapp", "venmo",
+  "doordash", "ubereats", "lyft", "grubhub", "bumble", "hinge", "signal",
+  "viber", "wechat", "line", "yahoo", "protonmail", "ebay", "walmart",
+  "target", "nike", "adidas", "expedia", "revolut", "wise", "payoneer",
+  "skrill",
+]);
 
 type ActiveVerification = {
   id: number;
@@ -118,7 +141,6 @@ export default function TextVerifyPage() {
   const [selected, setSelected] = useState<string>("");
   const [duration, setDuration] = useState<string>("sevenDay");
   const [priceNgn, setPriceNgn] = useState<number | null>(null);
-  const [priceUsd, setPriceUsd] = useState<number | null>(null);
   const [loadingServices, setLoadingServices] = useState(true);
   const [pricing, setPricing] = useState(false);
   const [buying, setBuying] = useState(false);
@@ -164,27 +186,49 @@ export default function TextVerifyPage() {
     const q = serviceQuery.trim().toLowerCase();
     if (!q) return services.slice(0, SUGGESTION_LIMIT);
 
-    const exact: Service[] = [];
-    const prefix: Service[] = [];
-    const contains: Service[] = [];
+    // Tier by match quality, then prefer the shortest name within a tier. Length
+    // is a good proxy for "the one they meant": searching "face" should offer
+    // facebook before thenorthface, and "tele" telegram before cointelegraph.
+    const scored: { s: Service; tier: number }[] = [];
 
     for (const s of services) {
       const name = s.serviceName.toLowerCase();
-      if (name === q) exact.push(s);
-      else if (name.startsWith(q)) prefix.push(s);
-      else if (name.includes(q)) contains.push(s);
-      if (exact.length + prefix.length >= SUGGESTION_LIMIT && contains.length > SUGGESTION_LIMIT) {
-        break;
-      }
+      const label = (s.label || "").toLowerCase();
+
+      let tier = -1;
+      if (name === q || label === q) tier = 0;
+      else if (name.startsWith(q) || label.startsWith(q)) tier = 1;
+      else if (name.includes(q) || label.includes(q)) tier = 2;
+
+      if (tier >= 0) scored.push({ s, tier });
     }
-    return [...exact, ...prefix, ...contains].slice(0, SUGGESTION_LIMIT);
+
+    scored.sort(
+      (a, b) =>
+        a.tier - b.tier ||
+        Number(POPULAR_SERVICES.has(b.s.serviceName)) -
+          Number(POPULAR_SERVICES.has(a.s.serviceName)) ||
+        a.s.serviceName.length - b.s.serviceName.length ||
+        a.s.serviceName.localeCompare(b.s.serviceName),
+    );
+
+    return scored.slice(0, SUGGESTION_LIMIT).map((x) => x.s);
   }, [services, serviceQuery]);
+
+  const selectedService = useMemo(
+    () => services.find((s) => s.serviceName === selected),
+    [services, selected],
+  );
 
   const totalMatches = useMemo(() => {
     const q = serviceQuery.trim().toLowerCase();
     if (!q) return services.length;
     return services.reduce(
-      (n, s) => (s.serviceName.toLowerCase().includes(q) ? n + 1 : n),
+      (n, s) =>
+        s.serviceName.toLowerCase().includes(q) ||
+        (s.label || "").toLowerCase().includes(q)
+          ? n + 1
+          : n,
       0,
     );
   }, [services, serviceQuery]);
@@ -226,7 +270,14 @@ export default function TextVerifyPage() {
         setServices(
           hasAll
             ? list
-            : [{ serviceName: "allservices", capability: "sms" }, ...list],
+            : [
+                {
+                  serviceName: "allservices",
+                  label: "All services",
+                  capabilities: ["sms"],
+                },
+                ...list,
+              ],
         );
         // Keep the search box in sync with the auto-selection, otherwise the
         // input looks empty while a service is actually chosen.
@@ -272,7 +323,6 @@ export default function TextVerifyPage() {
     setServiceQuery("");
     setSuggestOpen(false);
     setPriceNgn(null);
-    setPriceUsd(null);
     if (mode === "verify") setDuration("sevenDay");
     else if (mode === "nonrenewable") setDuration("sevenDay");
     else setDuration("thirtyDay");
@@ -286,7 +336,6 @@ export default function TextVerifyPage() {
     if (mode === "verify") {
       if (!selected) {
         setPriceNgn(null);
-        setPriceUsd(null);
         return;
       }
       let cancelled = false;
@@ -307,12 +356,10 @@ export default function TextVerifyPage() {
           if (!res.ok) throw new Error(data.message || "Pricing failed");
           if (!cancelled) {
             setPriceNgn(data.amount_ngn);
-            setPriceUsd(data.amount_usd);
           }
         } catch (err) {
           if (!cancelled) {
             setPriceNgn(null);
-            setPriceUsd(null);
             toast.error(err instanceof Error ? err.message : "Pricing failed");
           }
         } finally {
@@ -327,7 +374,6 @@ export default function TextVerifyPage() {
     // rental pricing
     if (!selected || !duration) {
       setPriceNgn(null);
-      setPriceUsd(null);
       return;
     }
     let cancelled = false;
@@ -350,12 +396,10 @@ export default function TextVerifyPage() {
         if (!res.ok) throw new Error(data.message || "Pricing failed");
         if (!cancelled) {
           setPriceNgn(data.amount_ngn);
-          setPriceUsd(data.amount_usd);
         }
       } catch (err) {
         if (!cancelled) {
           setPriceNgn(null);
-          setPriceUsd(null);
           toast.error(err instanceof Error ? err.message : "Pricing failed");
         }
       } finally {
@@ -862,7 +906,18 @@ export default function TextVerifyPage() {
                                 : "text-gray-700 hover:bg-gray-50"
                             }`}
                           >
-                            <span className="truncate">{s.serviceName}</span>
+                            <span className="min-w-0 truncate">
+                              {s.label && s.label !== s.serviceName ? (
+                                <>
+                                  {s.label}
+                                  <span className="ml-1.5 text-xs text-gray-400">
+                                    {s.serviceName}
+                                  </span>
+                                </>
+                              ) : (
+                                s.serviceName
+                              )}
+                            </span>
                             {selected === s.serviceName && (
                               <span className="ml-2 shrink-0 text-xs">selected</span>
                             )}
@@ -894,25 +949,34 @@ export default function TextVerifyPage() {
                     Delivery method
                   </label>
                   <div className="mt-1 grid grid-cols-3 gap-2">
-                    {CAPABILITIES.map((c) => (
-                      <button
-                        key={c.value}
-                        type="button"
-                        onClick={() => setCapability(c.value)}
-                        title={c.hint}
-                        className={`rounded-lg border px-2 py-2 text-xs font-medium transition ${
-                          capability === c.value
-                            ? "border-[#F87D1F] bg-[#fff4ea] text-[#F87D1F]"
-                            : "border-gray-300 text-gray-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        {c.label}
-                      </button>
-                    ))}
+                    {CAPABILITIES.map((c) => {
+                      // Only offer what this service actually supports; the
+                      // catalogue tells us per service.
+                      const caps = selectedService?.capabilities;
+                      const unsupported =
+                        !!caps &&
+                        c.value !== "smsAndVoiceCombo" &&
+                        !caps.includes(c.value.toLowerCase());
+                      return (
+                        <button
+                          key={c.value}
+                          type="button"
+                          disabled={unsupported}
+                          onClick={() => setCapability(c.value)}
+                          title={unsupported ? `${selected} has no ${c.label.toLowerCase()} option` : c.hint}
+                          className={`rounded-lg border px-2 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                            capability === c.value
+                              ? "border-[#F87D1F] bg-[#fff4ea] text-[#F87D1F]"
+                              : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          {c.label}
+                        </button>
+                      );
+                    })}
                   </div>
                   <p className="mt-1.5 text-[11px] text-gray-400">
-                    Voice costs more than SMS. Not every service supports every
-                    method.
+                    Voice costs more than SMS.
                   </p>
 
                   {areaStates.length > 0 && (
@@ -999,11 +1063,6 @@ export default function TextVerifyPage() {
                     <span className="text-gray-600">Price</span>
                     <span className="text-lg font-semibold text-teal-800">
                       ₦{priceNgn.toLocaleString()}
-                      {priceUsd != null && (
-                        <span className="ml-2 text-xs font-normal text-gray-500">
-                          (~${priceUsd.toFixed(2)})
-                        </span>
-                      )}
                     </span>
                   </div>
                 ) : (

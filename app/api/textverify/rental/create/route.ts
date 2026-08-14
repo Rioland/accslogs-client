@@ -194,7 +194,6 @@ export async function POST(req: Request) {
       phone_number: phone,
       is_renewable: isRenewable,
       duration,
-      amount_usd: usd,
       amount_ngn: amountNgn,
       new_balance: debitResult.new_balance,
       ends_at: endsAt,

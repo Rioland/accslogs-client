@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     const { data, error: qError } = await admin
       .from("text_rentals")
       .select(
-        "id, request_id, provider_id, service_name, phone_number, is_renewable, duration, amount_usd, amount_ngn, status, ends_at, created_at",
+        "id, request_id, provider_id, service_name, phone_number, is_renewable, duration, amount_ngn, status, ends_at, created_at",
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })

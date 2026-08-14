@@ -3,6 +3,7 @@ import { getAuthedUser } from "@/lib/billsAuth";
 import {
   TextVerifiedError,
   listVerificationServices,
+  normalizeServices,
 } from "@/lib/textverified";
 
 export const runtime = "nodejs";
@@ -13,13 +14,7 @@ export async function GET(req: Request) {
     if (error || !user) return error!;
 
     const services = await listVerificationServices();
-    const normalized = services
-      .map((s) => ({
-        serviceName: String(s.serviceName || s.service_name || ""),
-        capability: String(s.capability || "sms"),
-      }))
-      .filter((s) => s.serviceName)
-      .sort((a, b) => a.serviceName.localeCompare(b.serviceName));
+    const normalized = normalizeServices(services);
 
     return NextResponse.json(
       { services: normalized },
