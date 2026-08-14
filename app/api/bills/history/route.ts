@@ -43,6 +43,18 @@ export async function GET(req: Request) {
         instruction: p.instruction ?? null,
       }));
 
+      // These product types owe the customer something to copy. If it is not
+      // stored yet the order was still processing when we bought it, and a
+      // requery can collect it.
+      const owesDeliverable =
+        row.product_type === "electricity" || row.product_type === "epins";
+      const hasDeliverable = !!row.provider_token || epins.length > 0;
+      const awaitingDelivery =
+        owesDeliverable &&
+        !hasDeliverable &&
+        row.status !== "refunded" &&
+        row.status !== "failed";
+
       return {
         id: row.id,
         request_id: row.request_id,
@@ -57,6 +69,7 @@ export async function GET(req: Request) {
         token: row.provider_token,
         units: row.provider_units,
         epins,
+        awaiting_delivery: awaitingDelivery,
         error_message: row.error_message,
         created_at: row.created_at,
       };

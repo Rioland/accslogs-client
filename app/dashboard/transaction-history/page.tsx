@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Eye,
   Receipt,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar1 from "../../components/Navbar1";
@@ -50,6 +51,7 @@ interface BillPayment {
   token: string | null;
   units: string | null;
   epins: Epin[];
+  awaiting_delivery?: boolean;
   error_message: string | null;
   created_at: string;
 }
@@ -111,7 +113,53 @@ export default function TransactionHistoryPage() {
   const [details, setDetails] = useState<BillPayment | null>(null);
   const [tab, setTab] = useState<"bills" | "deposits">("bills");
   const [isLoading, setIsLoading] = useState(true);
+  const [billsError, setBillsError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
+
+  /** Ask the provider again for a token/PIN that was not ready at purchase. */
+  const refreshOrder = async (payment: BillPayment, silent = false) => {
+    setRefreshing(true);
+    try {
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch("/api/bills/requery", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ request_id: payment.request_id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Could not refresh");
+
+      const updated: BillPayment = {
+        ...payment,
+        token: data.token ?? payment.token,
+        units: data.units ?? payment.units,
+        epins: data.epins?.length ? data.epins : payment.epins,
+        awaiting_delivery: !data.token && !data.epins?.length,
+      };
+
+      setDetails((d) => (d && d.id === payment.id ? updated : d));
+      setBills((list) => list.map((x) => (x.id === payment.id ? updated : x)));
+
+      if (!silent) {
+        if (data.token || data.epins?.length) toast.success("Details updated");
+        else toast("Still processing — try again shortly");
+      }
+    } catch (err) {
+      if (!silent) {
+        toast.error(err instanceof Error ? err.message : "Could not refresh");
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -141,9 +189,16 @@ export default function TransactionHistoryPage() {
       }
 
       if (billRes.status === "fulfilled") {
-        setBills(billRes.value?.payments || []);
+        if (billRes.value?.message && !billRes.value?.payments) {
+          // Surface the reason instead of showing an empty list, which reads as
+          // "you have no purchases" when the real problem is a failed request.
+          setBillsError(billRes.value.message);
+        } else {
+          setBills(billRes.value?.payments || []);
+        }
       } else {
         console.error("Error fetching bill payments:", billRes);
+        setBillsError("Could not load your purchases. Please refresh.");
       }
 
       setIsLoading(false);
@@ -151,6 +206,13 @@ export default function TransactionHistoryPage() {
 
     fetchAll();
   }, [router]);
+
+  // Opening an order that never received its token/PIN silently asks the
+  // provider again, so the common case resolves without the user doing anything.
+  useEffect(() => {
+    if (details?.awaiting_delivery) void refreshOrder(details, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [details?.id]);
 
   // Escape closes the details dialog, and the page behind it must not scroll
   // while it is open.
@@ -342,7 +404,14 @@ export default function TransactionHistoryPage() {
                   ))}
                 </div>
 
+                {tab === "bills" && billsError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    {billsError}
+                  </div>
+                )}
+
                 {tab === "bills" &&
+                  !billsError &&
                   (bills.length === 0 ? (
                     <div className="py-8 text-center">
                       <Receipt className="mx-auto mb-4 h-12 w-12 text-gray-400" />
@@ -549,6 +618,34 @@ export default function TransactionHistoryPage() {
                 {details.status}
               </span>
 
+              {/* Nothing to copy yet — the provider was still processing. */}
+              {!details.token &&
+                details.epins.length === 0 &&
+                details.awaiting_delivery && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <p className="text-sm font-medium text-amber-800">
+                      {refreshing
+                        ? "Checking with the provider..."
+                        : "Your token/PIN is not ready yet"}
+                    </p>
+                    <p className="mt-1 text-xs text-amber-700">
+                      The provider is still processing this order. Your payment
+                      is safe — check again in a moment.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={refreshing}
+                      onClick={() => void refreshOrder(details)}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+                    >
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                      />
+                      {refreshing ? "Checking..." : "Check again"}
+                    </button>
+                  </div>
+                )}
+
               {details.token && (
                 <CopyableValue
                   label="Electricity token"
@@ -650,7 +747,8 @@ export default function TransactionHistoryPage() {
               {!details.token &&
                 details.epins.length === 0 &&
                 !details.units &&
-                !details.error_message && (
+                !details.error_message &&
+                !details.awaiting_delivery && (
                   <p className="text-xs text-gray-500">
                     This purchase type has no token or PIN to copy.
                   </p>

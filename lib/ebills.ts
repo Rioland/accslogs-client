@@ -356,13 +356,35 @@ export function isProviderSuccess(payload: unknown): boolean {
 
 export function extractProviderFields(payload: unknown) {
   const data = (payload as { data?: Record<string, unknown> })?.data || {};
+  const meta = (data.meta_data || {}) as Record<string, unknown>;
+
+  // The purchase response and the requery response carry the electricity token
+  // in different places: `data.token` on purchase, `meta_data.electricity_token`
+  // on requery. Reading only the first silently loses the token for any order
+  // that was still processing when we bought it.
+  const token =
+    data.token ??
+    meta.electricity_token ??
+    meta.token ??
+    null;
+
+  const units = data.units ?? meta.units ?? null;
+
   return {
     provider_order_id: data.order_id != null ? String(data.order_id) : null,
     amount_charged:
       data.amount_charged != null ? Number(data.amount_charged) : null,
     discount: data.discount != null ? Number(data.discount) : null,
-    provider_token: data.token != null ? String(data.token) : null,
-    provider_units: data.units != null ? String(data.units) : null,
+    provider_token: token != null ? String(token) : null,
+    provider_units: units != null ? String(units) : null,
     status: data.status != null ? String(data.status) : null,
   };
+}
+
+/** An order is only finished once the provider says completed. */
+export function isProviderCompleted(payload: unknown): boolean {
+  const status = String(
+    (payload as { data?: { status?: string } })?.data?.status || "",
+  ).toLowerCase();
+  return status === "completed-api" || status === "completed";
 }
