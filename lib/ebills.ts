@@ -4,6 +4,8 @@
  * Base: https://ebills.africa/wp-json
  */
 
+import { createHmac, timingSafeEqual } from "crypto";
+
 const BASE_URL =
   process.env.EBILLS_BASE_URL?.replace(/\/$/, "") ||
   "https://ebills.africa/wp-json";
@@ -282,6 +284,61 @@ export async function requeryOrder(request_id: string) {
     method: "POST",
     body: JSON.stringify({ request_id }),
   });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Webhook notifications                                              */
+/* ------------------------------------------------------------------ */
+
+export type EbillsWebhookPayload = {
+  order_id?: number | string;
+  status?: string;
+  product_name?: string;
+  quantity?: number;
+  amount?: string | number;
+  amount_charged?: string | number;
+  date_created?: string;
+  date_updated?: string;
+  request_id?: string;
+  meta_data?: Record<string, unknown>;
+  timestamp?: number;
+};
+
+/**
+ * Verify the X-Signature header against the RAW request body.
+ *
+ * eBills signs with HMAC-SHA256 keyed on the account's user PIN. The docs do
+ * not state the encoding, so both hex and base64 are accepted. Must be given
+ * the exact bytes received — re-serialising parsed JSON will not match.
+ */
+export function verifyEbillsWebhookSignature(
+  rawBody: string,
+  signatureHeader: string | null,
+): boolean {
+  const pin = process.env.EBILLS_USER_PIN?.trim();
+  if (!pin || !signatureHeader) return false;
+
+  const provided = signatureHeader.replace(/^(HMAC-)?SHA-?256=/i, "").trim();
+  const mac = createHmac("sha256", pin).update(rawBody, "utf8").digest();
+
+  return (
+    timingSafeEqualStr(provided, mac.toString("hex")) ||
+    timingSafeEqualStr(provided, mac.toString("base64"))
+  );
+}
+
+function timingSafeEqualStr(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
+
+/** True when a requery confirms the provider really refunded this order. */
+export function isProviderRefunded(payload: unknown): boolean {
+  const data = (payload as { data?: { status?: string } })?.data;
+  const status = String(data?.status || "").toLowerCase();
+  return status === "refunded" || status === "cancelled";
 }
 
 export function isProviderSuccess(payload: unknown): boolean {
