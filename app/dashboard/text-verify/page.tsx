@@ -20,14 +20,13 @@ import supabaseClient from "@/lib/supabaseClient";
 
 type Mode = "verify" | "nonrenewable" | "renewable";
 
-type Capability = "sms" | "voice" | "smsAndVoiceCombo";
+type Capability = "sms" | "voice";
 
 type AreaState = { state: string; codes: string[] };
 
 const CAPABILITIES: { value: Capability; label: string; hint: string }[] = [
   { value: "sms", label: "SMS", hint: "Receive a text code" },
   { value: "voice", label: "Voice call", hint: "Receive the code by call" },
-  { value: "smsAndVoiceCombo", label: "SMS + Voice", hint: "Either method" },
 ];
 
 type Service = {
@@ -948,15 +947,12 @@ export default function TextVerifyPage() {
                   <label className="mt-4 block text-xs font-medium text-gray-500">
                     Delivery method
                   </label>
-                  <div className="mt-1 grid grid-cols-3 gap-2">
+                  <div className="mt-1 grid grid-cols-2 gap-2">
                     {CAPABILITIES.map((c) => {
                       // Only offer what this service actually supports; the
                       // catalogue tells us per service.
                       const caps = selectedService?.capabilities;
-                      const unsupported =
-                        !!caps &&
-                        c.value !== "smsAndVoiceCombo" &&
-                        !caps.includes(c.value.toLowerCase());
+                      const unsupported = !!caps && !caps.includes(c.value);
                       return (
                         <button
                           key={c.value}

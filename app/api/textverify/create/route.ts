@@ -3,6 +3,7 @@ import { getAuthedUser } from "@/lib/billsAuth";
 import { getSupabaseAdminClient } from "@/lib/supabaseServer";
 import {
   TextVerifiedError,
+  TvCapability,
   createVerification,
   extractPhone,
   getAccountDetails,
@@ -11,7 +12,9 @@ import {
   usdToNgn,
 } from "@/lib/textverified";
 
-const ALLOWED_CAPABILITIES = ["sms", "voice", "smsAndVoiceCombo"] as const;
+// smsAndVoiceCombo is intentionally excluded: the provider 400s it for most
+// services, so accepting it here only buys a wasted upstream round trip.
+const ALLOWED_CAPABILITIES = ["sms", "voice"] as const;
 
 export const runtime = "nodejs";
 
@@ -67,7 +70,7 @@ export async function POST(req: Request) {
     const [inventory, account] = await Promise.all([
       getVerificationInventory({
         serviceName,
-        capability: capability as "sms" | "voice" | "smsAndVoiceCombo",
+        capability: capability as TvCapability,
       }).catch(() => null),
       getAccountDetails().catch(() => null),
     ]);
