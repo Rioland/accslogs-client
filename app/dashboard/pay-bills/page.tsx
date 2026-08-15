@@ -22,6 +22,7 @@ import Navbar1 from "../../components/Navbar1";
 import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
+import { notifyFundsChanged } from "@/lib/fundsEvents";
 
 type TabKey = "airtime" | "data" | "electricity" | "tv" | "betting" | "epins";
 
@@ -331,6 +332,7 @@ export default function PayBillsPage() {
       }
 
       toast.success("Payment successful");
+      notifyFundsChanged(json.new_balance);
       if (json.token) setLastToken(String(json.token));
       if (Array.isArray(json.epins) && json.epins.length) {
         setLastEpins(json.epins as Epin[]);

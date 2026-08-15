@@ -16,6 +16,7 @@ import {
   LucideIcon,
 } from "lucide-react";
 import supabaseClient from "@/lib/supabaseClient";
+import { onFundsChanged } from "@/lib/fundsEvents";
 import { useRouter } from "next/navigation";
 
 interface SidebarItem {
@@ -37,24 +38,45 @@ export default function Sidebar({ activeKey, onChange, items }: SidebarProps) {
   const router = useRouter();
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchFunds = async () => {
       const {
         data: { session },
       } = await supabaseClient.auth.getSession();
-      if (session) {
-        const { data: profile } = await supabaseClient
-          .from("profiles")
-          .select("funds")
-          .eq("id", session.user.id)
-          .single();
+      if (!session) return;
 
-        if (profile) {
-          setFunds(profile.funds || 0);
-        }
-      }
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("funds")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile && !cancelled) setFunds(profile.funds || 0);
     };
 
-    fetchFunds();
+    void fetchFunds();
+
+    // A purchase or refund happens on another page, so re-read on notification.
+    // The event carries the new balance when the API returned one, which lets
+    // the figure update immediately; the refetch then confirms it.
+    const unsubscribe = onFundsChanged((balance) => {
+      if (typeof balance === "number" && !cancelled) setFunds(balance);
+      void fetchFunds();
+    });
+
+    // Catches anything that changed while the tab was in the background —
+    // a webhook-driven deposit, or a purchase made in another tab.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void fetchFunds();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   const defaultItems: SidebarItem[] = useMemo(

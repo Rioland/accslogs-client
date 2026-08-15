@@ -17,6 +17,7 @@ import Navbar1 from "../../components/Navbar1";
 import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
+import { notifyFundsChanged } from "@/lib/fundsEvents";
 
 type Mode = "verify" | "nonrenewable" | "renewable";
 
@@ -151,6 +152,47 @@ export default function TextVerifyPage() {
   const [areaState, setAreaState] = useState("");
   const [areaCode, setAreaCode] = useState("");
   const [recovering, setRecovering] = useState<string | null>(null);
+
+  /**
+   * Purchase dialog: shows the number, counts down, and auto-refunds if no code
+   * arrives. `deadline` is an absolute timestamp rather than a decrementing
+   * counter so a backgrounded tab (where timers are throttled) still expires at
+   * the right moment instead of drifting.
+   *
+   * The deadline comes from the provider's own `ends_at` — the number is dead
+   * at that instant regardless of what we display, so counting to anything else
+   * would either strand the user on a number that already expired, or refund
+   * one that was still good. The constant below is only a fallback for when the
+   * provider returns no expiry.
+   */
+  const NUMBER_WINDOW_SECONDS = 300;
+  const MIN_WINDOW_MS = 30_000;
+  const MAX_WINDOW_MS = 60 * 60_000;
+  /**
+   * Run the full provider window. TextVerified refunds unused verifications on
+   * their side, so there is nothing to protect by cancelling early — a lead
+   * time would only shorten the window the customer paid for. If the cancel is
+   * rejected because the line just timed out, the route still refunds locally.
+   */
+  const CANCEL_LEAD_MS = 0;
+  const [numberDialogOpen, setNumberDialogOpen] = useState(false);
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(NUMBER_WINDOW_SECONDS);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const autoRefundRan = useRef(false);
+
+  /**
+   * Rentals get a confirmation dialog, never a countdown. A rental runs for
+   * days to a year and collects many messages, so there is no single "did the
+   * code arrive" moment — auto-refunding on a timer would destroy a number the
+   * customer deliberately paid to keep. Refunds here are explicit, and the
+   * provider decides eligibility.
+   */
+  const [rentalDialogOpen, setRentalDialogOpen] = useState(false);
+  const [confirmRefund, setConfirmRefund] = useState(false);
+  const [refunding, setRefunding] = useState(false);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [rentalHistory, setRentalHistory] = useState<HistoryRow[]>([]);
 
@@ -589,6 +631,8 @@ export default function TextVerifyPage() {
         toast.success(
           action === "reuse" ? "Number reused — watching for a new code" : "Number reactivated",
         );
+        // reuse/reactivate mint a new charged verification.
+        notifyFundsChanged(data.new_balance);
       }
       void loadHistory();
     } catch (err) {
@@ -631,7 +675,28 @@ export default function TextVerifyPage() {
           status: "active",
           ends_at: data.ends_at,
         });
-        toast.success("Number ready — enter it on the target site");
+
+        // Count down to the provider's own expiry. Clamped so a malformed or
+        // stale ends_at can't produce an instant timeout or an endless timer.
+        const providerEnd = data.ends_at
+          ? new Date(data.ends_at).getTime() - CANCEL_LEAD_MS
+          : NaN;
+        const fallback = Date.now() + NUMBER_WINDOW_SECONDS * 1000;
+        const endAt = Number.isFinite(providerEnd)
+          ? Math.min(
+              Math.max(providerEnd, Date.now() + MIN_WINDOW_MS),
+              Date.now() + MAX_WINDOW_MS,
+            )
+          : fallback;
+
+        autoRefundRan.current = false;
+        setTimedOut(false);
+        setConfirmCancel(false);
+        setSecondsLeft(Math.ceil((endAt - Date.now()) / 1000));
+        setDeadline(endAt);
+        setNumberDialogOpen(true);
+        notifyFundsChanged(data.new_balance);
+
         void loadHistory();
       } else {
         const res = await fetch("/api/textverify/rental/create", {
@@ -661,7 +726,9 @@ export default function TextVerifyPage() {
           duration: data.duration,
           ends_at: data.ends_at,
         });
-        toast.success("Rental active — number is ready");
+        setConfirmRefund(false);
+        setRentalDialogOpen(true);
+        notifyFundsChanged(data.new_balance);
         void loadRentalHistory();
       }
     } catch (err) {
@@ -671,31 +738,91 @@ export default function TextVerifyPage() {
     }
   };
 
-  const cancelActive = async () => {
-    if (!active) return;
-    try {
-      const headers = await authHeaders();
-      const res = await fetch("/api/textverify/cancel", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ request_id: active.request_id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Cancel failed");
-      toast.success(
-        data.refunded != null
-          ? `Cancelled. ₦${Number(data.refunded).toLocaleString()} refunded`
-          : "Cancelled",
-      );
-      setActive(null);
-      void loadHistory();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Cancel failed");
-    }
-  };
+  const cancelActive = useCallback(
+    async (reason: "user" | "timeout" = "user") => {
+      if (!active) return;
+      setCancelling(true);
+      try {
+        const headers = await authHeaders();
+        const res = await fetch("/api/textverify/cancel", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ request_id: active.request_id, reason }),
+        });
+        const data = await res.json();
+
+        // The code landed in the gap between the timer expiring and the cancel
+        // request. Show the code instead of an error — it is theirs, they paid
+        // for it, and it still works.
+        if (res.status === 409 && data.completed) {
+          setTimedOut(false);
+          setNumberDialogOpen(true);
+          setActive((prev) =>
+            prev
+              ? { ...prev, status: "completed", sms_code: data.code ?? null }
+              : prev,
+          );
+          toast.success("Your code arrived just in time");
+          void loadHistory();
+          return;
+        }
+
+        if (!res.ok) throw new Error(data.message || "Cancel failed");
+
+        const refunded =
+          data.refunded != null
+            ? `₦${Number(data.refunded).toLocaleString()} refunded`
+            : "Refunded";
+
+        // Money came back — tell the sidebar before anything else.
+        notifyFundsChanged(null);
+
+        if (reason === "timeout") {
+          // A refund is a money event, so surface it in the dialog — reopening
+          // it if the user hid it — rather than a toast they may never see.
+          setTimedOut(true);
+          setNumberDialogOpen(true);
+          setActive((prev) => (prev ? { ...prev, status: "refunded" } : prev));
+        } else {
+          toast.success(`Cancelled. ${refunded}`);
+          setNumberDialogOpen(false);
+          setActive(null);
+        }
+        void loadHistory();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Cancel failed");
+      } finally {
+        setCancelling(false);
+        setConfirmCancel(false);
+      }
+    },
+    [active, loadHistory],
+  );
+
+  // Tick the countdown and fire the automatic refund exactly once. Driven by
+  // the deadline rather than dialog visibility, so hiding the dialog cannot
+  // strand a purchase that should have been refunded.
+  useEffect(() => {
+    if (deadline == null) return;
+    if (active?.status === "completed" || timedOut) return;
+
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setSecondsLeft(left);
+      if (left === 0 && !autoRefundRan.current) {
+        autoRefundRan.current = true;
+        void cancelActive("timeout");
+      }
+    };
+
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [deadline, active?.status, timedOut, cancelActive]);
 
   const refundActiveRental = async () => {
     if (!activeRental) return;
+    setRefunding(true);
     try {
       const headers = await authHeaders();
       const res = await fetch("/api/textverify/rental/refund", {
@@ -710,10 +837,17 @@ export default function TextVerifyPage() {
           ? `Refunded ₦${Number(data.refunded).toLocaleString()}`
           : "Refunded",
       );
+      notifyFundsChanged(null);
+      setRentalDialogOpen(false);
       setActiveRental(null);
       void loadRentalHistory();
     } catch (err) {
+      // The provider decides eligibility — a rental past its refund window
+      // simply cannot be refunded, and the user needs to know why.
       toast.error(err instanceof Error ? err.message : "Refund failed");
+    } finally {
+      setRefunding(false);
+      setConfirmRefund(false);
     }
   };
 
@@ -1376,6 +1510,311 @@ export default function TextVerifyPage() {
           </div>
         </div>
       </div>
+
+      {/* Purchase dialog: number + countdown + cancel */}
+      {numberDialogOpen && active && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Your verification number"
+            className="flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:max-w-md sm:rounded-2xl"
+          >
+            <div className="border-b border-gray-200 p-5 text-center">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {active.status === "completed"
+                  ? "Code received"
+                  : timedOut
+                    ? "No code arrived"
+                    : "Your number is ready"}
+              </h3>
+              <p className="mt-0.5 text-sm text-gray-500">
+                {active.service_name}
+              </p>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+              {/* The number */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                  Phone number
+                </p>
+                <div className="mt-1 flex items-center justify-center gap-2">
+                  <p className="font-mono text-2xl font-bold text-gray-900">
+                    {active.phone_number}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void copy(active.phone_number, "Number")}
+                    aria-label="Copy number"
+                    className="rounded border border-gray-300 bg-white p-1.5 text-gray-600 hover:bg-gray-100"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Code, countdown, or timeout notice */}
+              {active.status === "completed" && active.sms_code ? (
+                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-green-700">
+                    Verification code
+                  </p>
+                  <div className="mt-1 flex items-center justify-center gap-2">
+                    <p className="font-mono text-3xl font-bold text-green-900">
+                      {active.sms_code}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void copy(String(active.sms_code), "Code")
+                      }
+                      aria-label="Copy code"
+                      className="rounded border border-green-300 bg-white p-1.5 text-green-700 hover:bg-green-100"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : timedOut ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-900">
+                    No code arrived in time — you have been refunded.
+                  </p>
+                  <p className="mt-1 text-xs text-amber-800">
+                    ₦{Number(active.amount_ngn).toLocaleString()} is back in your
+                    wallet. This is usually a network delay on the sender&apos;s
+                    side. Please try again, or pick a different service.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 p-4 text-center">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                    Waiting for the code
+                  </p>
+                  <p
+                    className={`mt-1 font-mono text-3xl font-bold tabular-nums ${
+                      secondsLeft <= 60 ? "text-red-600" : "text-gray-900"
+                    }`}
+                  >
+                    {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:
+                    {String(secondsLeft % 60).padStart(2, "0")}
+                  </p>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Enter the number on {active.service_name}. If no code arrives
+                    before the timer ends, you are refunded automatically.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-200 p-5">
+              {active.status === "completed" || timedOut ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNumberDialogOpen(false);
+                    if (timedOut) setActive(null);
+                  }}
+                  className="w-full rounded-full bg-[#F87D1F] px-4 py-3 text-sm font-semibold text-white hover:bg-[#e06d15]"
+                >
+                  {timedOut ? "Try again" : "Done"}
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    disabled={cancelling}
+                    onClick={() => setConfirmCancel(true)}
+                    className="w-full rounded-full border border-red-200 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {cancelling ? "Cancelling..." : "Cancel & refund"}
+                  </button>
+                  {/* The timer keeps running and still auto-refunds when hidden. */}
+                  <button
+                    type="button"
+                    onClick={() => setNumberDialogOpen(false)}
+                    className="w-full text-center text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Hide this and keep waiting
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rental purchase dialog — details and an explicit refund, no timer */}
+      {rentalDialogOpen && activeRental && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Your rented number"
+            className="flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:max-w-md sm:rounded-2xl"
+          >
+            <div className="border-b border-gray-200 p-5 text-center">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Your number is ready
+              </h3>
+              <p className="mt-0.5 text-sm text-gray-500">
+                {activeRental.service_name} ·{" "}
+                {activeRental.is_renewable ? "Renewable" : "Non-renewable"}
+              </p>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                  Phone number
+                </p>
+                <div className="mt-1 flex items-center justify-center gap-2">
+                  <p className="font-mono text-2xl font-bold text-gray-900">
+                    {activeRental.phone_number}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void copy(activeRental.phone_number, "Number")
+                    }
+                    aria-label="Copy number"
+                    className="rounded border border-gray-300 bg-white p-1.5 text-gray-600 hover:bg-gray-100"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <dl className="space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-gray-500">Paid</dt>
+                  <dd className="font-medium text-gray-900">
+                    ₦{Number(activeRental.amount_ngn).toLocaleString()}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-gray-500">Duration</dt>
+                  <dd className="text-gray-900">{activeRental.duration}</dd>
+                </div>
+                {activeRental.ends_at && (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="text-gray-500">
+                      {activeRental.is_renewable ? "Renews" : "Expires"}
+                    </dt>
+                    <dd className="text-right text-gray-900">
+                      {new Date(activeRental.ends_at).toLocaleString()}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                <p className="text-xs text-blue-800">
+                  This number stays yours for the whole period and can receive
+                  many messages. Incoming SMS appears on this page and in your
+                  transaction history — you do not need to keep this open.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 border-t border-gray-200 p-5">
+              <button
+                type="button"
+                onClick={() => setRentalDialogOpen(false)}
+                className="w-full rounded-full bg-[#F87D1F] px-4 py-3 text-sm font-semibold text-white hover:bg-[#e06d15]"
+              >
+                Done
+              </button>
+              <button
+                type="button"
+                disabled={refunding}
+                onClick={() => setConfirmRefund(true)}
+                className="w-full text-center text-xs text-gray-500 hover:text-red-600 disabled:opacity-50"
+              >
+                {refunding ? "Requesting refund..." : "I don't want this — request a refund"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rental refund confirmation */}
+      {confirmRefund && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm refund"
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
+          >
+            <h4 className="text-base font-semibold text-gray-900">
+              Refund this rental?
+            </h4>
+            <p className="mt-2 text-sm text-gray-600">
+              The number is released and ₦
+              {Number(activeRental?.amount_ngn ?? 0).toLocaleString()} is
+              returned. Refunds are only possible within the provider&apos;s
+              refund window — if it has passed, the request will be declined.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmRefund(false)}
+                className="flex-1 rounded-full border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Keep it
+              </button>
+              <button
+                type="button"
+                disabled={refunding}
+                onClick={() => void refundActiveRental()}
+                className="flex-1 rounded-full bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {refunding ? "Refunding..." : "Yes, refund"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel confirmation */}
+      {confirmCancel && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm cancellation"
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
+          >
+            <h4 className="text-base font-semibold text-gray-900">
+              Cancel this number?
+            </h4>
+            <p className="mt-2 text-sm text-gray-600">
+              The number is released immediately and ₦
+              {Number(active?.amount_ngn ?? 0).toLocaleString()} goes back to
+              your wallet. If a code arrives after cancelling, it is lost.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmCancel(false)}
+                className="flex-1 rounded-full border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Keep waiting
+              </button>
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={() => void cancelActive("user")}
+                className="flex-1 rounded-full bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {cancelling ? "Cancelling..." : "Yes, cancel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
