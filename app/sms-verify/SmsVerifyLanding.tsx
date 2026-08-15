@@ -17,8 +17,8 @@ import {
 const pricingPlans = [
   {
     name: "Verifications",
-    price: "$0.25",
-    unit: "/ verification",
+    price: "₦480",
+    unit: "from / verification",
     blurb:
       "Receive an SMS one-time-code (OTP) or respond to a voice call to register for ANY service, including popular services like Gmail, Tinder, and WhatsApp.",
     features: [
@@ -36,8 +36,8 @@ const pricingPlans = [
   },
   {
     name: "Non-Renewable Rentals",
-    price: "$1.50",
-    unit: "/ rental",
+    price: "₦13,440",
+    unit: "from / 7 days",
     blurb:
       "Rent one of our phone numbers that can be used for ANY service over a period of 1 to 14 days. Your rental will expire at the end of the chosen period.",
     features: [
@@ -55,8 +55,8 @@ const pricingPlans = [
   },
   {
     name: "Renewable Rentals",
-    price: "$5",
-    unit: "/ month",
+    price: "₦19,200",
+    unit: "from / 30 days",
     blurb:
       "Rent one of our phone numbers that can be used for ANY service and kept as long as you need. Pay every 30 days to keep the number.",
     features: [
@@ -472,9 +472,9 @@ export default function SmsVerifyLanding() {
 
           <AnimatedSection animation="fade-up" delay={200}>
             <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-gray-500">
-              Prices shown in USD. You pay from your Topnotchlogs wallet in NGN
-              at the live conversion rate. Verifications and rentals are live —
-              final NGN price is shown in your dashboard before you pay.
+              Starting prices — the exact amount depends on the service you
+              choose and is always shown in your dashboard before you pay. Paid
+              from your Topnotchlogs wallet, in naira.
             </p>
           </AnimatedSection>
         </div>

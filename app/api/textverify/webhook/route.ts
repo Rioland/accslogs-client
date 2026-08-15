@@ -80,10 +80,23 @@ export async function POST(req: Request) {
       );
 
       if (!completed?.success) {
-        await admin.rpc("text_rental_record_sms", {
+        // Not a verification — it belongs to a rental, which keeps every
+        // message rather than just the newest one.
+        const { data: stored } = await admin.rpc("text_rental_store_sms", {
           p_provider_id: sms.reservationId,
-          p_provider_response: sms as unknown as Record<string, unknown>,
+          p_sms_id: null,
+          p_from: sms.from,
+          p_to: sms.to,
+          p_content: sms.smsContent,
+          p_parsed_code: sms.parsedCode,
+          p_received_at: sms.createdAt || new Date().toISOString(),
         });
+
+        if (!stored?.success) {
+          console.warn(
+            `[textverify/webhook] no verification or rental matches reservation ${sms.reservationId}`,
+          );
+        }
       }
 
       return NextResponse.json({ ok: true });

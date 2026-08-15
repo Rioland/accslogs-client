@@ -78,8 +78,15 @@ type ActiveRental = {
   is_renewable: boolean;
   duration: string;
   ends_at?: string | null;
-  latest_code?: string | null;
-  latest_content?: string | null;
+};
+
+/** One SMS received on a rented number. */
+type RentalMessage = {
+  id: number;
+  from_number: string | null;
+  sms_content: string | null;
+  parsed_code: string | null;
+  received_at: string;
 };
 
 type HistoryRow = {
@@ -190,6 +197,7 @@ export default function TextVerifyPage() {
    * customer deliberately paid to keep. Refunds here are explicit, and the
    * provider decides eligibility.
    */
+  const [rentalMessages, setRentalMessages] = useState<RentalMessage[]>([]);
   const [rentalDialogOpen, setRentalDialogOpen] = useState(false);
   const [confirmRefund, setConfirmRefund] = useState(false);
   const [refunding, setRefunding] = useState(false);
@@ -562,42 +570,41 @@ export default function TextVerifyPage() {
           void loadRentalHistory();
           return;
         }
-        const messages = (data.messages || []) as Array<{
-          parsedCode?: string;
-          parsed_code?: string;
-          smsContent?: string;
-          sms_content?: string;
-        }>;
-        if (messages.length > 0) {
-          const latest = messages[0];
-          const code =
-            latest.parsedCode ||
-            latest.parsed_code ||
-            null;
-          const content = latest.smsContent || latest.sms_content || null;
-          setActiveRental((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  latest_code: code,
-                  latest_content: content,
-                }
-              : prev,
-          );
-        }
+        // The server returns the full stored inbox, so this replaces rather
+        // than appends — no risk of duplicating a message the webhook also saw.
+        const messages = (data.messages || []) as RentalMessage[];
+        setRentalMessages((prev) => {
+          if (messages.length > prev.length && prev.length > 0) {
+            const newest = messages[0];
+            toast.success(
+              newest?.parsed_code
+                ? `New code: ${newest.parsed_code}`
+                : "New message received",
+            );
+          }
+          return messages;
+        });
       } catch {
         // keep polling
       }
     };
 
     void tick();
+    // A rental lives for days, so this is a slow safety net behind the webhook
+    // rather than the delivery mechanism. It also pauses on hidden tabs.
     const id = window.setInterval(() => {
-      if (!stopped) void tick();
-    }, 5000);
+      if (!stopped && document.visibilityState === "visible") void tick();
+    }, 10_000);
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && !stopped) void tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       stopped = true;
       window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
       setPolling(false);
     };
   }, [activeRental?.request_id, activeRental?.status, loadRentalHistory]);
@@ -726,6 +733,7 @@ export default function TextVerifyPage() {
           duration: data.duration,
           ends_at: data.ends_at,
         });
+        setRentalMessages([]);
         setConfirmRefund(false);
         setRentalDialogOpen(true);
         notifyFundsChanged(data.new_balance);
@@ -1406,39 +1414,75 @@ export default function TextVerifyPage() {
                       )}
                     </p>
                   </div>
-                  {(activeRental.latest_code || activeRental.latest_content) && (
-                    <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                      {activeRental.latest_code && (
-                        <>
-                          <p className="text-xs font-medium text-green-700">
-                            Latest code
-                          </p>
-                          <div className="mt-1 flex items-center gap-2">
-                            <p className="font-mono text-2xl font-bold text-green-900">
-                              {activeRental.latest_code}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void copy(
-                                  String(activeRental.latest_code),
-                                  "Code",
-                                )
-                              }
-                              className="rounded border border-green-300 bg-white p-1.5"
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </>
-                      )}
-                      {activeRental.latest_content && (
-                        <p className="mt-2 text-xs text-green-800">
-                          {activeRental.latest_content}
-                        </p>
+                  {/* Inbox: a rented number is reused across services, so every
+                      message is kept and labelled by sender rather than being
+                      collapsed into a single "latest code". */}
+                  <div>
+                    <div className="mb-2 flex items-baseline justify-between">
+                      <p className="text-xs font-medium text-gray-500">
+                        Messages
+                      </p>
+                      {rentalMessages.length > 0 && (
+                        <span className="text-[11px] text-gray-400">
+                          {rentalMessages.length} received
+                        </span>
                       )}
                     </div>
-                  )}
+
+                    {rentalMessages.length === 0 ? (
+                      <div className="rounded-lg border border-dashed border-gray-300 p-4 text-center">
+                        <p className="text-sm text-gray-500">
+                          No messages yet
+                        </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                          Use this number on any service — every code that
+                          arrives shows up here.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                        {rentalMessages.map((m) => (
+                          <div
+                            key={m.id}
+                            className="rounded-lg border border-gray-200 bg-white p-3"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate text-xs font-medium text-gray-700">
+                                {m.from_number || "Unknown sender"}
+                              </span>
+                              <span className="shrink-0 text-[11px] text-gray-400">
+                                {new Date(m.received_at).toLocaleString()}
+                              </span>
+                            </div>
+
+                            {m.parsed_code && (
+                              <div className="mt-2 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-2 py-1.5">
+                                <p className="font-mono text-lg font-bold text-green-900">
+                                  {m.parsed_code}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void copy(String(m.parsed_code), "Code")
+                                  }
+                                  aria-label="Copy code"
+                                  className="ml-auto rounded border border-green-300 bg-white p-1.5 text-green-700"
+                                >
+                                  <Copy className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            )}
+
+                            {m.sms_content && (
+                              <p className="mt-2 break-words text-xs text-gray-600">
+                                {m.sms_content}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   {activeRental.status === "active" && (
                     <button
                       type="button"
