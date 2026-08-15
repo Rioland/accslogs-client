@@ -39,12 +39,12 @@ const pricingPlans = [
     price: "₦13,440",
     unit: "from / 7 days",
     blurb:
-      "Rent one of our phone numbers that can be used for ANY service over a period of 1 to 14 days. Your rental will expire at the end of the chosen period.",
+      "Rent one of our phone numbers that can be used for ANY service over a period of 3 to 14 days. Your rental will expire at the end of the chosen period.",
     features: [
       "Get a Non-VoIP US phone number",
       "Register for any online service",
       "Verify many services on a single line",
-      "Own your number for 1 to 14 days",
+      "Own your number for 3 to 14 days",
       "Receive unlimited SMS verifications",
       "Instantly get verifications 24/7",
     ],

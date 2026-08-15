@@ -10,6 +10,10 @@ import {
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  // Hoisted so the catch block can name the exact combination that failed.
+  let serviceName = "allservices";
+  let duration: RentalDurationApi = "sevenDay";
+
   try {
     const { user, error } = await getAuthedUser(req);
     if (error || !user) return error!;
@@ -22,8 +26,8 @@ export async function POST(req: Request) {
       alwaysOn?: boolean;
     };
 
-    const serviceName = String(body.serviceName || "allservices").trim();
-    const duration = body.duration || "sevenDay";
+    serviceName = String(body.serviceName || "allservices").trim();
+    duration = body.duration || "sevenDay";
     const isRenewable = Boolean(body.isRenewable);
 
     const { usd, raw } = await getRentalPricing({
@@ -51,6 +55,19 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     if (err instanceof TextVerifiedError) {
+      // Not every service sells every duration — "allservices" has no 1-day
+      // rental, for instance. The provider reports that as a bare
+      // "Pricing not found.", which tells the customer nothing actionable.
+      if (/pricing not found/i.test(err.message)) {
+        return NextResponse.json(
+          {
+            message: `${serviceName} isn't available for that rental length. Try a longer duration, or pick a specific service.`,
+            code: "duration_unavailable",
+            unavailable_duration: duration,
+          },
+          { status: 404 },
+        );
+      }
       return NextResponse.json(
         { message: err.message, code: err.code },
         { status: err.status >= 400 && err.status < 600 ? err.status : 502 },

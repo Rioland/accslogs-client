@@ -47,12 +47,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // oneDay is excluded: the provider does not sell a 1-day "allservices"
+    // rental, so it is not offered anywhere in the UI.
     if (
       !isRenewable &&
-      !["oneDay", "threeDay", "sevenDay", "fourteenDay"].includes(duration)
+      !["threeDay", "sevenDay", "fourteenDay"].includes(duration)
     ) {
       return NextResponse.json(
-        { message: "Non-renewable rentals support 1–14 day durations" },
+        { message: "Non-renewable rentals support 3, 7 or 14 day durations" },
         { status: 400 },
       );
     }

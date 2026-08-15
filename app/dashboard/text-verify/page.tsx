@@ -103,7 +103,8 @@ type HistoryRow = {
 };
 
 const NONRENEWABLE_DURATIONS = [
-  { value: "oneDay", label: "1 day" },
+  // 1 day is deliberately absent: the provider has no 1-day "allservices"
+  // rental, which is the default selection, so it only ever failed.
   { value: "threeDay", label: "3 days" },
   { value: "sevenDay", label: "7 days" },
   { value: "fourteenDay", label: "14 days" },
@@ -148,6 +149,18 @@ export default function TextVerifyPage() {
   const [selected, setSelected] = useState<string>("");
   const [duration, setDuration] = useState<string>("sevenDay");
   const [priceNgn, setPriceNgn] = useState<number | null>(null);
+  const [priceError, setPriceError] = useState<string | null>(null);
+  /**
+   * Service/duration pairs the provider has told us it does not sell (e.g.
+   * "allservices" has no 1-day rental). Remembered so the picker can warn
+   * before the user selects the same dead option again.
+   */
+  const [unavailable, setUnavailable] = useState<Set<string>>(new Set());
+  const durationKey = useCallback(
+    (service: string, renewable: boolean, d: string) =>
+      `${service}|${renewable ? "r" : "n"}|${d}`,
+    [],
+  );
   const [loadingServices, setLoadingServices] = useState(true);
   const [pricing, setPricing] = useState(false);
   const [buying, setBuying] = useState(false);
@@ -372,6 +385,7 @@ export default function TextVerifyPage() {
     setServiceQuery("");
     setSuggestOpen(false);
     setPriceNgn(null);
+    setPriceError(null);
     if (mode === "verify") setDuration("sevenDay");
     else if (mode === "nonrenewable") setDuration("sevenDay");
     else setDuration("thirtyDay");
@@ -385,6 +399,7 @@ export default function TextVerifyPage() {
     if (mode === "verify") {
       if (!selected) {
         setPriceNgn(null);
+        setPriceError(null);
         return;
       }
       let cancelled = false;
@@ -405,11 +420,12 @@ export default function TextVerifyPage() {
           if (!res.ok) throw new Error(data.message || "Pricing failed");
           if (!cancelled) {
             setPriceNgn(data.amount_ngn);
+            setPriceError(null);
           }
         } catch (err) {
           if (!cancelled) {
             setPriceNgn(null);
-            toast.error(err instanceof Error ? err.message : "Pricing failed");
+            setPriceError(err instanceof Error ? err.message : "Pricing failed");
           }
         } finally {
           if (!cancelled) setPricing(false);
@@ -423,6 +439,7 @@ export default function TextVerifyPage() {
     // rental pricing
     if (!selected || !duration) {
       setPriceNgn(null);
+      setPriceError(null);
       return;
     }
     let cancelled = false;
@@ -442,14 +459,28 @@ export default function TextVerifyPage() {
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Pricing failed");
+        if (!res.ok) {
+          // Remember dead service/duration pairs so the picker can flag them
+          // instead of letting the user rediscover the same failure.
+          if (data.code === "duration_unavailable" && !cancelled) {
+            setUnavailable((prev) =>
+              new Set(prev).add(
+                durationKey(selected, mode === "renewable", duration),
+              ),
+            );
+          }
+          throw new Error(data.message || "Pricing failed");
+        }
         if (!cancelled) {
           setPriceNgn(data.amount_ngn);
+          setPriceError(null);
         }
       } catch (err) {
         if (!cancelled) {
           setPriceNgn(null);
-          toast.error(err instanceof Error ? err.message : "Pricing failed");
+          // Shown in place of the price rather than as a toast — the user needs
+          // it while choosing, not for three seconds.
+          setPriceError(err instanceof Error ? err.message : "Pricing failed");
         }
       } finally {
         if (!cancelled) setPricing(false);
@@ -458,7 +489,7 @@ export default function TextVerifyPage() {
     return () => {
       cancelled = true;
     };
-  }, [mode, selected, duration, capability, areaCode]);
+  }, [mode, selected, duration, capability, areaCode, durationKey]);
 
   // Area codes are static and cached server-side; load once.
   useEffect(() => {
@@ -967,7 +998,7 @@ export default function TextVerifyPage() {
                   {mode === "verify"
                     ? "Get a verification number"
                     : mode === "nonrenewable"
-                      ? "Rent a number (1–14 days)"
+                      ? "Rent a number (3–14 days)"
                       : "Rent a renewable number"}
                 </h2>
               </div>
@@ -1176,11 +1207,19 @@ export default function TextVerifyPage() {
                     onChange={(e) => setDuration(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
                   >
-                    {durationOptions.map((d) => (
-                      <option key={d.value} value={d.value}>
-                        {d.label}
-                      </option>
-                    ))}
+                    {durationOptions.map((d) => {
+                      const dead =
+                        selected &&
+                        unavailable.has(
+                          durationKey(selected, mode === "renewable", d.value),
+                        );
+                      return (
+                        <option key={d.value} value={d.value} disabled={!!dead}>
+                          {d.label}
+                          {dead ? " — not available for this service" : ""}
+                        </option>
+                      );
+                    })}
                   </select>
                   <p className="mt-2 text-xs text-gray-500">
                     Always-on SMS lines. Use{" "}
@@ -1203,6 +1242,8 @@ export default function TextVerifyPage() {
                       ₦{priceNgn.toLocaleString()}
                     </span>
                   </div>
+                ) : priceError ? (
+                  <span className="text-amber-800">{priceError}</span>
                 ) : (
                   <span className="text-gray-500">
                     Select options to see price
