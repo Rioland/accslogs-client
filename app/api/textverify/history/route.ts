@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     const { data, error: qError } = await admin
       .from("text_verifications")
       .select(
-        "id, request_id, provider_id, service_name, phone_number, amount_ngn, status, sms_code, ends_at, created_at",
+        "id, request_id, provider_id, service_name, capability, phone_number, area_code, amount_ngn, status, sms_code, sms_content, error_message, ends_at, created_at",
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })

@@ -15,6 +15,7 @@ import {
   Eye,
   Receipt,
   RefreshCw,
+  Smartphone,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Navbar1 from "../../components/Navbar1";
@@ -55,6 +56,33 @@ interface BillPayment {
   error_message: string | null;
   created_at: string;
 }
+
+/** A verification or a rental — both are "a number you bought". */
+interface TextTxn {
+  id: number;
+  request_id: string;
+  provider_id: string | null;
+  service_name: string;
+  capability?: string | null;
+  phone_number: string | null;
+  area_code?: string | null;
+  amount_ngn: number;
+  status: string;
+  sms_code?: string | null;
+  sms_content?: string | null;
+  is_renewable?: boolean;
+  duration?: string | null;
+  error_message?: string | null;
+  ends_at: string | null;
+  created_at: string;
+  kind: "verification" | "rental";
+}
+
+const CAPABILITY_LABELS: Record<string, string> = {
+  sms: "SMS",
+  voice: "Voice call",
+  smsAndVoiceCombo: "SMS + Voice",
+};
 
 const PRODUCT_LABELS: Record<string, string> = {
   airtime: "Airtime",
@@ -110,8 +138,10 @@ export default function TransactionHistoryPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [bills, setBills] = useState<BillPayment[]>([]);
+  const [texts, setTexts] = useState<TextTxn[]>([]);
   const [details, setDetails] = useState<BillPayment | null>(null);
-  const [tab, setTab] = useState<"bills" | "deposits">("bills");
+  const [textDetails, setTextDetails] = useState<TextTxn | null>(null);
+  const [tab, setTab] = useState<"bills" | "numbers" | "deposits">("bills");
   const [isLoading, setIsLoading] = useState(true);
   const [billsError, setBillsError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -171,16 +201,39 @@ export default function TransactionHistoryPage() {
         return;
       }
 
-      const [depositRes, billRes] = await Promise.allSettled([
-        supabaseClient
-          .from("deposits")
-          .select("id, amount, reference, status, created_at, korapay_data")
-          .eq("user_id", session.user.id)
-          .order("created_at", { ascending: false }),
-        fetch("/api/bills/history", {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }).then((r) => r.json()),
-      ]);
+      const authed = {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      };
+
+      const [depositRes, billRes, verifyRes, rentalRes] =
+        await Promise.allSettled([
+          supabaseClient
+            .from("deposits")
+            .select("id, amount, reference, status, created_at, korapay_data")
+            .eq("user_id", session.user.id)
+            .order("created_at", { ascending: false }),
+          fetch("/api/bills/history", authed).then((r) => r.json()),
+          fetch("/api/textverify/history", authed).then((r) => r.json()),
+          fetch("/api/textverify/rental/history", authed).then((r) => r.json()),
+        ]);
+
+      // Verifications and rentals are both "a number you bought", so they share
+      // one list sorted by date rather than forcing the user between two tabs.
+      const combined: TextTxn[] = [];
+      if (verifyRes.status === "fulfilled") {
+        for (const v of verifyRes.value?.verifications || []) {
+          combined.push({ ...v, kind: "verification" });
+        }
+      }
+      if (rentalRes.status === "fulfilled") {
+        for (const r of rentalRes.value?.rentals || []) {
+          combined.push({ ...r, kind: "rental" });
+        }
+      }
+      combined.sort(
+        (a, b) => +new Date(b.created_at) - +new Date(a.created_at),
+      );
+      setTexts(combined);
 
       if (depositRes.status === "fulfilled" && !depositRes.value.error) {
         setDeposits(depositRes.value.data || []);
@@ -217,9 +270,12 @@ export default function TransactionHistoryPage() {
   // Escape closes the details dialog, and the page behind it must not scroll
   // while it is open.
   useEffect(() => {
-    if (!details) return;
+    if (!details && !textDetails) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setDetails(null);
+      if (e.key === "Escape") {
+        setDetails(null);
+        setTextDetails(null);
+      }
     };
     document.addEventListener("keydown", onKey);
     const previousOverflow = document.body.style.overflow;
@@ -228,7 +284,7 @@ export default function TransactionHistoryPage() {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
     };
-  }, [details]);
+  }, [details, textDetails]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -385,6 +441,7 @@ export default function TransactionHistoryPage() {
                   {(
                     [
                       ["bills", "Bills & Purchases", bills.length],
+                      ["numbers", "Phone Numbers", texts.length],
                       ["deposits", "Deposits", deposits.length],
                     ] as const
                   ).map(([key, label, count]) => (
@@ -497,6 +554,95 @@ export default function TransactionHistoryPage() {
                           </div>
                         );
                       })}
+                    </div>
+                  ))}
+
+                {tab === "numbers" &&
+                  (texts.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <Smartphone className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                      <h3 className="mb-2 text-lg font-medium text-gray-900">
+                        No phone numbers yet
+                      </h3>
+                      <p className="text-gray-600">
+                        SMS verifications and number rentals will appear here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {texts.map((t) => (
+                        <div
+                          key={`${t.kind}-${t.id}`}
+                          className="rounded-lg border border-gray-200"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setTextDetails(t)}
+                            className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-gray-50"
+                          >
+                            <div className="flex min-w-0 items-start gap-3">
+                              {getStatusIcon(
+                                t.status === "completed" || t.status === "active"
+                                  ? "successful"
+                                  : t.status === "refunded" ||
+                                      t.status === "failed" ||
+                                      t.status === "expired" ||
+                                      t.status === "cancelled"
+                                    ? "failed"
+                                    : "pending",
+                              )}
+                              <div className="min-w-0">
+                                <div className="font-medium text-gray-900">
+                                  ₦{Number(t.amount_ngn).toLocaleString()}{" "}
+                                  <span className="font-normal text-gray-500">
+                                    · {t.service_name}
+                                  </span>
+                                </div>
+                                <div className="font-mono text-xs text-gray-600 sm:text-sm">
+                                  {t.phone_number || "No number assigned"}
+                                </div>
+                                <div className="mt-1 flex flex-wrap items-center gap-2">
+                                  <span className="text-xs text-gray-500">
+                                    {formatDate(t.created_at)}
+                                  </span>
+                                  <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-600">
+                                    {t.kind === "rental"
+                                      ? `Rental${t.duration ? ` · ${t.duration}` : ""}`
+                                      : "Verification"}
+                                  </span>
+                                  {t.sms_code && (
+                                    <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">
+                                      Code received
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              <span
+                                className={`rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(
+                                  t.status === "completed" ||
+                                    t.status === "active"
+                                    ? "successful"
+                                    : t.status === "refunded" ||
+                                        t.status === "failed" ||
+                                        t.status === "expired" ||
+                                        t.status === "cancelled"
+                                      ? "failed"
+                                      : "pending",
+                                )}`}
+                              >
+                                {t.status}
+                              </span>
+                              <span className="hidden shrink-0 items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 sm:inline-flex">
+                                <Eye className="h-3.5 w-3.5" />
+                                View details
+                              </span>
+                              <ChevronRight className="h-4 w-4 text-gray-400 sm:hidden" />
+                            </div>
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   ))}
 
@@ -753,6 +899,148 @@ export default function TransactionHistoryPage() {
                     This purchase type has no token or PIN to copy.
                   </p>
                 )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phone number details dialog */}
+      {textDetails && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          onClick={() => setTextDetails(null)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Phone number details"
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[90vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl"
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-gray-200 p-4 sm:p-5">
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {textDetails.service_name}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  ₦{Number(textDetails.amount_ngn).toLocaleString()} ·{" "}
+                  {textDetails.kind === "rental"
+                    ? `Rental${textDetails.duration ? ` (${textDetails.duration})` : ""}`
+                    : "Verification"}
+                </p>
+                <p className="mt-0.5 text-xs text-gray-400">
+                  {formatDate(textDetails.created_at)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTextDetails(null)}
+                aria-label="Close"
+                className="shrink-0 rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5">
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(
+                  textDetails.status === "completed" ||
+                    textDetails.status === "active"
+                    ? "successful"
+                    : textDetails.status === "refunded" ||
+                        textDetails.status === "failed" ||
+                        textDetails.status === "expired" ||
+                        textDetails.status === "cancelled"
+                      ? "failed"
+                      : "pending",
+                )}`}
+              >
+                {textDetails.status}
+              </span>
+
+              {textDetails.phone_number && (
+                <CopyableValue
+                  label="Phone number"
+                  value={textDetails.phone_number}
+                  big
+                />
+              )}
+
+              {textDetails.sms_code && (
+                <CopyableValue
+                  label="Verification code"
+                  value={textDetails.sms_code}
+                  big
+                />
+              )}
+
+              {textDetails.sms_content && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                    Message received
+                  </p>
+                  <p className="mt-1 break-words text-sm text-gray-800">
+                    {textDetails.sms_content}
+                  </p>
+                </div>
+              )}
+
+              {/* An active line with no code yet is still waiting on the sender. */}
+              {textDetails.status === "active" && !textDetails.sms_code && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-sm font-medium text-amber-800">
+                    Waiting for the code
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700">
+                    Enter the number on the site you are verifying. Codes appear
+                    here and on the SMS Verify page automatically.
+                  </p>
+                </div>
+              )}
+
+              <dl className="space-y-2 border-t border-gray-100 pt-3 text-sm">
+                {textDetails.capability && (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="shrink-0 text-gray-500">Delivery</dt>
+                    <dd className="text-xs text-gray-800">
+                      {CAPABILITY_LABELS[textDetails.capability] ||
+                        textDetails.capability}
+                    </dd>
+                  </div>
+                )}
+                {textDetails.area_code && (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="shrink-0 text-gray-500">Area code</dt>
+                    <dd className="text-xs text-gray-800">
+                      {textDetails.area_code}
+                    </dd>
+                  </div>
+                )}
+                {textDetails.ends_at && (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="shrink-0 text-gray-500">
+                      {textDetails.kind === "rental" ? "Expires" : "Expired"}
+                    </dt>
+                    <dd className="text-right text-xs text-gray-800">
+                      {formatDate(textDetails.ends_at)}
+                    </dd>
+                  </div>
+                )}
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="shrink-0 text-gray-500">Reference</dt>
+                  <dd className="break-all text-right font-mono text-xs text-gray-800">
+                    {textDetails.request_id}
+                  </dd>
+                </div>
+              </dl>
+
+              {textDetails.error_message && (
+                <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                  {textDetails.error_message}
+                </p>
+              )}
             </div>
           </div>
         </div>
