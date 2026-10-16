@@ -113,17 +113,31 @@ export default function SignUpPage() {
         }
       }
 
-      toast.success('Registration successful. Check your email for a welcome message.');
-
-      // Fire-and-forget welcome email (SMTP from our API)
-      void fetch('/api/auth/welcome', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email.trim(),
-          firstName: formData.firstName.trim(),
-        }),
-      }).catch(() => {});
+      // Email confirmation is off in Supabase, so sign-up returns a session.
+      // Use it to send our own verification email, which doubles as the
+      // welcome message. Without a session, fall back to the plain welcome.
+      const accessToken = signUpData.session?.access_token;
+      if (accessToken) {
+        toast.success('Registration successful. Check your email to verify your account.');
+        void fetch('/api/auth/verify-email/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ welcome: true }),
+        }).catch(() => {});
+      } else {
+        toast.success('Registration successful. Check your email for a welcome message.');
+        void fetch('/api/auth/welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email.trim(),
+            firstName: formData.firstName.trim(),
+          }),
+        }).catch(() => {});
+      }
 
       setTimeout(() => router.push('/login'), 1200);
     } catch (err: any) {

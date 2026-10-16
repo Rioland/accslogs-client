@@ -112,3 +112,28 @@ export function welcomeEmailHtml(firstName: string, loginUrl: string) {
 
   return emailShell('Welcome to Topnotchlogs', body);
 }
+
+export function verifyEmailHtml(firstName: string, verifyUrl: string, opts?: { welcome?: boolean }) {
+  const name = firstName?.trim() || 'there';
+  const intro = opts?.welcome
+    ? `Hi ${name}, thanks for creating your Topnotchlogs account. Please confirm this is your email address so we can keep your account and wallet secure.`
+    : `Hi ${name}, please confirm this is your email address so we can keep your account and wallet secure.`;
+  const body = `
+    <tr>
+      <td style="padding:36px 28px 28px;text-align:center;">
+        <h2 style="margin:0 0 12px;color:#111827;font-size:24px;font-weight:700;line-height:1.3;">
+          ${opts?.welcome ? 'Welcome! Verify your email' : 'Verify your email'}
+        </h2>
+        <p style="margin:0 0 28px;color:#4b5563;font-size:15px;line-height:1.6;">
+          ${intro}
+        </p>
+        ${ctaButton(verifyUrl, 'Verify Email')}
+        <p style="margin:24px 0 0;color:#6b7280;font-size:13px;line-height:1.6;">
+          This link expires in 24 hours. If you didn’t create a Topnotchlogs account, you can ignore this email.
+        </p>
+      </td>
+    </tr>
+  `;
+
+  return emailShell('Verify your email', body);
+}

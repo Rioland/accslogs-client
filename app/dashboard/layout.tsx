@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import supabaseClient from '@/lib/supabaseClient'
+import VerifyEmailBanner from './VerifyEmailBanner'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -9,7 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabaseClient.auth.getSession()
-   
+
       if (!session) {
         router.push('/login')
       }
@@ -18,5 +19,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     checkSession()
   }, [router])
 
-  return <>{children}</>
+  return (
+    <>
+      <VerifyEmailBanner />
+      {children}
+    </>
+  )
 }
