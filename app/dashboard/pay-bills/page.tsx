@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Menu,
@@ -23,6 +23,17 @@ import TopBar from "../../components/TopBar";
 import Footer from "../../components/Footer";
 import supabaseClient from "@/lib/supabaseClient";
 import { notifyFundsChanged } from "@/lib/fundsEvents";
+import {
+  type Beneficiary,
+  type BeneficiaryInput,
+  type RecentRecipient,
+  beneficiaryKey,
+  deleteBeneficiary,
+  listBeneficiaries,
+  listRecentRecipients,
+  saveBeneficiary,
+} from "@/lib/billBeneficiaries";
+import { BeneficiaryPicker, SaveBeneficiaryToggle } from "./BeneficiaryPicker";
 
 type TabKey = "airtime" | "data" | "electricity" | "tv" | "betting" | "epins";
 
@@ -125,6 +136,27 @@ const TABS: { key: TabKey; label: string; icon: typeof Smartphone }[] = [
 const inputClass =
   "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F87D1F] bg-white text-gray-900";
 
+/** Providers offered on each tab, as [id, label] — used to label chips. */
+const SERVICE_OPTIONS: Record<string, { id: string; label: string }[]> = {
+  airtime: NETWORKS,
+  data: DATA_NETWORKS,
+  electricity: DISCOS,
+  tv: TV_PROVIDERS,
+  betting: BETTING_PROVIDERS.map((p) => ({ id: p, label: p })),
+};
+
+/** Max unsaved "recent" chips per tab, after the saved ones. */
+const MAX_RECENT_CHIPS = 6;
+
+/** Verify endpoints fall back to this when the provider returns no name. */
+const GENERIC_VERIFIED = "Verified";
+
+function verifiedName(name: string | null) {
+  return name && name !== GENERIC_VERIFIED && !name.startsWith("Showmax")
+    ? name
+    : null;
+}
+
 export default function PayBillsPage() {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -174,6 +206,20 @@ export default function PayBillsPage() {
   const [epinQuantity, setEpinQuantity] = useState(1);
   const [lastEpins, setLastEpins] = useState<Epin[]>([]);
   const [epinsPending, setEpinsPending] = useState(false);
+
+  // Saved beneficiaries
+  const [userId, setUserId] = useState<string | null>(null);
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
+  const [recents, setRecents] = useState<RecentRecipient[]>([]);
+  // False until we know the bill_beneficiaries table exists.
+  const [canSaveBeneficiaries, setCanSaveBeneficiaries] = useState(false);
+  const [saveBen, setSaveBen] = useState(true);
+  const [benNickname, setBenNickname] = useState("");
+  // Plan to pre-select once a picked beneficiary's plan list has loaded.
+  const pendingDataPlan = useRef<{ serviceId: string; planId: string } | null>(null);
+  const pendingTvPlan = useRef<{ serviceId: string; planId: string } | null>(null);
+  // Drops verify responses that a newer verify (e.g. a second chip tap) superseded.
+  const verifySeq = useRef(0);
 
   const epinTotal = useMemo(
     () => epinValue * epinQuantity,
@@ -230,9 +276,32 @@ export default function PayBillsPage() {
     }
   }, []);
 
+  const loadBeneficiaries = useCallback(async () => {
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession();
+    if (!session) return;
+    setUserId(session.user.id);
+    const [saved, recent] = await Promise.all([
+      listBeneficiaries(session.user.id),
+      listRecentRecipients(session.user.id),
+    ]);
+    setBeneficiaries(saved.items);
+    setCanSaveBeneficiaries(saved.available);
+    setRecents(recent);
+  }, []);
+
   useEffect(() => {
     loadHistory();
-  }, [loadHistory]);
+    loadBeneficiaries();
+  }, [loadHistory, loadBeneficiaries]);
+
+  // Each tab starts with a fresh save choice.
+  const switchTab = (key: TabKey) => {
+    setTab(key);
+    setSaveBen(true);
+    setBenNickname("");
+  };
 
   // Allow deep links from the dashboard promo, e.g. /dashboard/pay-bills?tab=data
   useEffect(() => {
@@ -252,13 +321,19 @@ export default function PayBillsPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Failed to load data plans");
       const list = (json.data || []) as Variation[];
-      setDataPlans(
-        list.filter(
-          (p) =>
-            !p.availability ||
-            p.availability.toLowerCase() === "available",
-        ),
+      const available = list.filter(
+        (p) =>
+          !p.availability ||
+          p.availability.toLowerCase() === "available",
       );
+      setDataPlans(available);
+      const wanted = pendingDataPlan.current;
+      if (wanted && wanted.serviceId === serviceId) {
+        pendingDataPlan.current = null;
+        if (available.some((p) => String(p.variation_id) === wanted.planId)) {
+          setDataPlanId(wanted.planId);
+        }
+      }
     } catch (err: any) {
       setDataPlans([]);
       toast.error(err.message || "Could not load data plans");
@@ -277,13 +352,19 @@ export default function PayBillsPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Failed to load TV packages");
       const list = (json.data || []) as Variation[];
-      setTvPlans(
-        list.filter(
-          (p) =>
-            !p.availability ||
-            p.availability.toLowerCase() === "available",
-        ),
+      const available = list.filter(
+        (p) =>
+          !p.availability ||
+          p.availability.toLowerCase() === "available",
       );
+      setTvPlans(available);
+      const wanted = pendingTvPlan.current;
+      if (wanted && wanted.serviceId === serviceId) {
+        pendingTvPlan.current = null;
+        if (available.some((p) => String(p.variation_id) === wanted.planId)) {
+          setTvPlanId(wanted.planId);
+        }
+      }
     } catch (err: any) {
       setTvPlans([]);
       toast.error(err.message || "Could not load TV packages");
@@ -309,7 +390,30 @@ export default function PayBillsPage() {
     }
   };
 
-  const pay = async (payload: Record<string, unknown>) => {
+  /** Save or refresh the paid recipient. Never blocks a successful payment. */
+  const rememberRecipient = async (recipient: BeneficiaryInput) => {
+    if (!userId || !canSaveBeneficiaries || !recipient.customer_id.trim()) return;
+    const existing = beneficiaries.some(
+      (b) => beneficiaryKey(b) === beneficiaryKey(recipient),
+    );
+    if (!existing && !saveBen) return;
+    try {
+      await saveBeneficiary(userId, {
+        ...recipient,
+        nickname: existing ? null : benNickname,
+      });
+      if (!existing) toast.success("Beneficiary saved");
+      setBenNickname("");
+    } catch (err: any) {
+      console.warn("save beneficiary:", err?.message);
+      toast.error("Payment went through, but the beneficiary could not be saved.");
+    }
+  };
+
+  const pay = async (
+    payload: Record<string, unknown>,
+    recipient?: BeneficiaryInput,
+  ) => {
     const token = await getAccessToken();
     if (!token) return;
 
@@ -343,7 +447,8 @@ export default function PayBillsPage() {
           icon: "⏳",
         });
       }
-      await loadHistory();
+      if (recipient) await rememberRecipient(recipient);
+      await Promise.all([loadHistory(), loadBeneficiaries()]);
     } catch (err: any) {
       toast.error(err.message || "Payment failed");
     } finally {
@@ -353,12 +458,15 @@ export default function PayBillsPage() {
 
   const handleAirtime = async (e: React.FormEvent) => {
     e.preventDefault();
-    await pay({
-      product_type: "airtime",
-      service_id: airNetwork,
-      phone: airPhone.trim(),
-      amount: Number(airAmount),
-    });
+    await pay(
+      {
+        product_type: "airtime",
+        service_id: airNetwork,
+        phone: airPhone.trim(),
+        amount: Number(airAmount),
+      },
+      { product_type: "airtime", service_id: airNetwork, customer_id: airPhone },
+    );
   };
 
   const handleData = async (e: React.FormEvent) => {
@@ -367,24 +475,47 @@ export default function PayBillsPage() {
       toast.error("Select a data plan");
       return;
     }
-    await pay({
-      product_type: "data",
-      service_id: dataNetwork,
-      phone: dataPhone.trim(),
-      variation_id: String(selectedDataPlan.variation_id),
-      amount: Number(selectedDataPlan.price),
-    });
+    await pay(
+      {
+        product_type: "data",
+        service_id: dataNetwork,
+        phone: dataPhone.trim(),
+        variation_id: String(selectedDataPlan.variation_id),
+        amount: Number(selectedDataPlan.price),
+      },
+      {
+        product_type: "data",
+        service_id: dataNetwork,
+        customer_id: dataPhone,
+        variation_id: String(selectedDataPlan.variation_id),
+      },
+    );
   };
 
-  const verifyElectricity = async () => {
+  /**
+   * Shared verify call for meters, smartcards and betting accounts. `silent`
+   * skips the success toast when verification runs automatically after a
+   * beneficiary is picked.
+   */
+  const runVerify = async (opts: {
+    customerId: string;
+    serviceId: string;
+    variationId?: string;
+    emptyMessage: string;
+    successMessage: string;
+    setName: (name: string | null) => void;
+    silent?: boolean;
+  }) => {
     const token = await getAccessToken();
     if (!token) return;
-    if (!meterNumber.trim()) {
-      toast.error("Enter meter / account number");
+    const customerId = opts.customerId.trim();
+    if (!customerId) {
+      toast.error(opts.emptyMessage);
       return;
     }
+    const seq = ++verifySeq.current;
     setVerifying(true);
-    setCustomerName(null);
+    opts.setName(null);
     try {
       const res = await fetch("/api/bills/verify", {
         method: "POST",
@@ -393,22 +524,38 @@ export default function PayBillsPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          customer_id: meterNumber.trim(),
-          service_id: disco,
-          variation_id: meterType,
+          customer_id: customerId,
+          service_id: opts.serviceId,
+          ...(opts.variationId ? { variation_id: opts.variationId } : {}),
         }),
       });
       const json = await res.json();
+      if (seq !== verifySeq.current) return;
       if (!res.ok) throw new Error(json.message || "Verification failed");
-      const name = json?.data?.customer_name;
-      setCustomerName(name || "Verified");
-      toast.success("Customer verified");
+      opts.setName(json?.data?.customer_name || GENERIC_VERIFIED);
+      if (!opts.silent) toast.success(opts.successMessage);
     } catch (err: any) {
-      toast.error(err.message || "Verification failed");
+      if (seq === verifySeq.current) {
+        toast.error(err.message || "Verification failed");
+      }
     } finally {
-      setVerifying(false);
+      if (seq === verifySeq.current) setVerifying(false);
     }
   };
+
+  const verifyElectricity = (
+    override?: { customerId: string; serviceId: string; meterType: string },
+    silent = false,
+  ) =>
+    runVerify({
+      customerId: override?.customerId ?? meterNumber,
+      serviceId: override?.serviceId ?? disco,
+      variationId: override?.meterType ?? meterType,
+      emptyMessage: "Enter meter / account number",
+      successMessage: "Customer verified",
+      setName: setCustomerName,
+      silent,
+    });
 
   const handleElectricity = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -416,49 +563,48 @@ export default function PayBillsPage() {
       toast.error("Verify the meter first");
       return;
     }
-    await pay({
-      product_type: "electricity",
-      service_id: disco,
-      customer_id: meterNumber.trim(),
-      variation_id: meterType,
-      amount: Number(elecAmount),
-    });
+    await pay(
+      {
+        product_type: "electricity",
+        service_id: disco,
+        customer_id: meterNumber.trim(),
+        variation_id: meterType,
+        amount: Number(elecAmount),
+      },
+      {
+        product_type: "electricity",
+        service_id: disco,
+        customer_id: meterNumber,
+        variation_id: meterType,
+        customer_name: verifiedName(customerName),
+      },
+    );
   };
 
-  const verifyTv = async () => {
-    const token = await getAccessToken();
-    if (!token) return;
-    if (!smartcard.trim()) {
-      toast.error("Enter smartcard / IUC number");
-      return;
-    }
-    if (tvProvider === "showmax") {
+  const verifyTv = (
+    override?: { customerId: string; serviceId: string },
+    silent = false,
+  ) => {
+    const serviceId = override?.serviceId ?? tvProvider;
+    const customerId = override?.customerId ?? smartcard;
+    if (serviceId === "showmax") {
+      if (!customerId.trim()) {
+        toast.error("Enter smartcard / IUC number");
+        return;
+      }
+      verifySeq.current++;
+      setVerifying(false);
       setTvCustomerName("Showmax (no verify required)");
       return;
     }
-    setVerifying(true);
-    setTvCustomerName(null);
-    try {
-      const res = await fetch("/api/bills/verify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          customer_id: smartcard.trim(),
-          service_id: tvProvider,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Verification failed");
-      setTvCustomerName(json?.data?.customer_name || "Verified");
-      toast.success("Smartcard verified");
-    } catch (err: any) {
-      toast.error(err.message || "Verification failed");
-    } finally {
-      setVerifying(false);
-    }
+    return runVerify({
+      customerId,
+      serviceId,
+      emptyMessage: "Enter smartcard / IUC number",
+      successMessage: "Smartcard verified",
+      setName: setTvCustomerName,
+      silent,
+    });
   };
 
   const handleTv = async (e: React.FormEvent) => {
@@ -471,46 +617,36 @@ export default function PayBillsPage() {
       toast.error("Verify the smartcard first");
       return;
     }
-    await pay({
-      product_type: "tv",
-      service_id: tvProvider,
-      customer_id: smartcard.trim(),
-      variation_id: String(selectedTvPlan.variation_id),
-      amount: Number(selectedTvPlan.price),
-    });
+    await pay(
+      {
+        product_type: "tv",
+        service_id: tvProvider,
+        customer_id: smartcard.trim(),
+        variation_id: String(selectedTvPlan.variation_id),
+        amount: Number(selectedTvPlan.price),
+      },
+      {
+        product_type: "tv",
+        service_id: tvProvider,
+        customer_id: smartcard,
+        variation_id: String(selectedTvPlan.variation_id),
+        customer_name: verifiedName(tvCustomerName),
+      },
+    );
   };
 
-  const verifyBetting = async () => {
-    const token = await getAccessToken();
-    if (!token) return;
-    if (!betAccountId.trim()) {
-      toast.error("Enter your betting account ID");
-      return;
-    }
-    setVerifying(true);
-    setBetCustomerName(null);
-    try {
-      const res = await fetch("/api/bills/verify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          customer_id: betAccountId.trim(),
-          service_id: betProvider,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Verification failed");
-      setBetCustomerName(json?.data?.customer_name || "Verified");
-      toast.success("Account verified");
-    } catch (err: any) {
-      toast.error(err.message || "Verification failed");
-    } finally {
-      setVerifying(false);
-    }
-  };
+  const verifyBetting = (
+    override?: { customerId: string; serviceId: string },
+    silent = false,
+  ) =>
+    runVerify({
+      customerId: override?.customerId ?? betAccountId,
+      serviceId: override?.serviceId ?? betProvider,
+      emptyMessage: "Enter your betting account ID",
+      successMessage: "Account verified",
+      setName: setBetCustomerName,
+      silent,
+    });
 
   const handleBetting = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -525,12 +661,20 @@ export default function PayBillsPage() {
       );
       return;
     }
-    await pay({
-      product_type: "betting",
-      service_id: betProvider,
-      customer_id: betAccountId.trim(),
-      amount,
-    });
+    await pay(
+      {
+        product_type: "betting",
+        service_id: betProvider,
+        customer_id: betAccountId.trim(),
+        amount,
+      },
+      {
+        product_type: "betting",
+        service_id: betProvider,
+        customer_id: betAccountId,
+        customer_name: verifiedName(betCustomerName),
+      },
+    );
   };
 
   const handleEpins = async (e: React.FormEvent) => {
@@ -542,6 +686,144 @@ export default function PayBillsPage() {
       quantity: epinQuantity,
     });
   };
+
+  // ---- Beneficiary picker -------------------------------------------------
+
+  const serviceLabel = useCallback(
+    (serviceId: string) =>
+      SERVICE_OPTIONS[tab]?.find((o) => o.id === serviceId)?.label || serviceId,
+    [tab],
+  );
+
+  /** Saved and recent recipients for the open tab, limited to providers it offers. */
+  const { tabSaved, tabRecents } = useMemo(() => {
+    const offered = new Set((SERVICE_OPTIONS[tab] || []).map((o) => o.id));
+    const savedKeys = new Set(beneficiaries.map(beneficiaryKey));
+    return {
+      tabSaved: beneficiaries.filter(
+        (b) => b.product_type === tab && offered.has(b.service_id),
+      ),
+      tabRecents: recents
+        .filter(
+          (r) =>
+            r.product_type === tab &&
+            offered.has(r.service_id) &&
+            !savedKeys.has(beneficiaryKey(r)),
+        )
+        .slice(0, MAX_RECENT_CHIPS),
+    };
+  }, [tab, beneficiaries, recents]);
+
+  /** The recipient currently typed into the open tab's form. */
+  const currentKey = useMemo(() => {
+    const current: Record<string, [string, string]> = {
+      airtime: [airNetwork, airPhone],
+      data: [dataNetwork, dataPhone],
+      electricity: [disco, meterNumber],
+      tv: [tvProvider, smartcard],
+      betting: [betProvider, betAccountId],
+    };
+    const entry = current[tab];
+    if (!entry || !entry[1].trim()) return null;
+    return beneficiaryKey({
+      product_type: tab,
+      service_id: entry[0],
+      customer_id: entry[1],
+    });
+  }, [
+    tab,
+    airNetwork,
+    airPhone,
+    dataNetwork,
+    dataPhone,
+    disco,
+    meterNumber,
+    tvProvider,
+    smartcard,
+    betProvider,
+    betAccountId,
+  ]);
+
+  const currentSaved = useMemo(
+    () =>
+      currentKey
+        ? beneficiaries.find((b) => beneficiaryKey(b) === currentKey) || null
+        : null,
+    [currentKey, beneficiaries],
+  );
+
+  const pickBeneficiary = (item: Beneficiary | RecentRecipient) => {
+    const { service_id: serviceId, customer_id: customerId, variation_id: planId } = item;
+    switch (item.product_type) {
+      case "airtime":
+        setAirNetwork(serviceId);
+        setAirPhone(customerId);
+        break;
+      case "data":
+        setDataPhone(customerId);
+        if (planId) {
+          if (serviceId === dataNetwork && !plansLoading) {
+            if (dataPlans.some((p) => String(p.variation_id) === planId)) {
+              setDataPlanId(planId);
+            }
+          } else {
+            pendingDataPlan.current = { serviceId, planId };
+          }
+        }
+        setDataNetwork(serviceId);
+        break;
+      case "electricity": {
+        const type = planId === "postpaid" ? "postpaid" : "prepaid";
+        setDisco(serviceId);
+        setMeterType(type);
+        setMeterNumber(customerId);
+        verifyElectricity({ customerId, serviceId, meterType: type }, true);
+        break;
+      }
+      case "tv":
+        setSmartcard(customerId);
+        if (planId) {
+          if (serviceId === tvProvider && !tvPlansLoading) {
+            if (tvPlans.some((p) => String(p.variation_id) === planId)) {
+              setTvPlanId(planId);
+            }
+          } else {
+            pendingTvPlan.current = { serviceId, planId };
+          }
+        }
+        setTvProvider(serviceId);
+        verifyTv({ customerId, serviceId }, true);
+        break;
+      case "betting":
+        setBetProvider(serviceId);
+        setBetAccountId(customerId);
+        verifyBetting({ customerId, serviceId }, true);
+        break;
+    }
+  };
+
+  const removeBeneficiary = async (item: Beneficiary) => {
+    const label = item.nickname || item.customer_name || item.customer_id;
+    if (!window.confirm(`Remove ${label} from your saved beneficiaries?`)) return;
+    try {
+      await deleteBeneficiary(item.id);
+      setBeneficiaries((list) => list.filter((b) => b.id !== item.id));
+      toast.success("Beneficiary removed");
+    } catch (err: any) {
+      toast.error(err.message || "Could not remove beneficiary");
+    }
+  };
+
+  const saveToggle = canSaveBeneficiaries ? (
+    <SaveBeneficiaryToggle
+      alreadySaved={currentSaved}
+      checked={saveBen}
+      onCheckedChange={setSaveBen}
+      nickname={benNickname}
+      onNicknameChange={setBenNickname}
+      disabled={submitting}
+    />
+  ) : null;
 
   const copyText = async (text: string, label: string) => {
     try {
@@ -639,7 +921,7 @@ export default function PayBillsPage() {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setTab(key)}
+                  onClick={() => switchTab(key)}
                   className={[
                     "flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-3 py-3 text-sm font-medium transition-colors",
                     tab === key
@@ -654,6 +936,19 @@ export default function PayBillsPage() {
             </div>
 
             <div className="p-4 md:p-6 max-w-lg">
+              {tab !== "epins" && (
+                <BeneficiaryPicker
+                  key={tab}
+                  saved={tabSaved}
+                  recents={tabRecents}
+                  selectedKey={currentKey}
+                  keyOf={beneficiaryKey}
+                  serviceLabel={serviceLabel}
+                  onPick={pickBeneficiary}
+                  onDelete={removeBeneficiary}
+                />
+              )}
+
               {tab === "airtime" && (
                 <form onSubmit={handleAirtime} className="space-y-4">
                   <div>
@@ -698,6 +993,7 @@ export default function PayBillsPage() {
                       required
                     />
                   </div>
+                  {saveToggle}
                   <button
                     type="submit"
                     disabled={submitting}
@@ -767,6 +1063,7 @@ export default function PayBillsPage() {
                       </select>
                     )}
                   </div>
+                  {saveToggle}
                   <button
                     type="submit"
                     disabled={submitting || plansLoading}
@@ -834,7 +1131,7 @@ export default function PayBillsPage() {
                       />
                       <button
                         type="button"
-                        onClick={verifyElectricity}
+                        onClick={() => verifyElectricity()}
                         disabled={verifying}
                         className="shrink-0 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
                       >
@@ -860,6 +1157,7 @@ export default function PayBillsPage() {
                       required
                     />
                   </div>
+                  {saveToggle}
                   <button
                     type="submit"
                     disabled={submitting || !customerName}
@@ -907,7 +1205,7 @@ export default function PayBillsPage() {
                       />
                       <button
                         type="button"
-                        onClick={verifyTv}
+                        onClick={() => verifyTv()}
                         disabled={verifying}
                         className="shrink-0 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
                       >
@@ -949,6 +1247,7 @@ export default function PayBillsPage() {
                       </select>
                     )}
                   </div>
+                  {saveToggle}
                   <button
                     type="submit"
                     disabled={submitting || tvPlansLoading}
@@ -1007,7 +1306,7 @@ export default function PayBillsPage() {
                       />
                       <button
                         type="button"
-                        onClick={verifyBetting}
+                        onClick={() => verifyBetting()}
                         disabled={verifying}
                         className="shrink-0 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
                       >
@@ -1038,6 +1337,7 @@ export default function PayBillsPage() {
                       {BETTING_MAX.toLocaleString()}
                     </p>
                   </div>
+                  {saveToggle}
                   <button
                     type="submit"
                     disabled={submitting || !betCustomerName}
