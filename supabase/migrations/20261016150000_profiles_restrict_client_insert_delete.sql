@@ -1,5 +1,4 @@
--- STATUS: NOT YET APPLIED to production (2026-10-16). Run in the Supabase
--- SQL Editor; safe to re-run.
+-- Applied to production via the Supabase SQL Editor on 2026-10-16.
 --
 -- Close a wallet-minting hole on profiles.
 --
