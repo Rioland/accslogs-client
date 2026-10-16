@@ -63,7 +63,8 @@ create policy "Users can delete own beneficiaries"
   for delete to authenticated
   using ((select auth.uid()) = user_id);
 
--- Supabase's default privileges grant anon full table access; RLS would block
--- it anyway, but anon has no business here at all.
-revoke all on public.bill_beneficiaries from anon;
+-- Supabase's default privileges grant anon and authenticated every table
+-- privilege, including TRUNCATE, which RLS does not cover. Grant back only
+-- what the page uses.
+revoke all on public.bill_beneficiaries from anon, authenticated;
 grant select, insert, update, delete on public.bill_beneficiaries to authenticated;
