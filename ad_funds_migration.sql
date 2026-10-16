@@ -3,7 +3,7 @@
 
 begin;
 
--- Add korapay_customer_id and account_reference to profiles (for Korapay dedicated virtual accounts)
+-- Add korapay_customer_id and account_reference to profiles (for Korapay dedicated virtual accounts for users)
 alter table public.profiles
   add column if not exists korapay_customer_id text,
   add column if not exists account_reference text,
