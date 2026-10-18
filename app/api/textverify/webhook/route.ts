@@ -79,6 +79,15 @@ export async function POST(req: Request) {
         },
       );
 
+      if (completed?.noop && completed?.status === "refunded") {
+        // The customer cancelled (and was refunded) before this code landed.
+        // The provider bills lines that receive a message, so flag it for
+        // reconciliation; the payload is kept in text_webhook_events.
+        console.warn(
+          `[textverify/webhook] code arrived on refunded verification ${completed.id} (reservation ${sms.reservationId}) — provider will bill this line`,
+        );
+      }
+
       if (!completed?.success) {
         // Not a verification — it belongs to a rental, which keeps every
         // message rather than just the newest one.

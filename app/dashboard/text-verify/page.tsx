@@ -1820,13 +1820,32 @@ export default function TextVerifyPage() {
                             ? (row.status === "active" ||
                                 row.status === "completed") &&
                               row.phone_number && (
-                                <button
-                                  type="button"
-                                  onClick={() => openVerification(row)}
-                                  className="rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                                >
-                                  {row.status === "active" ? "Open" : "View"}
-                                </button>
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => openVerification(row)}
+                                    className="rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                  >
+                                    {row.status === "active" ? "Open" : "View"}
+                                  </button>
+                                  {/* Still waiting for a code: let the customer
+                                      stop now rather than sit out the provider's
+                                      5–15 minute window. Opens the number and asks
+                                      for confirmation first. */}
+                                  {row.status === "active" && (
+                                    <button
+                                      type="button"
+                                      disabled={cancelling}
+                                      onClick={() => {
+                                        openVerification(row);
+                                        setConfirmCancel(true);
+                                      }}
+                                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                                    >
+                                      Cancel
+                                    </button>
+                                  )}
+                                </div>
                               )
                             : row.phone_number && (
                                 <button
@@ -1974,7 +1993,7 @@ export default function TextVerifyPage() {
                   <p className="mt-2 text-xs text-gray-500">
                     {secondsLeft === 0
                       ? "Time's up — confirming with the provider and refunding you..."
-                      : `Enter the number on ${active.service_name}. If no code arrives before the timer ends, you are refunded automatically.`}
+                      : `Enter the number on ${active.service_name}. No code yet? You can cancel any time before it arrives for a full refund — or wait, and you're refunded automatically when the timer ends.`}
                   </p>
                 </div>
               )}

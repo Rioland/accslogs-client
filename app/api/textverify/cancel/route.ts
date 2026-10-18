@@ -49,7 +49,11 @@ export async function POST(req: Request) {
     // Safe to call more than once: the countdown, the SMS poll and the
     // customer can all try to end the same number, and every caller gets the
     // same final answer rather than an error for arriving second.
-    const result = await settleVerification(admin, row as SettleRow, reason);
+    // A customer cancel refunds immediately when no code has arrived; the
+    // automatic timeout path waits for the provider to confirm the line ended.
+    const result = await settleVerification(admin, row as SettleRow, reason, {
+      customerCancel: body.reason !== "timeout",
+    });
 
     switch (result.outcome) {
       case "completed":

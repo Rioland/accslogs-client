@@ -10,11 +10,13 @@
  *   1. A code that reached the line is the customer's. If the provider says
  *      the verification completed, or any message is sitting on it, the row is
  *      completed, never refunded.
- *   2. Money only goes back once the line is dead upstream: cancelled by us,
- *      or already ended by the provider without a code. If we cannot confirm
- *      that (provider unreachable, unexpected error), nothing changes and the
- *      caller is told to retry. Refunding blind would let a live number keep
- *      receiving codes after the customer was paid back.
+ *   2. When the customer cancels a number that has no code, they are refunded
+ *      straight away; releasing the line upstream is best effort (see
+ *      cancelForCustomer).
+ *   3. Automatic endings (timeout, poll, sweep) only refund once the line is
+ *      dead upstream: cancelled by us, or already ended by the provider
+ *      without a code. If that can't be confirmed (provider unreachable,
+ *      unexpected error), nothing changes and the caller retries later.
  *
  * Server-only: uses the service-role client.
  */
@@ -172,10 +174,20 @@ async function refund(
   return (fresh && outcomeOfFinalRow(fresh)) || { outcome: "retry", message: RETRY_MESSAGE };
 }
 
+export type SettleOptions = {
+  /**
+   * The customer pressed cancel. They must be able to stop waiting at any
+   * point before a code arrives, without the number sitting "active" until
+   * the provider's 5–15 minute window runs out.
+   */
+  customerCancel?: boolean;
+};
+
 export async function settleVerification(
   admin: SupabaseClient,
   row: SettleRow,
   reason: string,
+  opts: SettleOptions = {},
 ): Promise<SettleOutcome> {
   const final = outcomeOfFinalRow(row);
   if (final) return final;
@@ -198,13 +210,17 @@ export async function settleVerification(
     return complete(admin, row, sms ?? null);
   }
 
+  if (state && ENDED_WITHOUT_CODE.has(state)) {
+    return refund(admin, row, reason);
+  }
+
+  if (opts.customerCancel) {
+    return cancelForCustomer(admin, row, reason);
+  }
+
   // Neither the state nor the inbox could be read: no basis for a decision.
   if (state === null && sms === undefined) {
     return { outcome: "retry", message: RETRY_MESSAGE };
-  }
-
-  if (state && ENDED_WITHOUT_CODE.has(state)) {
-    return refund(admin, row, reason);
   }
 
   if (state !== null && state !== TV_STATE.pending) {
@@ -241,6 +257,55 @@ export async function settleVerification(
     return refund(admin, row, reason);
   }
   return { outcome: "retry", message: RETRY_MESSAGE };
+}
+
+/**
+ * The customer cancelled a number that has not delivered a code.
+ *
+ * Refund now, whatever the provider says about the cancel. That is safe
+ * because:
+ *   - a code only ever reaches the customer through this row (webhook or
+ *     poll), and a delivered code completes the row first — so an active row
+ *     means the customer has received nothing;
+ *   - TextVerified only bills a verification when a message arrives, so a
+ *     line that stays silent costs nothing even if it lingers upstream.
+ *
+ * Releasing the line upstream is still attempted, so it stops accepting
+ * messages. If the provider refuses (some lines can't be cancelled straight
+ * away) or can't be reached, the line simply times out on its own. The one
+ * cost is a code landing on it in the meantime: the provider bills us, the
+ * webhook logs it, and the customer keeps their refund.
+ */
+async function cancelForCustomer(
+  admin: SupabaseClient,
+  row: SettleRow,
+  reason: string,
+): Promise<SettleOutcome> {
+  const providerId = row.provider_id as string;
+  let released = true;
+  try {
+    await cancelVerification(providerId);
+  } catch (err) {
+    released = false;
+    const refused = err instanceof TextVerifiedError && err.code === "cannot_cancel";
+    console[refused ? "info" : "warn"](
+      `[textverify/settle] ${row.request_id}: provider ${refused ? "refused" : "failed"} the cancel — refunding anyway, line will expire upstream`,
+      refused ? "" : err,
+    );
+  }
+
+  if (!released) {
+    // A refused cancel can mean a code landed a moment ago. If it is there,
+    // the customer gets it instead of a refund.
+    const lateSms = await readLatestSms(providerId);
+    if (lateSms) return complete(admin, row, lateSms);
+  }
+
+  return refund(
+    admin,
+    row,
+    released ? reason : `${reason} (left to expire at provider)`,
+  );
 }
 
 /* ------------------------------------------------------------------ */
