@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from "@/lib/supabaseServer";
 import {
   TextVerifiedError,
   TvCapability,
+  cancelVerification,
   createVerification,
   extractPhone,
   getAccountDetails,
@@ -189,13 +190,30 @@ export async function POST(req: Request) {
 
     const endsAt = verification.endsAt || verification.ends_at || null;
 
-    await admin.rpc("text_verification_activate", {
+    const { data: activated } = await admin.rpc("text_verification_activate", {
       p_request_id: requestId,
       p_provider_id: providerId,
       p_phone_number: phone,
       p_ends_at: endsAt,
       p_provider_response: verification,
     });
+
+    // Activation only succeeds while the order is still pending. If it was
+    // refunded in the meantime (e.g. cancelled while we waited on the
+    // provider), the customer already has their money back — release the
+    // number instead of handing it over for free.
+    if (activated && activated.success === false) {
+      console.warn(
+        `[textverify/create] ${requestId} was finalised before activation — releasing ${providerId}`,
+      );
+      await cancelVerification(providerId).catch((releaseErr) => {
+        console.error(`[textverify/create] could not release ${providerId}`, releaseErr);
+      });
+      return NextResponse.json(
+        { message: "This order was cancelled before the number was ready. Your wallet was refunded." },
+        { status: 409 },
+      );
+    }
 
     return NextResponse.json({
       success: true,

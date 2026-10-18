@@ -64,6 +64,8 @@ type ActiveVerification = {
   amount_ngn: number;
   status: string;
   sms_code?: string | null;
+  /** Full message text — the only thing to show when no code could be parsed. */
+  sms_content?: string | null;
   ends_at?: string | null;
 };
 
@@ -92,15 +94,68 @@ type RentalMessage = {
 type HistoryRow = {
   id: number;
   request_id: string;
+  provider_id?: string | null;
   service_name: string;
   phone_number: string | null;
   amount_ngn: number;
   status: string;
   sms_code?: string | null;
+  sms_content?: string | null;
   is_renewable?: boolean;
   duration?: string;
+  ends_at?: string | null;
   created_at: string;
 };
+
+function toActiveVerification(row: HistoryRow): ActiveVerification {
+  return {
+    id: row.id,
+    request_id: row.request_id,
+    provider_id: row.provider_id || "",
+    service_name: row.service_name,
+    phone_number: row.phone_number || "",
+    amount_ngn: row.amount_ngn,
+    status: row.status,
+    sms_code: row.sms_code ?? null,
+    sms_content: row.sms_content ?? null,
+    ends_at: row.ends_at ?? null,
+  };
+}
+
+function toActiveRental(row: HistoryRow): ActiveRental {
+  return {
+    id: row.id,
+    request_id: row.request_id,
+    provider_id: row.provider_id || "",
+    service_name: row.service_name,
+    phone_number: row.phone_number || "",
+    amount_ngn: row.amount_ngn,
+    status: row.status,
+    is_renewable: Boolean(row.is_renewable),
+    duration: row.duration || "",
+    ends_at: row.ends_at ?? null,
+  };
+}
+
+/**
+ * Purchase dialog timing. The countdown runs to the provider's own `ends_at`
+ * — the number is dead at that instant regardless of what we display, so
+ * counting to anything else would either strand the user on a number that
+ * already expired, or refund one that was still good. NUMBER_WINDOW_SECONDS is
+ * only a fallback for when the provider returns no expiry.
+ */
+const NUMBER_WINDOW_SECONDS = 300;
+const MIN_WINDOW_MS = 30_000;
+const MAX_WINDOW_MS = 60 * 60_000;
+/**
+ * Run the full provider window. TextVerified refunds unused verifications on
+ * their side, so there is nothing to protect by cancelling early — a lead
+ * time would only shorten the window the customer paid for.
+ */
+const CANCEL_LEAD_MS = 0;
+/** A timeout refund the provider couldn't confirm is retried this often. */
+const TIMEOUT_RETRY_MS = 15_000;
+const TIMEOUT_MAX_RETRIES = 3;
 
 const NONRENEWABLE_DURATIONS = [
   // 1 day is deliberately absent: the provider has no 1-day "allservices"
@@ -178,23 +233,7 @@ export default function TextVerifyPage() {
    * arrives. `deadline` is an absolute timestamp rather than a decrementing
    * counter so a backgrounded tab (where timers are throttled) still expires at
    * the right moment instead of drifting.
-   *
-   * The deadline comes from the provider's own `ends_at` — the number is dead
-   * at that instant regardless of what we display, so counting to anything else
-   * would either strand the user on a number that already expired, or refund
-   * one that was still good. The constant below is only a fallback for when the
-   * provider returns no expiry.
    */
-  const NUMBER_WINDOW_SECONDS = 300;
-  const MIN_WINDOW_MS = 30_000;
-  const MAX_WINDOW_MS = 60 * 60_000;
-  /**
-   * Run the full provider window. TextVerified refunds unused verifications on
-   * their side, so there is nothing to protect by cancelling early — a lead
-   * time would only shorten the window the customer paid for. If the cancel is
-   * rejected because the line just timed out, the route still refunds locally.
-   */
-  const CANCEL_LEAD_MS = 0;
   const [numberDialogOpen, setNumberDialogOpen] = useState(false);
   const [deadline, setDeadline] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(NUMBER_WINDOW_SECONDS);
@@ -202,6 +241,14 @@ export default function TextVerifyPage() {
   const [cancelling, setCancelling] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const autoRefundRan = useRef(false);
+  const timeoutRetries = useRef(0);
+  /** Latest cancelActive, for timers and the poll that must not re-subscribe. */
+  const cancelActiveRef = useRef<
+    ((reason?: "user" | "timeout") => Promise<void>) | null
+  >(null);
+  /** Restore a waiting number / live rental once, on the first history load. */
+  const restoredVerification = useRef(false);
+  const restoredRental = useRef(false);
 
   /**
    * Rentals get a confirmation dialog, never a countdown. A rental runs for
@@ -216,6 +263,56 @@ export default function TextVerifyPage() {
   const [refunding, setRefunding] = useState(false);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [rentalHistory, setRentalHistory] = useState<HistoryRow[]>([]);
+
+  // Mirrors of the current number, for async code that must not restore over
+  // something the customer has just bought.
+  const activeRef = useRef<ActiveVerification | null>(null);
+  const activeRentalRef = useRef<ActiveRental | null>(null);
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
+  useEffect(() => {
+    activeRentalRef.current = activeRental;
+  }, [activeRental]);
+
+  /**
+   * Arm the countdown for the verification now in `active`. Every way a number
+   * becomes the one being waited on — a purchase, a reuse/reactivate, a restore
+   * after reload, or opening it from history — goes through here, so none of
+   * them can inherit the previous number's deadline.
+   *
+   * `allowPast` is for numbers picked up again later: if their window already
+   * closed, the countdown fires straight away and settles them, instead of
+   * granting a fresh 30 seconds.
+   */
+  const startCountdown = useCallback(
+    (endsAt: string | null | undefined, opts: { allowPast?: boolean } = {}) => {
+      const now = Date.now();
+      const providerEnd = endsAt
+        ? new Date(endsAt).getTime() - CANCEL_LEAD_MS
+        : NaN;
+      let endAt: number;
+      if (!Number.isFinite(providerEnd)) {
+        endAt = now + NUMBER_WINDOW_SECONDS * 1000;
+      } else if (opts.allowPast) {
+        endAt = Math.min(providerEnd, now + MAX_WINDOW_MS);
+      } else {
+        // Clamped so a malformed or stale ends_at can't produce an instant
+        // timeout or an endless timer on a fresh purchase.
+        endAt = Math.min(
+          Math.max(providerEnd, now + MIN_WINDOW_MS),
+          now + MAX_WINDOW_MS,
+        );
+      }
+      autoRefundRan.current = false;
+      timeoutRetries.current = 0;
+      setTimedOut(false);
+      setConfirmCancel(false);
+      setSecondsLeft(Math.max(0, Math.ceil((endAt - now) / 1000)));
+      setDeadline(endAt);
+    },
+    [],
+  );
 
   const handleChange = useCallback(
     (key: string) => {
@@ -281,6 +378,17 @@ export default function TextVerifyPage() {
     () => services.find((s) => s.serviceName === selected),
     [services, selected],
   );
+
+  /**
+   * The delivery method actually in force. Picking Voice and then switching to
+   * an SMS-only service used to leave "voice" selected behind a greyed-out
+   * button, so pricing failed or the wrong type was bought.
+   */
+  const effectiveCapability: Capability = useMemo(() => {
+    const caps = selectedService?.capabilities;
+    if (!caps || caps.includes(capability)) return capability;
+    return CAPABILITIES.find((c) => caps.includes(c.value))?.value ?? "sms";
+  }, [selectedService, capability]);
 
   const totalMatches = useMemo(() => {
     const q = serviceQuery.trim().toLowerCase();
@@ -363,22 +471,74 @@ export default function TextVerifyPage() {
       const headers = await authHeaders();
       const res = await fetch("/api/textverify/history", { headers });
       const data = await res.json();
-      if (res.ok) setHistory(data.verifications || []);
+      if (!res.ok) return;
+      const rows: HistoryRow[] = data.verifications || [];
+      setHistory(rows);
+
+      // A reload, or coming back later, used to drop the number being waited
+      // on — no countdown, no auto-refund, no way to cancel. Pick it back up.
+      // (The server has already settled any whose window closed.)
+      if (!restoredVerification.current) {
+        restoredVerification.current = true;
+        const waiting = rows.find(
+          (r) => r.status === "active" && r.phone_number && r.provider_id,
+        );
+        if (waiting && !activeRef.current) {
+          setActive(toActiveVerification(waiting));
+          startCountdown(waiting.ends_at, { allowPast: true });
+          setNumberDialogOpen(true);
+        }
+      }
     } catch {
       // ignore
     }
-  }, []);
+  }, [startCountdown]);
 
   const loadRentalHistory = useCallback(async () => {
     try {
       const headers = await authHeaders();
       const res = await fetch("/api/textverify/rental/history", { headers });
       const data = await res.json();
-      if (res.ok) setRentalHistory(data.rentals || []);
+      if (!res.ok) return;
+      const rows: HistoryRow[] = data.rentals || [];
+      setRentalHistory(rows);
+
+      // Same for rentals: without this, a rented number's inbox was
+      // unreachable as soon as the page reloaded.
+      if (!restoredRental.current) {
+        restoredRental.current = true;
+        const live = rows.find((r) => r.status === "active" && r.phone_number);
+        if (live && !activeRentalRef.current) {
+          setActiveRental(toActiveRental(live));
+        }
+      }
     } catch {
       // ignore
     }
   }, []);
+
+  /** Open a verification from the history table. */
+  const openVerification = (row: HistoryRow) => {
+    setActive(toActiveVerification(row));
+    if (row.status === "active") {
+      startCountdown(row.ends_at, { allowPast: true });
+    } else {
+      setDeadline(null);
+      setTimedOut(false);
+      setConfirmCancel(false);
+    }
+    setNumberDialogOpen(true);
+  };
+
+  /** Open a rental's inbox from the history table — live or expired. */
+  const openRental = (row: HistoryRow) => {
+    setRentalMessages([]);
+    setConfirmRefund(false);
+    setActiveRental(toActiveRental(row));
+    document
+      .getElementById("active-number")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   useEffect(() => {
     setSelected("");
@@ -412,7 +572,7 @@ export default function TextVerifyPage() {
             headers,
             body: JSON.stringify({
               serviceName: selected,
-              capability,
+              capability: effectiveCapability,
               areaCode: Boolean(areaCode),
             }),
           });
@@ -489,7 +649,7 @@ export default function TextVerifyPage() {
     return () => {
       cancelled = true;
     };
-  }, [mode, selected, duration, capability, areaCode, durationKey]);
+  }, [mode, selected, duration, effectiveCapability, areaCode, durationKey]);
 
   // Area codes are static and cached server-side; load once.
   useEffect(() => {
@@ -524,18 +684,32 @@ export default function TextVerifyPage() {
           { headers },
         );
         const data = await res.json();
-        if (!res.ok) return;
+        // The customer may have switched to another number mid-request.
+        if (stopped || !res.ok) return;
         const v = data.verification;
         if (!v) return;
         if (v.status === "completed") {
-          setActive({ ...active, status: "completed", sms_code: data.code });
-          toast.success(`Code received: ${data.code || "see message"}`);
+          setActive({
+            ...active,
+            status: "completed",
+            sms_code: data.code ?? v.sms_code ?? null,
+            sms_content: v.sms_content ?? null,
+          });
+          toast.success(
+            data.code ? `Code received: ${data.code}` : "Message received",
+          );
           void loadHistory();
           return;
         }
-        if (v.status === "expired") {
-          setActive({ ...active, status: "expired" });
-          toast.error("Number expired before a code arrived");
+        if (v.status === "refunded") {
+          // The server settled it once the window closed with no code. Show
+          // the refund in the dialog — the one message for this outcome — and
+          // stop the countdown from trying to refund it a second time.
+          autoRefundRan.current = true;
+          setActive({ ...active, status: "refunded" });
+          setTimedOut(true);
+          setNumberDialogOpen(true);
+          notifyFundsChanged(null);
           void loadHistory();
         }
       } catch {
@@ -578,12 +752,14 @@ export default function TextVerifyPage() {
     };
   }, [active?.request_id, active?.status, loadHistory]);
 
-  // Poll rental SMS
+  // Poll rental SMS. A live rental is polled; an ended one is fetched once so
+  // its inbox can still be read from history.
   useEffect(() => {
-    if (!activeRental || activeRental.status !== "active") return;
+    if (!activeRental) return;
+    const live = activeRental.status === "active";
 
     let stopped = false;
-    setPolling(true);
+    if (live) setPolling(true);
 
     const tick = async () => {
       try {
@@ -593,13 +769,12 @@ export default function TextVerifyPage() {
           { headers },
         );
         const data = await res.json();
-        if (!res.ok) return;
+        if (stopped || !res.ok) return;
         const rental = data.rental;
-        if (rental?.status === "expired") {
+        if (live && rental?.status === "expired") {
           setActiveRental({ ...activeRental, status: "expired" });
           toast.error("Rental expired");
           void loadRentalHistory();
-          return;
         }
         // The server returns the full stored inbox, so this replaces rather
         // than appends — no risk of duplicating a message the webhook also saw.
@@ -621,6 +796,11 @@ export default function TextVerifyPage() {
     };
 
     void tick();
+    if (!live) {
+      return () => {
+        stopped = true;
+      };
+    }
     // A rental lives for days, so this is a slow safety net behind the webhook
     // rather than the delivery mechanism. It also pauses on hidden tabs.
     const id = window.setInterval(() => {
@@ -664,8 +844,15 @@ export default function TextVerifyPage() {
           phone_number: data.phone_number,
           amount_ngn: data.amount_ngn,
           status: "active",
+          sms_code: null,
+          sms_content: null,
           ends_at: data.ends_at,
         });
+        // A fresh window for the new line. Without this the countdown resumed
+        // against the previous number's deadline — usually already past — and
+        // immediately cancelled the number the customer had just paid for.
+        startCountdown(data.ends_at);
+        setNumberDialogOpen(true);
         toast.success(
           action === "reuse" ? "Number reused — watching for a new code" : "Number reactivated",
         );
@@ -695,7 +882,7 @@ export default function TextVerifyPage() {
           headers,
           body: JSON.stringify({
             serviceName: selected,
-            capability,
+            capability: effectiveCapability,
             areaCodes: areaCode ? [areaCode] : [],
           }),
         });
@@ -711,27 +898,11 @@ export default function TextVerifyPage() {
           phone_number: data.phone_number,
           amount_ngn: data.amount_ngn,
           status: "active",
+          sms_code: null,
+          sms_content: null,
           ends_at: data.ends_at,
         });
-
-        // Count down to the provider's own expiry. Clamped so a malformed or
-        // stale ends_at can't produce an instant timeout or an endless timer.
-        const providerEnd = data.ends_at
-          ? new Date(data.ends_at).getTime() - CANCEL_LEAD_MS
-          : NaN;
-        const fallback = Date.now() + NUMBER_WINDOW_SECONDS * 1000;
-        const endAt = Number.isFinite(providerEnd)
-          ? Math.min(
-              Math.max(providerEnd, Date.now() + MIN_WINDOW_MS),
-              Date.now() + MAX_WINDOW_MS,
-            )
-          : fallback;
-
-        autoRefundRan.current = false;
-        setTimedOut(false);
-        setConfirmCancel(false);
-        setSecondsLeft(Math.ceil((endAt - Date.now()) / 1000));
-        setDeadline(endAt);
+        startCountdown(data.ends_at);
         setNumberDialogOpen(true);
         notifyFundsChanged(data.new_balance);
 
@@ -798,7 +969,12 @@ export default function TextVerifyPage() {
           setNumberDialogOpen(true);
           setActive((prev) =>
             prev
-              ? { ...prev, status: "completed", sms_code: data.code ?? null }
+              ? {
+                  ...prev,
+                  status: "completed",
+                  sms_code: data.code ?? null,
+                  sms_content: data.content ?? null,
+                }
               : prev,
           );
           toast.success("Your code arrived just in time");
@@ -806,7 +982,27 @@ export default function TextVerifyPage() {
           return;
         }
 
-        if (!res.ok) throw new Error(data.message || "Cancel failed");
+        if (!res.ok) {
+          // The provider couldn't confirm the line is dead, so nothing was
+          // refunded yet. Try again shortly rather than leave the customer
+          // charged; the server-side sweep is the backstop if the tab closes.
+          if (
+            reason === "timeout" &&
+            res.status >= 500 &&
+            timeoutRetries.current < TIMEOUT_MAX_RETRIES
+          ) {
+            timeoutRetries.current += 1;
+            const requestId = active.request_id;
+            window.setTimeout(() => {
+              const current = activeRef.current;
+              if (current?.request_id === requestId && current.status === "active") {
+                void cancelActiveRef.current?.("timeout");
+              }
+            }, TIMEOUT_RETRY_MS);
+            return;
+          }
+          throw new Error(data.message || "Cancel failed");
+        }
 
         const refunded =
           data.refunded != null
@@ -838,12 +1034,17 @@ export default function TextVerifyPage() {
     [active, loadHistory],
   );
 
+  useEffect(() => {
+    cancelActiveRef.current = cancelActive;
+  }, [cancelActive]);
+
   // Tick the countdown and fire the automatic refund exactly once. Driven by
   // the deadline rather than dialog visibility, so hiding the dialog cannot
-  // strand a purchase that should have been refunded.
+  // strand a purchase that should have been refunded. Only a number that is
+  // still waiting counts down — completed, refunded and closed ones never do.
   useEffect(() => {
     if (deadline == null) return;
-    if (active?.status === "completed" || timedOut) return;
+    if (active?.status !== "active" || timedOut) return;
 
     const tick = () => {
       const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
@@ -1134,7 +1335,7 @@ export default function TextVerifyPage() {
                           onClick={() => setCapability(c.value)}
                           title={unsupported ? `${selected} has no ${c.label.toLowerCase()} option` : c.hint}
                           className={`rounded-lg border px-2 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                            capability === c.value
+                            effectiveCapability === c.value
                               ? "border-[#F87D1F] bg-[#fff4ea] text-[#F87D1F]"
                               : "border-gray-300 text-gray-600 hover:bg-gray-50"
                           }`}
@@ -1279,7 +1480,10 @@ export default function TextVerifyPage() {
               </button>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div
+              id="active-number"
+              className="scroll-mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
               <h2 className="mb-4 font-semibold text-teal-800">Active number</h2>
 
               {mode === "verify" ? (
@@ -1346,14 +1550,35 @@ export default function TextVerifyPage() {
                         </div>
                       </div>
                     )}
+                    {/* Shown even without a parsed code: some senders format
+                        codes we can't pick out, and the text is all they have. */}
+                    {active.status === "completed" && active.sms_content && (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-medium text-gray-500">Message</p>
+                          <button
+                            type="button"
+                            onClick={() => void copy(String(active.sms_content), "Message")}
+                            aria-label="Copy message"
+                            className="rounded border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-100"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <p className="mt-1 break-words text-sm text-gray-800">
+                          {active.sms_content}
+                        </p>
+                      </div>
+                    )}
                     {active.status === "active" && (
                       <div className="space-y-2">
                         <button
                           type="button"
-                          onClick={() => void cancelActive()}
-                          className="w-full rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                          disabled={cancelling}
+                          onClick={() => setConfirmCancel(true)}
+                          className="w-full rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
                         >
-                          Cancel &amp; refund
+                          {cancelling ? "Cancelling..." : "Cancel & refund"}
                         </button>
                         <button
                           type="button"
@@ -1527,10 +1752,11 @@ export default function TextVerifyPage() {
                   {activeRental.status === "active" && (
                     <button
                       type="button"
-                      onClick={() => void refundActiveRental()}
-                      className="w-full rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                      disabled={refunding}
+                      onClick={() => setConfirmRefund(true)}
+                      className="w-full rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
                     >
-                      End early &amp; refund
+                      {refunding ? "Requesting refund..." : "End early & refund"}
                     </button>
                   )}
                 </div>
@@ -1560,6 +1786,9 @@ export default function TextVerifyPage() {
                       {mode === "verify" && <th className="px-4 py-3">Code</th>}
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">
+                        <span className="sr-only">Actions</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -1585,6 +1814,29 @@ export default function TextVerifyPage() {
                         <td className="px-4 py-3 capitalize">{row.status}</td>
                         <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                           {new Date(row.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {mode === "verify"
+                            ? (row.status === "active" ||
+                                row.status === "completed") &&
+                              row.phone_number && (
+                                <button
+                                  type="button"
+                                  onClick={() => openVerification(row)}
+                                  className="rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                  {row.status === "active" ? "Open" : "View"}
+                                </button>
+                              )
+                            : row.phone_number && (
+                                <button
+                                  type="button"
+                                  onClick={() => openRental(row)}
+                                  className="rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                  {row.status === "active" ? "Open" : "Messages"}
+                                </button>
+                              )}
                         </td>
                       </tr>
                     ))}
@@ -1640,26 +1892,60 @@ export default function TextVerifyPage() {
               </div>
 
               {/* Code, countdown, or timeout notice */}
-              {active.status === "completed" && active.sms_code ? (
-                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-green-700">
-                    Verification code
-                  </p>
-                  <div className="mt-1 flex items-center justify-center gap-2">
-                    <p className="font-mono text-3xl font-bold text-green-900">
-                      {active.sms_code}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void copy(String(active.sms_code), "Code")
-                      }
-                      aria-label="Copy code"
-                      className="rounded border border-green-300 bg-white p-1.5 text-green-700 hover:bg-green-100"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </button>
-                  </div>
+              {active.status === "completed" ? (
+                <div className="space-y-3">
+                  {active.sms_code && (
+                    <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center">
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-green-700">
+                        Verification code
+                      </p>
+                      <div className="mt-1 flex items-center justify-center gap-2">
+                        <p className="font-mono text-3xl font-bold text-green-900">
+                          {active.sms_code}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void copy(String(active.sms_code), "Code")
+                          }
+                          aria-label="Copy code"
+                          className="rounded border border-green-300 bg-white p-1.5 text-green-700 hover:bg-green-100"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {active.sms_content ? (
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                          Message
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void copy(String(active.sms_content), "Message")
+                          }
+                          aria-label="Copy message"
+                          className="rounded border border-gray-300 bg-white p-1.5 text-gray-600 hover:bg-gray-100"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <p className="mt-1 break-words text-sm text-gray-800">
+                        {active.sms_content}
+                      </p>
+                    </div>
+                  ) : (
+                    !active.sms_code && (
+                      <p className="rounded-xl border border-gray-200 p-4 text-center text-sm text-gray-600">
+                        The provider marked this number as used, but no message
+                        text came through. Check your transaction history, or
+                        contact support if you didn&apos;t receive a code.
+                      </p>
+                    )
+                  )}
                 </div>
               ) : timedOut ? (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -1686,8 +1972,9 @@ export default function TextVerifyPage() {
                     {String(secondsLeft % 60).padStart(2, "0")}
                   </p>
                   <p className="mt-2 text-xs text-gray-500">
-                    Enter the number on {active.service_name}. If no code arrives
-                    before the timer ends, you are refunded automatically.
+                    {secondsLeft === 0
+                      ? "Time's up — confirming with the provider and refunding you..."
+                      : `Enter the number on ${active.service_name}. If no code arrives before the timer ends, you are refunded automatically.`}
                   </p>
                 </div>
               )}

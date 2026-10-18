@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAuthedUser } from "@/lib/billsAuth";
 import { getSupabaseAdminClient } from "@/lib/supabaseServer";
-import {
-  TextVerifiedError,
-  cancelVerification,
-  extractSmsFields,
-  getVerification,
-  listSms,
-} from "@/lib/textverified";
+import { TextVerifiedError } from "@/lib/textverified";
+import { SETTLE_COLUMNS, settleVerification, type SettleRow } from "@/lib/textverifySettle";
 
 export const runtime = "nodejs";
 
@@ -40,7 +35,7 @@ export async function POST(req: Request) {
     const admin = getSupabaseAdminClient();
     let query = admin
       .from("text_verifications")
-      .select("id, user_id, request_id, provider_id, status")
+      .select(SETTLE_COLUMNS)
       .eq("user_id", user.id);
 
     if (requestId) query = query.eq("request_id", requestId);
@@ -51,92 +46,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Verification not found" }, { status: 404 });
     }
 
-    if (["completed", "refunded", "cancelled"].includes(row.status)) {
-      return NextResponse.json(
-        { message: `Cannot cancel a ${row.status} verification` },
-        { status: 400 },
-      );
-    }
+    // Safe to call more than once: the countdown, the SMS poll and the
+    // customer can all try to end the same number, and every caller gets the
+    // same final answer rather than an error for arriving second.
+    const result = await settleVerification(admin, row as SettleRow, reason);
 
-    if (row.provider_id) {
-      // Check the provider's view BEFORE refunding. If the code actually
-      // arrived and we simply missed the webhook, refunding here would hand
-      // back the money for a verification that was delivered.
-      let providerState: string | null = null;
-      try {
-        const details = await getVerification(row.provider_id);
-        providerState = String(details.state || "");
-      } catch (stateErr) {
-        console.warn("[textverify/cancel] could not read provider state", stateErr);
-      }
-
-      if (providerState === "verificationCompleted") {
-        const messages = await listSms({
-          reservationId: row.provider_id,
-        }).catch(() => []);
-        const fields = messages[0]
-          ? extractSmsFields(messages[0])
-          : { code: null, content: null };
-
-        await admin.rpc("text_verification_complete", {
-          p_request_id: row.request_id,
-          p_sms_code: fields.code,
-          p_sms_content: fields.content,
-          p_provider_response: null,
-        });
-
+    switch (result.outcome) {
+      case "completed":
         return NextResponse.json(
           {
             success: false,
             completed: true,
-            code: fields.code,
+            code: result.code,
+            content: result.content,
             message:
-              "Your code arrived just before this was cancelled, so the number was used and cannot be refunded.",
+              "Your code arrived before this could be cancelled, so the number was used and cannot be refunded.",
           },
           { status: 409 },
         );
-      }
-
-      try {
-        await cancelVerification(row.provider_id);
-      } catch (cancelErr) {
-        // A number that already timed out cannot be cancelled — the provider
-        // reports canCancel:false. That is the normal end of an unused
-        // verification, not a failure, so it is not logged as an error. We
-        // refund locally either way; TextVerified refunds their side.
-        const expected =
-          cancelErr instanceof TextVerifiedError &&
-          cancelErr.code === "cannot_cancel";
-        if (expected) {
-          console.info(
-            `[textverify/cancel] ${row.request_id} already timed out at provider — refunding locally`,
-          );
-        } else {
-          console.error("[textverify/cancel] provider", cancelErr);
-        }
-      }
+      case "refunded":
+        return NextResponse.json({ success: true, refunded: result.refunded });
+      case "unchanged":
+        return NextResponse.json(
+          { message: `Cannot cancel a ${result.status} verification` },
+          { status: 400 },
+        );
+      case "retry":
+        return NextResponse.json(
+          { message: result.message, code: "retry" },
+          { status: 502 },
+        );
     }
-
-    const { data: refundResult, error: refundError } = await admin.rpc(
-      "text_verification_fail_and_refund",
-      {
-        p_request_id: row.request_id,
-        p_error_message: reason,
-        p_provider_response: null,
-      },
-    );
-
-    if (refundError) {
-      return NextResponse.json(
-        { message: refundError.message || "Refund failed" },
-        { status: 500 },
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      refunded: refundResult?.refunded ?? null,
-    });
   } catch (err) {
     if (err instanceof TextVerifiedError) {
       return NextResponse.json(

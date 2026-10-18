@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthedUser } from "@/lib/billsAuth";
 import { getSupabaseAdminClient, isMissingTableError } from "@/lib/supabaseServer";
+import { settleStaleVerifications } from "@/lib/textverifySettle";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,24 @@ export async function GET(req: Request) {
     if (error || !user) return error!;
 
     const admin = getSupabaseAdminClient();
+
+    // A number whose window closed while the customer was away (tab closed,
+    // connection dropped) was never refunded by the browser countdown. Settle
+    // those before listing, so the customer sees their money back — or their
+    // late code — instead of a number stuck on "active". Best-effort: a
+    // provider hiccup must never break the history list.
+    try {
+      await settleStaleVerifications(admin, {
+        userId: user.id,
+        limit: 5,
+        parallel: true,
+      });
+    } catch (settleErr) {
+      if (!isMissingTableError(settleErr as { code?: string; message?: string })) {
+        console.warn("[textverify/history] settling stale verifications failed", settleErr);
+      }
+    }
+
     const { data, error: qError } = await admin
       .from("text_verifications")
       .select(

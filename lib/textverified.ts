@@ -608,8 +608,53 @@ export function extractSmsFields(msg: TvSms) {
 }
 
 function extractCodeFromText(text: string): string | null {
-  const m = text.match(/\b(\d{4,8})\b/);
-  return m?.[1] || null;
+  const plain = text.match(/\b(\d{4,8})\b/);
+  if (plain) return plain[1];
+  // Some senders split the code: "123-456" or "123 456".
+  const split = text.match(/\b(\d{3})[-\s](\d{3})\b/);
+  return split ? split[1] + split[2] : null;
+}
+
+function smsTime(msg: TvSms): number {
+  const t = new Date(String(msg.createdAt || msg.created_at || "")).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+/**
+ * The provider does not promise an order for /sms, so "the latest message" has
+ * to be chosen explicitly rather than assumed to be element 0.
+ */
+export function sortSmsNewestFirst(messages: TvSms[]): TvSms[] {
+  return [...messages].sort((a, b) => smsTime(b) - smsTime(a));
+}
+
+/** Provider states of a verification (ReservationState in the v2 API). */
+export const TV_STATE = {
+  pending: "verificationPending",
+  completed: "verificationCompleted",
+  canceled: "verificationCanceled",
+  timedOut: "verificationTimedOut",
+  reported: "verificationReported",
+  refunded: "verificationRefunded",
+  reused: "verificationReused",
+  reactivated: "verificationReactivated",
+} as const;
+
+/** Rental details carry `refund: { canRefund, refundableUntil }`. */
+export function extractRentalRefund(r: CreatedRental): {
+  canRefund: boolean | null;
+  refundableUntil: string | null;
+} {
+  const node = r.refund as
+    | { canRefund?: boolean; refundableUntil?: string | null }
+    | undefined;
+  if (!node || typeof node !== "object") {
+    return { canRefund: null, refundableUntil: null };
+  }
+  return {
+    canRefund: typeof node.canRefund === "boolean" ? node.canRefund : null,
+    refundableUntil: node.refundableUntil ?? null,
+  };
 }
 
 /* ------------------------------------------------------------------ */

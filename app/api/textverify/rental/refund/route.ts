@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAuthedUser } from "@/lib/billsAuth";
 import { getSupabaseAdminClient } from "@/lib/supabaseServer";
-import { TextVerifiedError, refundRental } from "@/lib/textverified";
+import {
+  TextVerifiedError,
+  extractRentalRefund,
+  getRental,
+  refundRental,
+} from "@/lib/textverified";
 
 export const runtime = "nodejs";
 
@@ -42,11 +47,56 @@ export async function POST(req: Request) {
       );
     }
 
+    // The provider owns the refund window. The wallet is only credited once
+    // the provider has actually refunded us — crediting it when they decline
+    // hands the customer a rental we have already paid for.
     if (row.provider_id) {
+      const isRenewable = Boolean(row.is_renewable);
+
+      // Ask first so a rental past its window gets a clear answer instead of
+      // a raw provider error. If the lookup itself fails, the refund call
+      // below still decides.
       try {
-        await refundRental(row.provider_id, Boolean(row.is_renewable));
+        const details = await getRental(row.provider_id, isRenewable);
+        const { canRefund, refundableUntil } = extractRentalRefund(details);
+        if (canRefund === false) {
+          const until = refundableUntil
+            ? ` The refund window closed on ${new Date(refundableUntil).toUTCString()}.`
+            : "";
+          return NextResponse.json(
+            {
+              message: `This rental can no longer be refunded.${until}`,
+              code: "not_refundable",
+            },
+            { status: 409 },
+          );
+        }
+      } catch (lookupErr) {
+        console.warn("[textverify/rental/refund] eligibility lookup failed", lookupErr);
+      }
+
+      try {
+        await refundRental(row.provider_id, isRenewable);
       } catch (refundErr) {
         console.error("[textverify/rental/refund] provider", refundErr);
+        const declined =
+          refundErr instanceof TextVerifiedError &&
+          refundErr.status >= 400 &&
+          refundErr.status < 500 &&
+          refundErr.status !== 429;
+        return NextResponse.json(
+          declined
+            ? {
+                message: `The provider declined this refund: ${(refundErr as TextVerifiedError).message}`,
+                code: "refund_declined",
+              }
+            : {
+                message:
+                  "Couldn't reach the provider to process the refund. Your rental is unchanged — please try again in a moment.",
+                code: "provider_unreachable",
+              },
+          { status: declined ? 409 : 502 },
+        );
       }
     }
 
@@ -60,6 +110,10 @@ export async function POST(req: Request) {
     );
 
     if (refundError) {
+      console.error(
+        `[textverify/rental/refund] provider refunded ${row.provider_id} but wallet credit failed`,
+        refundError,
+      );
       return NextResponse.json(
         { message: refundError.message || "Refund failed" },
         { status: 500 },

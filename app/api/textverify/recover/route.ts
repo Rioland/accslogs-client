@@ -3,6 +3,7 @@ import { getAuthedUser } from "@/lib/billsAuth";
 import { getSupabaseAdminClient } from "@/lib/supabaseServer";
 import {
   TextVerifiedError,
+  cancelVerification,
   extractPhone,
   getVerificationPricing,
   reactivateVerification,
@@ -123,12 +124,19 @@ export async function POST(req: Request) {
     );
 
     if (debitError || !debitResult?.success) {
-      // The line exists upstream but we failed to bill for it. Do NOT hand the
-      // number over silently — log loudly so it can be reconciled.
+      // The line exists upstream but we failed to bill for it. Release it so
+      // we are not paying for a number nobody holds, and log loudly in case
+      // the release fails too.
       console.error(
         `[textverify/recover] ${action} succeeded upstream (provider_id=${newProviderId}) but debit failed:`,
         debitError?.message || debitResult?.error,
       );
+      await cancelVerification(newProviderId).catch((releaseErr) => {
+        console.error(
+          `[textverify/recover] could not release unbilled line ${newProviderId} — reconcile manually`,
+          releaseErr,
+        );
+      });
       return NextResponse.json(
         { message: debitResult?.error || "Could not complete billing for this number" },
         { status: debitResult?.error === "Insufficient balance" ? 402 : 500 },
@@ -146,6 +154,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       action,
+      id: debitResult.id,
       request_id: newRequestId,
       provider_id: newProviderId,
       phone_number: phone,

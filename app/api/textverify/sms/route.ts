@@ -5,7 +5,9 @@ import {
   TextVerifiedError,
   extractSmsFields,
   listSms,
+  sortSmsNewestFirst,
 } from "@/lib/textverified";
+import { settleVerification } from "@/lib/textverifySettle";
 
 export const runtime = "nodejs";
 
@@ -49,7 +51,9 @@ export async function GET(req: Request) {
       });
     }
 
-    if (row.status !== "active" || !row.phone_number) {
+    // "expired" rows were left behind by older code that marked a number dead
+    // without refunding it; they go through the same settle path below.
+    if ((row.status !== "active" && row.status !== "expired") || !row.phone_number) {
       return NextResponse.json({
         verification: row,
         messages: [],
@@ -57,21 +61,32 @@ export async function GET(req: Request) {
       });
     }
 
-    const messages = await listSms({
-      to: row.phone_number,
-      reservationId: row.provider_id || undefined,
-    });
+    const messages = sortSmsNewestFirst(
+      await listSms({
+        to: row.phone_number,
+        reservationId: row.provider_id || undefined,
+      }),
+    );
 
     const latest = messages[0];
     if (latest) {
       const fields = extractSmsFields(latest);
       if (fields.code || fields.content) {
-        await admin.rpc("text_verification_complete", {
-          p_request_id: row.request_id,
-          p_sms_code: fields.code,
-          p_sms_content: fields.content,
-          p_provider_response: latest,
-        });
+        // Keyed by provider id so it also completes rows older code left
+        // marked "expired" (text_verification_complete only accepts active).
+        await (row.provider_id
+          ? admin.rpc("text_verification_complete_by_provider", {
+              p_provider_id: row.provider_id,
+              p_sms_code: fields.code,
+              p_sms_content: fields.content,
+              p_provider_response: latest,
+            })
+          : admin.rpc("text_verification_complete", {
+              p_request_id: row.request_id,
+              p_sms_code: fields.code,
+              p_sms_content: fields.content,
+              p_provider_response: latest,
+            }));
 
         return NextResponse.json({
           verification: {
@@ -86,18 +101,41 @@ export async function GET(req: Request) {
       }
     }
 
-    // Expire locally if past ends_at
-    if (row.ends_at && new Date(row.ends_at).getTime() < Date.now()) {
-      await admin
-        .from("text_verifications")
-        .update({ status: "expired", updated_at: new Date().toISOString() })
-        .eq("id", row.id)
-        .eq("status", "active");
-      return NextResponse.json({
-        verification: { ...row, status: "expired" },
-        messages,
-        code: null,
-      });
+    // Window closed with no code. Settle it here rather than just marking it
+    // expired: an expired-but-unrefunded row is money the customer paid for a
+    // number that never worked. Settling refunds it, or completes it if a code
+    // slipped in at the last second.
+    const windowClosed =
+      row.status === "expired" ||
+      (row.ends_at && new Date(row.ends_at).getTime() < Date.now());
+    if (windowClosed) {
+      const result = await settleVerification(
+        admin,
+        row,
+        "No code received before the number expired",
+      );
+      if (result.outcome === "completed") {
+        return NextResponse.json({
+          verification: {
+            ...row,
+            status: "completed",
+            sms_code: result.code,
+            sms_content: result.content,
+          },
+          messages,
+          code: result.code,
+        });
+      }
+      if (result.outcome === "refunded") {
+        return NextResponse.json({
+          verification: { ...row, status: "refunded" },
+          messages,
+          code: null,
+          refunded: result.refunded,
+        });
+      }
+      // Undecided (provider unreachable): leave it active and try again on
+      // the next poll.
     }
 
     return NextResponse.json({
